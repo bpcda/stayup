@@ -40,60 +40,54 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
 
   useEffect(() => {
     if (!giorno || !fermata) {
-      setSchedules([]);
+      setSlots([]);
+      setBookingCounts({});
       setOrario("");
       return;
     }
 
     if (!isSupabaseConfigured) {
-      // Use fallback static schedules
       const times = FALLBACK_SCHEDULES[fermata] || [];
-      setSchedules(
+      setSlots(
         times.map((t, i) => ({
           id: `fallback-${i}`,
-          stop: fermata,
-          time: t,
-          day: giorno,
-          capacity: 50,
-          booked_count: 0,
+          fermata,
+          orario: t,
+          giorno,
+          capienza: 50,
         }))
       );
+      setBookingCounts({});
       setOrario("");
       return;
     }
 
-    const fetchSchedules = async () => {
+    const fetchSlots = async () => {
       setLoadingSchedules(true);
       setOrario("");
-      const { data, error } = await supabase
-        .from("shuttle_schedules")
-        .select("*")
-        .eq("day", giorno)
-        .eq("stop", fermata);
 
-      if (error) {
-        console.error("Error fetching schedules:", error);
-        // Fallback on error too
+      const [slotsRes, bookingsRes] = await Promise.all([
+        supabase.from("shuttle_slots").select("*").eq("giorno", giorno).eq("fermata", fermata),
+        supabase.from("bookings").select("orario").eq("giorno", giorno).eq("fermata", fermata),
+      ]);
+
+      if (slotsRes.error) {
+        console.error("Error fetching slots:", slotsRes.error);
         const times = FALLBACK_SCHEDULES[fermata] || [];
-        setSchedules(
-          times.map((t, i) => ({
-            id: `fallback-${i}`,
-            stop: fermata,
-            time: t,
-            day: giorno,
-            capacity: 50,
-            booked_count: 0,
-          }))
-        );
+        setSlots(times.map((t, i) => ({ id: `fallback-${i}`, fermata, orario: t, giorno, capienza: 50 })));
+        setBookingCounts({});
       } else {
-        setSchedules(
-          (data || []).filter((s: Schedule) => s.capacity > s.booked_count)
-        );
+        const counts: Record<string, number> = {};
+        (bookingsRes.data || []).forEach((b: { orario: string }) => {
+          counts[b.orario] = (counts[b.orario] || 0) + 1;
+        });
+        setSlots((slotsRes.data || []).filter((s: ShuttleSlot) => s.capienza > (counts[s.orario] || 0)));
+        setBookingCounts(counts);
       }
       setLoadingSchedules(false);
     };
 
-    fetchSchedules();
+    fetchSlots();
   }, [giorno, fermata]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -189,15 +183,15 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
           <Label>Orario *</Label>
           {loadingSchedules ? (
             <p className="text-muted-foreground text-sm">Caricamento orari...</p>
-          ) : schedules.length === 0 ? (
+          ) : slots.length === 0 ? (
             <p className="text-muted-foreground text-sm">Nessun orario disponibile per questa combinazione.</p>
           ) : (
             <div className="grid grid-cols-3 gap-2">
-              {schedules.map((s) => (
-                <button key={s.id} type="button" onClick={() => setOrario(s.time)}
+              {slots.map((s) => (
+                <button key={s.id} type="button" onClick={() => setOrario(s.orario)}
                   className={`px-3 py-2.5 rounded-lg border text-sm font-medium transition-all ${
-                    orario === s.time ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary text-foreground hover:border-muted-foreground"
-                  }`}>{s.time}</button>
+                    orario === s.orario ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary text-foreground hover:border-muted-foreground"
+                  }`}>{s.orario}</button>
               ))}
             </div>
           )}
