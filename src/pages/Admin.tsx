@@ -411,9 +411,47 @@ const Admin = () => {
         {/* Shuttle Management */}
         <Card>
           <CardHeader><CardTitle className="text-lg">Gestione Navette</CardTitle></CardHeader>
-          <CardContent>
-            {slotStats.length === 0 ? (
-              <p className="text-muted-foreground text-sm">Nessuno slot configurato.</p>
+          <CardContent className="space-y-4">
+            {/* Shuttle Filters */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1">
+                <Label className="text-xs">Giorno</Label>
+                <Select value={slotFilterGiorno} onValueChange={setSlotFilterGiorno}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti</SelectItem>
+                    <SelectItem value="25 Aprile">25 Aprile</SelectItem>
+                    <SelectItem value="26 Aprile">26 Aprile</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Fermata</Label>
+                <Select value={slotFilterFermata} onValueChange={setSlotFilterFermata}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutte</SelectItem>
+                    <SelectItem value="Università Cattolica">Università Cattolica</SelectItem>
+                    <SelectItem value="Cheope">Cheope</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Riempimento</Label>
+                <Select value={slotFilterRiempimento} onValueChange={setSlotFilterRiempimento}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti</SelectItem>
+                    <SelectItem value="disponibile">Disponibili</SelectItem>
+                    <SelectItem value="quasi_pieno">Quasi pieni (≤5)</SelectItem>
+                    <SelectItem value="pieno">Pieni</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {filteredSlotStats.length === 0 ? (
+              <p className="text-muted-foreground text-sm">Nessuno slot trovato.</p>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
@@ -425,10 +463,11 @@ const Admin = () => {
                       <TableHead className="text-center">Capienza</TableHead>
                       <TableHead className="text-center">Occupati</TableHead>
                       <TableHead className="text-center">Rimanenti</TableHead>
+                      <TableHead className="text-center">Lista</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {slotStats.map((s) => (
+                    {filteredSlotStats.map((s) => (
                       <TableRow key={s.id}>
                         <TableCell>{s.giorno}</TableCell>
                         <TableCell>{s.fermata}</TableCell>
@@ -439,6 +478,11 @@ const Admin = () => {
                           <span className={s.rimanenti <= 0 ? "text-red-400 font-bold" : s.rimanenti <= 5 ? "text-yellow-400 font-medium" : ""}>
                             {s.rimanenti}
                           </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Button size="sm" variant="outline" onClick={() => downloadPassengerList(s)} disabled={s.occupati === 0}>
+                            ⬇ Scarica
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
