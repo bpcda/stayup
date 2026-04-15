@@ -20,6 +20,8 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/grill-contest" element={<GrillContest />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/termini" element={<TermsConditions />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
