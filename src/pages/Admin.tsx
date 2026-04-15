@@ -76,6 +76,11 @@ const Admin = () => {
   const [filterFermata, setFilterFermata] = useState("all");
   const [filterPagato, setFilterPagato] = useState("all");
 
+  // Shuttle filters
+  const [slotFilterGiorno, setSlotFilterGiorno] = useState("all");
+  const [slotFilterFermata, setSlotFilterFermata] = useState("all");
+  const [slotFilterRiempimento, setSlotFilterRiempimento] = useState("all");
+
   // Move dialog
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
