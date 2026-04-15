@@ -11,10 +11,14 @@ const GrillContest = () => {
     <div className="min-h-screen px-4 py-8 md:py-16">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-center mb-12">
+        <div className="flex items-center justify-between mb-12">
+          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+            ← Home
+          </Link>
           <Link to="/">
             <img src={stayupLogo} alt="StayUp" className="w-24 h-auto" />
           </Link>
+          <div className="w-12" /> {/* spacer for centering */}
         </div>
 
         {/* Section 1: Event Info */}
