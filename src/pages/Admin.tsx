@@ -141,6 +141,39 @@ const Admin = () => {
     });
   }, [slots, bookings]);
 
+  const filteredSlotStats = useMemo(() => {
+    return slotStats.filter((s) => {
+      if (slotFilterGiorno !== "all" && s.giorno !== slotFilterGiorno) return false;
+      if (slotFilterFermata !== "all" && s.fermata !== slotFilterFermata) return false;
+      if (slotFilterRiempimento === "pieno" && s.rimanenti > 0) return false;
+      if (slotFilterRiempimento === "disponibile" && s.rimanenti <= 0) return false;
+      if (slotFilterRiempimento === "quasi_pieno" && (s.rimanenti <= 0 || s.rimanenti > 5)) return false;
+      return true;
+    });
+  }, [slotStats, slotFilterGiorno, slotFilterFermata, slotFilterRiempimento]);
+
+  const downloadPassengerList = (slot: typeof slotStats[0]) => {
+    const passengers = bookings.filter(
+      (b) => b.giorno === slot.giorno && b.fermata === slot.fermata && b.orario === slot.orario && b.pagato
+    );
+    const lines = [
+      `LISTA PASSEGGERI - ${slot.giorno} | ${slot.fermata} | ${slot.orario}`,
+      `Totale pagati: ${passengers.length}/${slot.capienza}`,
+      `Generata il: ${new Date().toLocaleString("it-IT")}`,
+      "",
+      "N. | Nome | Telefono | Email",
+      "---|------|----------|------",
+      ...passengers.map((p, i) => `${i + 1} | ${p.nome} | ${p.telefono} | ${p.email}`),
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `passeggeri_${slot.giorno.replace(/\s/g, "_")}_${slot.fermata.replace(/\s/g, "_")}_${slot.orario}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const togglePagato = async (booking: Booking) => {
     const newPagato = !booking.pagato;
     if (isSupabaseConfigured) {
