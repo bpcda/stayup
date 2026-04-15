@@ -20,7 +20,7 @@ const Index = () => {
         </p>
 
         <Button variant="hero" size="lg" asChild>
-          <Link to="/grill-contest">Scopri il prossimo evento</Link>
+          <Link to="/grill-contest">Grill Contest Rivergaro 2026</Link>
         </Button>
       </div>
     </div>
