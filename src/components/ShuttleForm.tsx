@@ -5,13 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 
-interface Schedule {
+interface ShuttleSlot {
   id: string;
-  stop: string;
-  time: string;
-  day: string;
-  capacity: number;
-  booked_count: number;
+  giorno: string;
+  fermata: string;
+  orario: string;
+  capienza: number;
 }
 
 interface ShuttleFormProps {
@@ -34,7 +33,8 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
   const [giorno, setGiorno] = useState("");
   const [fermata, setFermata] = useState("");
   const [orario, setOrario] = useState("");
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [slots, setSlots] = useState<ShuttleSlot[]>([]);
+  const [bookingCounts, setBookingCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
   const [loadingSchedules, setLoadingSchedules] = useState(false);
 
