@@ -29,6 +29,8 @@ const FALLBACK_SCHEDULES: Record<string, string[]> = {
   "Cheope": ["12:45", "14:15", "15:45", "17:15", "18:45", "21:15"],
 };
 
+const RETURN_TIMES = ["17:45", "19:15", "21:45", "23:00", "00:30", "2:00"];
+
 const TIPO_OPTIONS: { value: TipoViaggio; label: string }[] = [
   { value: "andata", label: "Solo Andata" },
   { value: "ritorno", label: "Solo Ritorno" },
@@ -43,6 +45,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
   const [giorno, setGiorno] = useState("");
   const [fermata, setFermata] = useState("");
   const [orario, setOrario] = useState("");
+  const [orarioRitorno, setOrarioRitorno] = useState("");
   const [slots, setSlots] = useState<ShuttleSlot[]>([]);
   const [bookingCounts, setBookingCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
@@ -50,6 +53,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
   const [accettaTermini, setAccettaTermini] = useState(false);
 
   const needsAndata = tipoViaggio === "andata" || tipoViaggio === "andata_ritorno";
+  const needsRitorno = tipoViaggio === "ritorno" || tipoViaggio === "andata_ritorno";
 
   useEffect(() => {
     if (!needsAndata || !giorno || !fermata) {
@@ -108,6 +112,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
     setGiorno("");
     setFermata("");
     setOrario("");
+    setOrarioRitorno("");
   }, [tipoViaggio]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -120,6 +125,11 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
 
     if (needsAndata && (!giorno || !fermata || !orario)) {
       toast({ title: "Errore", description: "Seleziona giorno, fermata e orario per l'andata.", variant: "destructive" });
+      return;
+    }
+
+    if (needsRitorno && !orarioRitorno) {
+      toast({ title: "Errore", description: "Seleziona un orario di ritorno.", variant: "destructive" });
       return;
     }
 
@@ -139,6 +149,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
         giorno: needsAndata ? giorno : null,
         fermata: needsAndata ? fermata : null,
         orario: needsAndata ? orario : null,
+        orario_ritorno: needsRitorno ? orarioRitorno : null,
         stato: "pending",
         pagato: false,
       };
@@ -149,7 +160,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
 
         supabase.functions
           .invoke("send-booking-email", {
-            body: { nome, email, telefono, tipo_viaggio: tipoViaggio, giorno, fermata, orario },
+            body: { nome, email, telefono, tipo_viaggio: tipoViaggio, giorno, fermata, orario, orario_ritorno: orarioRitorno },
           })
           .catch((err) => console.warn("Email send failed (non-critical):", err));
       } else {
@@ -185,7 +196,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
 
       {/* Trip type */}
       <div className="space-y-2">
-        <Label>Tipo di viaggio *</Label>
+        <Label>Cosa ti serve? *</Label>
         <div className="grid grid-cols-3 gap-2">
           {TIPO_OPTIONS.map((opt) => (
             <button
@@ -204,11 +215,11 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
         </div>
       </div>
 
-      {/* Andata fields - only if andata or andata_ritorno */}
+      {/* Andata fields */}
       {needsAndata && (
         <>
           <div className="space-y-2">
-            <Label>Giorno *</Label>
+            <Label>Giorno di andata *</Label>
             <div className="grid grid-cols-2 gap-3">
               {DAYS.map((d) => (
                 <button
@@ -277,13 +288,26 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
         </>
       )}
 
-      {/* Ritorno info */}
-      {(tipoViaggio === "ritorno" || tipoViaggio === "andata_ritorno") && (
-        <div className="rounded-lg border border-border bg-secondary/50 p-4">
-          <p className="text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">🚌 Ritorno:</span>{" "}
-            Il servizio di ritorno è unico per tutti i partecipanti. L'orario e il punto di raccolta verranno comunicati via email dopo la conferma della prenotazione.
-          </p>
+      {/* Ritorno time selection */}
+      {needsRitorno && (
+        <div className="space-y-2">
+          <Label>Orario di ritorno *</Label>
+          <div className="grid grid-cols-3 gap-2">
+            {RETURN_TIMES.map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setOrarioRitorno(t)}
+                className={`px-3 py-2.5 rounded-lg border text-sm font-medium transition-all ${
+                  orarioRitorno === t
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-secondary text-foreground hover:border-muted-foreground"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
