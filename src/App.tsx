@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index";
 import GrillContest from "./pages/GrillContest";
 import Admin from "./pages/Admin";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsConditions from "./pages/TermsConditions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -18,6 +20,8 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/grill-contest" element={<GrillContest />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/termini" element={<TermsConditions />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
