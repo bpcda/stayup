@@ -255,7 +255,12 @@ const Admin = () => {
             <Link to="/"><img src={stayupLogo} alt="StayUp" className="w-16 h-auto" /></Link>
             <h1 className="text-2xl font-bold font-heading">Dashboard Admin</h1>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setAuthenticated(false)}>Logout</Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/">← Home</Link>
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setAuthenticated(false)}>Logout</Button>
+          </div>
         </div>
 
         {/* Filters */}
