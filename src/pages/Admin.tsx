@@ -364,9 +364,11 @@ const Admin = () => {
                       <TableHead>Nome</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Telefono</TableHead>
+                      <TableHead>Tipo</TableHead>
                       <TableHead>Giorno</TableHead>
                       <TableHead>Fermata</TableHead>
-                      <TableHead>Orario</TableHead>
+                      <TableHead>Andata</TableHead>
+                      <TableHead>Ritorno</TableHead>
                       <TableHead>Pagamento</TableHead>
                       <TableHead>Azioni</TableHead>
                     </TableRow>
@@ -377,9 +379,11 @@ const Admin = () => {
                         <TableCell className="font-medium">{b.nome}</TableCell>
                         <TableCell>{b.email}</TableCell>
                         <TableCell>{b.telefono}</TableCell>
-                        <TableCell>{b.giorno}</TableCell>
-                        <TableCell>{b.fermata}</TableCell>
-                        <TableCell>{b.orario}</TableCell>
+                        <TableCell className="capitalize">{b.tipo_viaggio?.replace("_", " + ") || "—"}</TableCell>
+                        <TableCell>{b.giorno || "/"}</TableCell>
+                        <TableCell>{b.fermata || "/"}</TableCell>
+                        <TableCell>{b.orario || "/"}</TableCell>
+                        <TableCell>{b.orario_ritorno || "/"}</TableCell>
                         <TableCell>
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                             b.pagato
@@ -398,7 +402,7 @@ const Admin = () => {
                               Sposta
                             </Button>
                             <Button size="sm" variant="outline" onClick={() => sendConfirmEmail(b)}>
-                              ✉ Email
+                              {b.pagato ? "✉ Riepilogo" : "✉ Pagamento"}
                             </Button>
                           </div>
                         </TableCell>
