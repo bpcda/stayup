@@ -43,28 +43,15 @@ interface ShuttleSlot {
   capienza: number;
 }
 
-// Demo data
-const DEMO_BOOKINGS: Booking[] = [
-  { id: "1", nome: "Mario Rossi", email: "mario@test.com", telefono: "+39 333 1111111", tipo_viaggio: "andata_ritorno", giorno: "25 Aprile", fermata: "Università Cattolica", orario: "14:00", orario_ritorno: "21:45", stato: "pending", pagato: false, created_at: new Date().toISOString() },
-  { id: "2", nome: "Luca Bianchi", email: "luca@test.com", telefono: "+39 333 2222222", tipo_viaggio: "andata", giorno: "25 Aprile", fermata: "Cheope", orario: "14:15", orario_ritorno: "", stato: "pending", pagato: true, created_at: new Date().toISOString() },
-  { id: "3", nome: "Anna Verdi", email: "anna@test.com", telefono: "+39 333 3333333", tipo_viaggio: "ritorno", giorno: "", fermata: "", orario: "", orario_ritorno: "23:00", stato: "pending", pagato: false, created_at: new Date().toISOString() },
-];
-
-const DEMO_SLOTS: ShuttleSlot[] = [
-  { id: "s1", giorno: "25 Aprile", fermata: "Università Cattolica", orario: "12:30", capienza: 50 },
-  { id: "s2", giorno: "25 Aprile", fermata: "Università Cattolica", orario: "14:00", capienza: 50 },
-  { id: "s3", giorno: "25 Aprile", fermata: "Università Cattolica", orario: "15:30", capienza: 50 },
-  { id: "s4", giorno: "25 Aprile", fermata: "Cheope", orario: "12:45", capienza: 50 },
-  { id: "s5", giorno: "25 Aprile", fermata: "Cheope", orario: "14:15", capienza: 50 },
-  { id: "s6", giorno: "26 Aprile", fermata: "Università Cattolica", orario: "17:00", capienza: 50 },
-  { id: "s7", giorno: "26 Aprile", fermata: "Cheope", orario: "17:15", capienza: 50 },
-];
+interface ReturnSlot {
+  id: string;
+  giorno: string;
+  orario: string;
+  capienza: number;
+}
 
 const STOPS = ["Università Cattolica", "Cheope"];
-const TIMES: Record<string, string[]> = {
-  "Università Cattolica": ["12:30", "14:00", "15:30", "17:00", "18:30", "21:00", "Mi serve solo ritorno"],
-  "Cheope": ["12:45", "14:15", "15:45", "17:15", "18:45", "21:15", "Mi serve solo ritorno"],
-};
+const GIORNI = ["25 Aprile", "26 Aprile"];
 
 const Admin = () => {
   const [authenticated, setAuthenticated] = useState(false);
@@ -72,6 +59,7 @@ const Admin = () => {
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [slots, setSlots] = useState<ShuttleSlot[]>([]);
+  const [returnSlots, setReturnSlots] = useState<ReturnSlot[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Filters
@@ -95,7 +83,16 @@ const Admin = () => {
   const [newOrario, setNewOrario] = useState("");
   const [newOrarioRitorno, setNewOrarioRitorno] = useState("");
 
-  const RETURN_TIMES = ["17:45", "19:15", "21:45", "23:00", "00:30", "2:00"];
+  // Slot edit dialog
+  const [editSlotDialog, setEditSlotDialog] = useState(false);
+  const [editSlotType, setEditSlotType] = useState<"andata" | "ritorno">("andata");
+  const [editSlotData, setEditSlotData] = useState<{ id: string; giorno: string; fermata: string; orario: string; capienza: number }>({ id: "", giorno: "", fermata: "", orario: "", capienza: 50 });
+
+  // Add slot dialog
+  const [addSlotDialog, setAddSlotDialog] = useState(false);
+  const [addSlotType, setAddSlotType] = useState<"andata" | "ritorno">("andata");
+  const [newSlotData, setNewSlotData] = useState({ giorno: "25 Aprile", fermata: "Università Cattolica", orario: "", capienza: 50 });
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (password === ADMIN_PASSWORD) {
@@ -109,26 +106,44 @@ const Admin = () => {
   const fetchData = async () => {
     setLoading(true);
     if (!isSupabaseConfigured) {
-      setBookings(DEMO_BOOKINGS);
-      setSlots(DEMO_SLOTS);
+      setBookings([]);
+      setSlots([]);
+      setReturnSlots([]);
       setLoading(false);
       return;
     }
     try {
-      const [bRes, sRes] = await Promise.all([
+      const [bRes, sRes, rRes] = await Promise.all([
         supabase.from("bookings").select("*").order("created_at", { ascending: false }),
-        supabase.from("shuttle_slots").select("*"),
+        supabase.from("shuttle_slots").select("*").order("orario"),
+        supabase.from("shuttle_return_slots").select("*").order("orario"),
       ]);
       if (bRes.error) throw bRes.error;
       if (sRes.error) throw sRes.error;
+      if (rRes.error) throw rRes.error;
       setBookings(bRes.data || []);
       setSlots(sRes.data || []);
+      setReturnSlots(rRes.data || []);
     } catch (err) {
       console.error(err);
       toast({ title: "Errore", description: "Impossibile caricare i dati.", variant: "destructive" });
     }
     setLoading(false);
   };
+
+  // === STATISTICS ===
+  const stats = useMemo(() => {
+    const totale = bookings.length;
+    const pagati = bookings.filter((b) => b.pagato).length;
+    const nonPagati = totale - pagati;
+    const incasso = pagati * 6;
+    const soloAndata = bookings.filter((b) => b.tipo_viaggio === "andata").length;
+    const soloRitorno = bookings.filter((b) => b.tipo_viaggio === "ritorno").length;
+    const andataRitorno = bookings.filter((b) => b.tipo_viaggio === "andata_ritorno").length;
+    const oggi = new Date().toISOString().slice(0, 10);
+    const iscrittiOggi = bookings.filter((b) => b.created_at?.slice(0, 10) === oggi).length;
+    return { totale, pagati, nonPagati, incasso, soloAndata, soloRitorno, andataRitorno, iscrittiOggi };
+  }, [bookings]);
 
   const filteredBookings = useMemo(() => {
     return bookings.filter((b) => {
@@ -140,7 +155,7 @@ const Admin = () => {
     });
   }, [bookings, filterGiorno, filterFermata, filterPagato]);
 
-  // Shuttle management: count bookings per slot
+  // Shuttle slot stats
   const slotStats = useMemo(() => {
     return slots.map((slot) => {
       const count = bookings.filter(
@@ -161,25 +176,18 @@ const Admin = () => {
     });
   }, [slotStats, slotFilterGiorno, slotFilterFermata, slotFilterRiempimento]);
 
-  // Return shuttle stats
-  const RETURN_CAPIENZA = 50;
-  const GIORNI = ["25 Aprile", "26 Aprile"];
-
+  // Return slot stats from DB
   const returnSlotStats = useMemo(() => {
-    const result: { id: string; giorno: string; orario: string; capienza: number; occupati: number; rimanenti: number }[] = [];
-    GIORNI.forEach((giorno) => {
-      RETURN_TIMES.forEach((orario) => {
-        const count = bookings.filter(
-          (b) =>
-            b.giorno === giorno &&
-            b.orario_ritorno === orario &&
-            (b.tipo_viaggio === "ritorno" || b.tipo_viaggio === "andata_ritorno")
-        ).length;
-        result.push({ id: `r-${giorno}-${orario}`, giorno, orario, capienza: RETURN_CAPIENZA, occupati: count, rimanenti: RETURN_CAPIENZA - count });
-      });
+    return returnSlots.map((slot) => {
+      const count = bookings.filter(
+        (b) =>
+          b.giorno === slot.giorno &&
+          b.orario_ritorno === slot.orario &&
+          (b.tipo_viaggio === "ritorno" || b.tipo_viaggio === "andata_ritorno")
+      ).length;
+      return { ...slot, occupati: count, rimanenti: slot.capienza - count };
     });
-    return result;
-  }, [bookings]);
+  }, [returnSlots, bookings]);
 
   const filteredReturnSlotStats = useMemo(() => {
     return returnSlotStats.filter((s) => {
@@ -247,14 +255,11 @@ const Admin = () => {
 
   const handleMove = async () => {
     if (!selectedBooking) return;
-
     const hasAndata = selectedBooking.tipo_viaggio === "andata" || selectedBooking.tipo_viaggio === "andata_ritorno";
     const hasRitorno = selectedBooking.tipo_viaggio === "ritorno" || selectedBooking.tipo_viaggio === "andata_ritorno";
-
     if (hasAndata && (!newFermata || !newOrario)) return;
     if (hasRitorno && !newOrarioRitorno) return;
 
-    // Check capacity for andata
     if (hasAndata && (newFermata !== selectedBooking.fermata || newOrario !== selectedBooking.orario)) {
       const targetSlot = slotStats.find(
         (s) => s.giorno === selectedBooking.giorno && s.fermata === newFermata && s.orario === newOrario
@@ -266,27 +271,15 @@ const Admin = () => {
     }
 
     const updateData: Record<string, string | null> = {};
-    if (hasAndata) {
-      updateData.fermata = newFermata;
-      updateData.orario = newOrario;
-    }
-    if (hasRitorno) {
-      updateData.orario_ritorno = newOrarioRitorno;
-    }
+    if (hasAndata) { updateData.fermata = newFermata; updateData.orario = newOrario; }
+    if (hasRitorno) { updateData.orario_ritorno = newOrarioRitorno; }
 
     if (isSupabaseConfigured) {
-      const { error } = await supabase
-        .from("bookings")
-        .update(updateData)
-        .eq("id", selectedBooking.id);
+      const { error } = await supabase.from("bookings").update(updateData).eq("id", selectedBooking.id);
       if (error) {
         toast({ title: "Errore", description: "Spostamento fallito.", variant: "destructive" });
         return;
       }
-
-      // Send notification email
-      const updatedAndata = hasAndata ? newOrario : (selectedBooking.orario || "/");
-      const updatedRitorno = hasRitorno ? newOrarioRitorno : (selectedBooking.orario_ritorno || "/");
       supabase.functions
         .invoke("send-booking-email", {
           body: {
@@ -295,19 +288,17 @@ const Admin = () => {
             telefono: selectedBooking.telefono,
             giorno: selectedBooking.giorno || "/",
             fermata: hasAndata ? newFermata : (selectedBooking.fermata || "/"),
-            orario_andata: updatedAndata,
-            orario_ritorno: updatedRitorno,
+            orario_andata: hasAndata ? newOrario : (selectedBooking.orario || "/"),
+            orario_ritorno: hasRitorno ? newOrarioRitorno : (selectedBooking.orario_ritorno || "/"),
             spostamento: true,
           },
         })
         .catch((err) => console.warn("Move notification email failed:", err));
     }
 
-    setBookings((prev) =>
-      prev.map((b) => (b.id === selectedBooking.id ? { ...b, ...updateData } : b))
-    );
+    setBookings((prev) => prev.map((b) => (b.id === selectedBooking.id ? { ...b, ...updateData } : b)));
     setMoveDialogOpen(false);
-    toast({ title: "Spostato", description: `${selectedBooking.nome} spostato con successo. Email di notifica inviata.` });
+    toast({ title: "Spostato", description: `${selectedBooking.nome} spostato con successo.` });
   };
 
   const sendConfirmEmail = async (booking: Booking) => {
@@ -318,13 +309,9 @@ const Admin = () => {
     try {
       const { error } = await supabase.functions.invoke("send-booking-email", {
         body: {
-          nome: booking.nome,
-          email: booking.email,
-          telefono: booking.telefono,
-          giorno: booking.giorno || "/",
-          fermata: booking.fermata || "/",
-          orario_andata: booking.orario || "/",
-          orario_ritorno: booking.orario_ritorno || "/",
+          nome: booking.nome, email: booking.email, telefono: booking.telefono,
+          giorno: booking.giorno || "/", fermata: booking.fermata || "/",
+          orario_andata: booking.orario || "/", orario_ritorno: booking.orario_ritorno || "/",
           confirmed: booking.pagato,
         },
       });
@@ -335,29 +322,97 @@ const Admin = () => {
     }
   };
 
+  // === SLOT MANAGEMENT ===
+  const openEditSlot = (type: "andata" | "ritorno", slot: { id: string; giorno: string; fermata?: string; orario: string; capienza: number }) => {
+    setEditSlotType(type);
+    setEditSlotData({ id: slot.id, giorno: slot.giorno, fermata: (slot as any).fermata || "", orario: slot.orario, capienza: slot.capienza });
+    setEditSlotDialog(true);
+  };
+
+  const saveEditSlot = async () => {
+    const table = editSlotType === "andata" ? "shuttle_slots" : "shuttle_return_slots";
+    const updatePayload: any = { giorno: editSlotData.giorno, orario: editSlotData.orario, capienza: editSlotData.capienza };
+    if (editSlotType === "andata") updatePayload.fermata = editSlotData.fermata;
+
+    if (isSupabaseConfigured) {
+      const { error } = await supabase.from(table).update(updatePayload).eq("id", editSlotData.id);
+      if (error) {
+        toast({ title: "Errore", description: "Salvataggio fallito.", variant: "destructive" });
+        return;
+      }
+    }
+
+    if (editSlotType === "andata") {
+      setSlots((prev) => prev.map((s) => (s.id === editSlotData.id ? { ...s, ...updatePayload } : s)));
+    } else {
+      setReturnSlots((prev) => prev.map((s) => (s.id === editSlotData.id ? { ...s, ...updatePayload } : s)));
+    }
+    setEditSlotDialog(false);
+    toast({ title: "Salvato", description: "Slot aggiornato." });
+  };
+
+  const deleteSlot = async (type: "andata" | "ritorno", id: string) => {
+    const table = type === "andata" ? "shuttle_slots" : "shuttle_return_slots";
+    if (isSupabaseConfigured) {
+      const { error } = await supabase.from(table).delete().eq("id", id);
+      if (error) {
+        toast({ title: "Errore", description: "Eliminazione fallita.", variant: "destructive" });
+        return;
+      }
+    }
+    if (type === "andata") {
+      setSlots((prev) => prev.filter((s) => s.id !== id));
+    } else {
+      setReturnSlots((prev) => prev.filter((s) => s.id !== id));
+    }
+    toast({ title: "Eliminato", description: "Slot rimosso." });
+  };
+
+  const openAddSlot = (type: "andata" | "ritorno") => {
+    setAddSlotType(type);
+    setNewSlotData({ giorno: "25 Aprile", fermata: "Università Cattolica", orario: "", capienza: 50 });
+    setAddSlotDialog(true);
+  };
+
+  const saveAddSlot = async () => {
+    if (!newSlotData.orario) {
+      toast({ title: "Errore", description: "Inserisci un orario.", variant: "destructive" });
+      return;
+    }
+    const table = addSlotType === "andata" ? "shuttle_slots" : "shuttle_return_slots";
+    const insertPayload: any = { giorno: newSlotData.giorno, orario: newSlotData.orario, capienza: newSlotData.capienza };
+    if (addSlotType === "andata") insertPayload.fermata = newSlotData.fermata;
+
+    if (isSupabaseConfigured) {
+      const { data, error } = await supabase.from(table).insert(insertPayload).select().single();
+      if (error) {
+        toast({ title: "Errore", description: "Inserimento fallito.", variant: "destructive" });
+        return;
+      }
+      if (addSlotType === "andata") {
+        setSlots((prev) => [...prev, data]);
+      } else {
+        setReturnSlots((prev) => [...prev, data]);
+      }
+    }
+    setAddSlotDialog(false);
+    toast({ title: "Aggiunto", description: "Nuovo slot creato." });
+  };
+
   // Login screen
   if (!authenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <Card className="w-full max-w-sm">
           <CardHeader className="text-center">
-            <Link to="/">
-              <img src={stayupLogo} alt="StayUp" className="w-20 h-auto mx-auto mb-2" />
-            </Link>
+            <Link to="/"><img src={stayupLogo} alt="StayUp" className="w-20 h-auto mx-auto mb-2" /></Link>
             <CardTitle className="font-heading">Admin</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Inserisci password"
-                  required
-                />
+                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Inserisci password" required />
               </div>
               <Button type="submit" className="w-full">Accedi</Button>
             </form>
@@ -377,11 +432,64 @@ const Admin = () => {
             <h1 className="text-2xl font-bold font-heading">Dashboard Admin</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/">← Home</Link>
-            </Button>
+            <Button variant="outline" size="sm" onClick={fetchData}>↻ Aggiorna</Button>
+            <Button variant="outline" size="sm" asChild><Link to="/">← Home</Link></Button>
             <Button variant="outline" size="sm" onClick={() => setAuthenticated(false)}>Logout</Button>
           </div>
+        </div>
+
+        {/* Statistics */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <p className="text-3xl font-bold text-primary">{stats.totale}</p>
+              <p className="text-sm text-muted-foreground">Totale iscritti</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <p className="text-3xl font-bold text-green-400">{stats.pagati}</p>
+              <p className="text-sm text-muted-foreground">Pagati</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <p className="text-3xl font-bold text-red-400">{stats.nonPagati}</p>
+              <p className="text-sm text-muted-foreground">Non pagati</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <p className="text-3xl font-bold text-primary">€{stats.incasso}</p>
+              <p className="text-sm text-muted-foreground">Incasso totale</p>
+            </CardContent>
+          </Card>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <p className="text-2xl font-bold">{stats.soloAndata}</p>
+              <p className="text-xs text-muted-foreground">Solo Andata</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <p className="text-2xl font-bold">{stats.soloRitorno}</p>
+              <p className="text-xs text-muted-foreground">Solo Ritorno</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <p className="text-2xl font-bold">{stats.andataRitorno}</p>
+              <p className="text-xs text-muted-foreground">Andata + Ritorno</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <p className="text-2xl font-bold">{stats.iscrittiOggi}</p>
+              <p className="text-xs text-muted-foreground">Iscritti oggi</p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Filters */}
@@ -395,8 +503,7 @@ const Admin = () => {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tutti</SelectItem>
-                    <SelectItem value="25 Aprile">25 Aprile</SelectItem>
-                    <SelectItem value="26 Aprile">26 Aprile</SelectItem>
+                    {GIORNI.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -406,8 +513,7 @@ const Admin = () => {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tutte</SelectItem>
-                    <SelectItem value="Università Cattolica">Università Cattolica</SelectItem>
-                    <SelectItem value="Cheope">Cheope</SelectItem>
+                    {STOPS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -466,9 +572,7 @@ const Admin = () => {
                         <TableCell>{b.orario_ritorno || "/"}</TableCell>
                         <TableCell>
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            b.pagato
-                              ? "bg-green-900/30 text-green-400"
-                              : "bg-red-900/30 text-red-400"
+                            b.pagato ? "bg-green-900/30 text-green-400" : "bg-red-900/30 text-red-400"
                           }`}>
                             {b.pagato ? "Pagato" : "Non pagato"}
                           </span>
@@ -478,9 +582,7 @@ const Admin = () => {
                             <Button size="sm" variant="outline" onClick={() => togglePagato(b)}>
                               {b.pagato ? "↩ Annulla" : "✓ Pagato"}
                             </Button>
-                            <Button size="sm" variant="outline" onClick={() => openMoveDialog(b)}>
-                              Sposta
-                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => openMoveDialog(b)}>Sposta</Button>
                             <Button size="sm" variant="outline" onClick={() => sendConfirmEmail(b)}>
                               {b.pagato ? "✉ Riepilogo" : "✉ Pagamento"}
                             </Button>
@@ -495,11 +597,15 @@ const Admin = () => {
           </CardContent>
         </Card>
 
-        {/* Shuttle Management */}
+        {/* Shuttle Andata Management */}
         <Card>
-          <CardHeader><CardTitle className="text-lg">Gestione Navette Andata</CardTitle></CardHeader>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">Gestione Navette Andata</CardTitle>
+              <Button size="sm" onClick={() => openAddSlot("andata")}>+ Aggiungi Slot</Button>
+            </div>
+          </CardHeader>
           <CardContent className="space-y-4">
-            {/* Shuttle Filters */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-1">
                 <Label className="text-xs">Giorno</Label>
@@ -507,8 +613,7 @@ const Admin = () => {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tutti</SelectItem>
-                    <SelectItem value="25 Aprile">25 Aprile</SelectItem>
-                    <SelectItem value="26 Aprile">26 Aprile</SelectItem>
+                    {GIORNI.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -518,8 +623,7 @@ const Admin = () => {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tutte</SelectItem>
-                    <SelectItem value="Università Cattolica">Università Cattolica</SelectItem>
-                    <SelectItem value="Cheope">Cheope</SelectItem>
+                    {STOPS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -550,7 +654,7 @@ const Admin = () => {
                       <TableHead className="text-center">Capienza</TableHead>
                       <TableHead className="text-center">Occupati</TableHead>
                       <TableHead className="text-center">Rimanenti</TableHead>
-                      <TableHead className="text-center">Lista</TableHead>
+                      <TableHead className="text-center">Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -567,9 +671,11 @@ const Admin = () => {
                           </span>
                         </TableCell>
                         <TableCell className="text-center">
-                          <Button size="sm" variant="outline" onClick={() => downloadPassengerList(s)} disabled={s.occupati === 0}>
-                            ⬇ Scarica
-                          </Button>
+                          <div className="flex gap-1 justify-center">
+                            <Button size="sm" variant="outline" onClick={() => downloadPassengerList(s)} disabled={s.occupati === 0}>⬇ Excel</Button>
+                            <Button size="sm" variant="outline" onClick={() => openEditSlot("andata", s)}>✏️</Button>
+                            <Button size="sm" variant="destructive" onClick={() => deleteSlot("andata", s.id)}>🗑</Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -582,7 +688,12 @@ const Admin = () => {
 
         {/* Return Shuttle Management */}
         <Card>
-          <CardHeader><CardTitle className="text-lg">Gestione Navette Ritorno</CardTitle></CardHeader>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">Gestione Navette Ritorno</CardTitle>
+              <Button size="sm" onClick={() => openAddSlot("ritorno")}>+ Aggiungi Slot</Button>
+            </div>
+          </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
@@ -591,8 +702,7 @@ const Admin = () => {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tutti</SelectItem>
-                    <SelectItem value="25 Aprile">25 Aprile</SelectItem>
-                    <SelectItem value="26 Aprile">26 Aprile</SelectItem>
+                    {GIORNI.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -622,7 +732,7 @@ const Admin = () => {
                       <TableHead className="text-center">Capienza</TableHead>
                       <TableHead className="text-center">Occupati</TableHead>
                       <TableHead className="text-center">Rimanenti</TableHead>
-                      <TableHead className="text-center">Lista</TableHead>
+                      <TableHead className="text-center">Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -638,9 +748,11 @@ const Admin = () => {
                           </span>
                         </TableCell>
                         <TableCell className="text-center">
-                          <Button size="sm" variant="outline" onClick={() => downloadReturnPassengerList(s)} disabled={s.occupati === 0}>
-                            ⬇ Scarica
-                          </Button>
+                          <div className="flex gap-1 justify-center">
+                            <Button size="sm" variant="outline" onClick={() => downloadReturnPassengerList(s)} disabled={s.occupati === 0}>⬇ Excel</Button>
+                            <Button size="sm" variant="outline" onClick={() => openEditSlot("ritorno", s)}>✏️</Button>
+                            <Button size="sm" variant="destructive" onClick={() => deleteSlot("ritorno", s.id)}>🗑</Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -651,11 +763,10 @@ const Admin = () => {
           </CardContent>
         </Card>
 
+        {/* Move Dialog */}
         <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
           <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Sposta {selectedBooking?.nome}</DialogTitle>
-            </DialogHeader>
+            <DialogHeader><DialogTitle>Sposta {selectedBooking?.nome}</DialogTitle></DialogHeader>
             <div className="space-y-4 py-4">
               {(selectedBooking?.tipo_viaggio === "andata" || selectedBooking?.tipo_viaggio === "andata_ritorno") && (
                 <>
@@ -674,23 +785,18 @@ const Admin = () => {
                     <Select value={newOrario} onValueChange={setNewOrario}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {(TIMES[newFermata] || []).map((t) => {
-                          const slot = slotStats.find(
-                            (s) => s.giorno === selectedBooking?.giorno && s.fermata === newFermata && s.orario === t
-                          );
-                          const isFull = slot ? slot.rimanenti <= 0 : false;
-                          return (
-                            <SelectItem key={t} value={t} disabled={isFull}>
-                              {t} {slot ? `(${slot.rimanenti} posti)` : ""} {isFull ? "— PIENO" : ""}
+                        {slotStats
+                          .filter((s) => s.giorno === selectedBooking?.giorno && s.fermata === newFermata)
+                          .map((s) => (
+                            <SelectItem key={s.orario} value={s.orario} disabled={s.rimanenti <= 0}>
+                              {s.orario} ({s.rimanenti} posti) {s.rimanenti <= 0 ? "— PIENO" : ""}
                             </SelectItem>
-                          );
-                        })}
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
                 </>
               )}
-
               {(selectedBooking?.tipo_viaggio === "ritorno" || selectedBooking?.tipo_viaggio === "andata_ritorno") && (
                 <>
                   <p className="text-sm font-medium text-muted-foreground">Ritorno</p>
@@ -699,9 +805,13 @@ const Admin = () => {
                     <Select value={newOrarioRitorno} onValueChange={setNewOrarioRitorno}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {RETURN_TIMES.map((t) => (
-                          <SelectItem key={t} value={t}>{t}</SelectItem>
-                        ))}
+                        {returnSlotStats
+                          .filter((s) => s.giorno === selectedBooking?.giorno)
+                          .map((s) => (
+                            <SelectItem key={s.orario} value={s.orario} disabled={s.rimanenti <= 0}>
+                              {s.orario} ({s.rimanenti} posti) {s.rimanenti <= 0 ? "— PIENO" : ""}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -711,6 +821,88 @@ const Admin = () => {
             <DialogFooter>
               <Button variant="outline" onClick={() => setMoveDialogOpen(false)}>Annulla</Button>
               <Button onClick={handleMove}>Conferma spostamento</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Slot Dialog */}
+        <Dialog open={editSlotDialog} onOpenChange={setEditSlotDialog}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Modifica Slot {editSlotType === "andata" ? "Andata" : "Ritorno"}</DialogTitle></DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Giorno</Label>
+                <Select value={editSlotData.giorno} onValueChange={(v) => setEditSlotData((p) => ({ ...p, giorno: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {GIORNI.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              {editSlotType === "andata" && (
+                <div className="space-y-2">
+                  <Label>Fermata</Label>
+                  <Select value={editSlotData.fermata} onValueChange={(v) => setEditSlotData((p) => ({ ...p, fermata: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {STOPS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label>Orario (HH:MM)</Label>
+                <Input value={editSlotData.orario} onChange={(e) => setEditSlotData((p) => ({ ...p, orario: e.target.value }))} placeholder="14:00" />
+              </div>
+              <div className="space-y-2">
+                <Label>Capienza</Label>
+                <Input type="number" value={editSlotData.capienza} onChange={(e) => setEditSlotData((p) => ({ ...p, capienza: parseInt(e.target.value) || 0 }))} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditSlotDialog(false)}>Annulla</Button>
+              <Button onClick={saveEditSlot}>Salva</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Slot Dialog */}
+        <Dialog open={addSlotDialog} onOpenChange={setAddSlotDialog}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Nuovo Slot {addSlotType === "andata" ? "Andata" : "Ritorno"}</DialogTitle></DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Giorno</Label>
+                <Select value={newSlotData.giorno} onValueChange={(v) => setNewSlotData((p) => ({ ...p, giorno: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {GIORNI.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              {addSlotType === "andata" && (
+                <div className="space-y-2">
+                  <Label>Fermata</Label>
+                  <Select value={newSlotData.fermata} onValueChange={(v) => setNewSlotData((p) => ({ ...p, fermata: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {STOPS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label>Orario (HH:MM)</Label>
+                <Input value={newSlotData.orario} onChange={(e) => setNewSlotData((p) => ({ ...p, orario: e.target.value }))} placeholder="14:00" />
+              </div>
+              <div className="space-y-2">
+                <Label>Capienza</Label>
+                <Input type="number" value={newSlotData.capienza} onChange={(e) => setNewSlotData((p) => ({ ...p, capienza: parseInt(e.target.value) || 0 }))} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAddSlotDialog(false)}>Annulla</Button>
+              <Button onClick={saveAddSlot}>Aggiungi</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

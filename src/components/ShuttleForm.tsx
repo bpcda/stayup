@@ -15,19 +15,23 @@ interface ShuttleSlot {
   capienza: number;
 }
 
+interface ReturnSlot {
+  id: string;
+  giorno: string;
+  orario: string;
+  capienza: number;
+}
+
 interface ShuttleFormProps {
   onSuccess: () => void;
 }
 
 type TipoViaggio = "andata" | "ritorno" | "andata_ritorno";
 
-/** Convert "HH:MM" to minutes since midnight; handles times like "00:30" and "2:00" as next-day. */
 const timeToMinutes = (t: string): number => {
   const [h, m] = t.split(":").map(Number);
-  // Times <= 6:00 are considered next-day (after midnight)
   return h < 6 ? (h + 24) * 60 + m : h * 60 + m;
 };
-
 
 const DAYS = ["25 Aprile", "26 Aprile"];
 const STOPS = ["Università Cattolica", "Cheope"];
@@ -37,7 +41,7 @@ const FALLBACK_SCHEDULES: Record<string, string[]> = {
   "Cheope": ["12:45", "14:15", "15:45", "17:15", "18:45", "21:15"],
 };
 
-const RETURN_TIMES = ["17:45", "19:15", "21:45", "23:00", "00:30", "2:00"];
+const FALLBACK_RETURN_TIMES = ["17:45", "19:15", "21:45", "23:00", "00:30", "2:00"];
 
 const TIPO_OPTIONS: { value: TipoViaggio; label: string }[] = [
   { value: "andata", label: "Solo Andata" },
@@ -55,11 +59,12 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
   const [orario, setOrario] = useState("");
   const [orarioRitorno, setOrarioRitorno] = useState("");
   const [slots, setSlots] = useState<ShuttleSlot[]>([]);
+  const [returnSlots, setReturnSlots] = useState<ReturnSlot[]>([]);
   const [bookingCounts, setBookingCounts] = useState<Record<string, number>>({});
   const [returnCounts, setReturnCounts] = useState<Record<string, number>>({});
-  const [loadingReturnSlots, setLoadingReturnSlots] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingSchedules, setLoadingSchedules] = useState(false);
+  const [loadingReturnSlots, setLoadingReturnSlots] = useState(false);
   const [accettaTermini, setAccettaTermini] = useState(false);
   const [accettaPagamento, setAccettaPagamento] = useState(false);
   const [accettaRimborso, setAccettaRimborso] = useState(false);
@@ -67,6 +72,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
   const needsAndata = tipoViaggio === "andata" || tipoViaggio === "andata_ritorno";
   const needsRitorno = tipoViaggio === "ritorno" || tipoViaggio === "andata_ritorno";
 
+  // Fetch andata slots
   useEffect(() => {
     if (!needsAndata || !giorno || !fermata) {
       setSlots([]);
@@ -77,15 +83,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
 
     if (!isSupabaseConfigured) {
       const times = FALLBACK_SCHEDULES[fermata] || [];
-      setSlots(
-        times.map((t, i) => ({
-          id: `fallback-${i}`,
-          fermata,
-          orario: t,
-          giorno,
-          capienza: 50,
-        }))
-      );
+      setSlots(times.map((t, i) => ({ id: `fallback-${i}`, fermata, orario: t, giorno, capienza: 50 })));
       setBookingCounts({});
       setOrario("");
       return;
@@ -101,7 +99,6 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
       ]);
 
       if (slotsRes.error) {
-        console.error("Error fetching slots:", slotsRes.error);
         const times = FALLBACK_SCHEDULES[fermata] || [];
         setSlots(times.map((t, i) => ({ id: `fallback-${i}`, fermata, orario: t, giorno, capienza: 50 })));
         setBookingCounts({});
@@ -119,34 +116,51 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
     fetchSlots();
   }, [giorno, fermata, needsAndata]);
 
-  // Fetch return slot counts
+  // Fetch return slots from DB
   useEffect(() => {
     if (!needsRitorno || !giorno) {
+      setReturnSlots([]);
       setReturnCounts({});
       setOrarioRitorno("");
       return;
     }
+
     if (!isSupabaseConfigured) {
+      setReturnSlots(FALLBACK_RETURN_TIMES.map((t, i) => ({ id: `fr-${i}`, giorno, orario: t, capienza: 50 })));
       setReturnCounts({});
       return;
     }
-    const fetchReturnCounts = async () => {
+
+    const fetchReturnSlots = async () => {
       setLoadingReturnSlots(true);
       setOrarioRitorno("");
-      const { data } = await supabase
-        .from("bookings")
-        .select("orario_ritorno")
-        .eq("giorno", giorno)
-        .eq("pagato", true)
-        .in("tipo_viaggio", ["ritorno", "andata_ritorno"]);
-      const counts: Record<string, number> = {};
-      (data || []).forEach((b: { orario_ritorno: string }) => {
-        if (b.orario_ritorno) counts[b.orario_ritorno] = (counts[b.orario_ritorno] || 0) + 1;
-      });
-      setReturnCounts(counts);
+
+      const [slotsRes, bookingsRes] = await Promise.all([
+        supabase.from("shuttle_return_slots").select("*").eq("giorno", giorno),
+        supabase
+          .from("bookings")
+          .select("orario_ritorno")
+          .eq("giorno", giorno)
+          .eq("pagato", true)
+          .in("tipo_viaggio", ["ritorno", "andata_ritorno"]),
+      ]);
+
+      if (slotsRes.error) {
+        setReturnSlots(FALLBACK_RETURN_TIMES.map((t, i) => ({ id: `fr-${i}`, giorno, orario: t, capienza: 50 })));
+        setReturnCounts({});
+      } else {
+        const counts: Record<string, number> = {};
+        (bookingsRes.data || []).forEach((b: { orario_ritorno: string }) => {
+          if (b.orario_ritorno) counts[b.orario_ritorno] = (counts[b.orario_ritorno] || 0) + 1;
+        });
+        // Filter out full return slots
+        setReturnSlots((slotsRes.data || []).filter((s: ReturnSlot) => s.capienza > (counts[s.orario] || 0)));
+        setReturnCounts(counts);
+      }
       setLoadingReturnSlots(false);
     };
-    fetchReturnCounts();
+
+    fetchReturnSlots();
   }, [giorno, needsRitorno]);
 
   // Reset dependent fields when tipo changes
@@ -379,35 +393,37 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
         </div>
       )}
 
-      {/* Ritorno time selection */}
+      {/* Ritorno time selection — now from DB */}
       {needsRitorno && giorno && (
         <div className="space-y-2">
           <Label>Orario di ritorno *</Label>
           {loadingReturnSlots ? (
             <p className="text-muted-foreground text-sm">Caricamento orari...</p>
+          ) : returnSlots.length === 0 ? (
+            <p className="text-muted-foreground text-sm">Nessun orario di ritorno disponibile.</p>
           ) : (
-          <div className="grid grid-cols-3 gap-2">
-            {RETURN_TIMES.filter((t) => (returnCounts[t] || 0) < 50).map((t) => {
-              const disabled = needsAndata && orario ? timeToMinutes(t) <= timeToMinutes(orario) : false;
-              return (
-                <button
-                  key={t}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => setOrarioRitorno(t)}
-                  className={`px-3 py-2.5 rounded-lg border text-sm font-medium transition-all ${
-                    disabled
-                      ? "border-border bg-muted text-muted-foreground cursor-not-allowed opacity-50"
-                      : orarioRitorno === t
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border bg-secondary text-foreground hover:border-muted-foreground"
-                  }`}
-                >
-                  {t}
-                </button>
-              );
-            })}
-          </div>
+            <div className="grid grid-cols-3 gap-2">
+              {returnSlots.map((rs) => {
+                const disabled = needsAndata && orario ? timeToMinutes(rs.orario) <= timeToMinutes(orario) : false;
+                return (
+                  <button
+                    key={rs.id}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => setOrarioRitorno(rs.orario)}
+                    className={`px-3 py-2.5 rounded-lg border text-sm font-medium transition-all ${
+                      disabled
+                        ? "border-border bg-muted text-muted-foreground cursor-not-allowed opacity-50"
+                        : orarioRitorno === rs.orario
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border bg-secondary text-foreground hover:border-muted-foreground"
+                    }`}
+                  >
+                    {rs.orario}
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
       )}
