@@ -24,9 +24,11 @@ interface Booking {
   nome: string;
   email: string;
   telefono: string;
+  tipo_viaggio: string;
   giorno: string;
   fermata: string;
   orario: string;
+  orario_ritorno: string;
   stato: string;
   pagato: boolean;
   created_at: string;
@@ -230,7 +232,7 @@ const Admin = () => {
 
   const sendConfirmEmail = async (booking: Booking) => {
     if (!isSupabaseConfigured) {
-      toast({ title: "Demo", description: `Email di conferma simulata a ${booking.email}` });
+      toast({ title: "Demo", description: `Email simulata a ${booking.email}` });
       return;
     }
     try {
@@ -239,14 +241,15 @@ const Admin = () => {
           nome: booking.nome,
           email: booking.email,
           telefono: booking.telefono,
-          giorno: booking.giorno,
-          fermata: booking.fermata,
-          orario: booking.orario,
-          confirmed: true,
+          giorno: booking.giorno || "/",
+          fermata: booking.fermata || "/",
+          orario_andata: booking.orario || "/",
+          orario_ritorno: booking.orario_ritorno || "/",
+          confirmed: booking.pagato,
         },
       });
       if (error) throw error;
-      toast({ title: "Inviata", description: `Email di conferma inviata a ${booking.email}` });
+      toast({ title: "Inviata", description: `Email inviata a ${booking.email}` });
     } catch {
       toast({ title: "Errore", description: "Invio email fallito.", variant: "destructive" });
     }
