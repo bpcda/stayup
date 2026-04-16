@@ -146,6 +146,8 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
       setLoadingReturnSlots(false);
     };
     fetchReturnCounts();
+  }, [giorno, needsRitorno]);
+
   // Reset dependent fields when tipo changes
   useEffect(() => {
     setGiorno("");
