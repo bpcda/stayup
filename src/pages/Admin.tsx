@@ -24,9 +24,11 @@ interface Booking {
   nome: string;
   email: string;
   telefono: string;
+  tipo_viaggio: string;
   giorno: string;
   fermata: string;
   orario: string;
+  orario_ritorno: string;
   stato: string;
   pagato: boolean;
   created_at: string;
@@ -42,9 +44,9 @@ interface ShuttleSlot {
 
 // Demo data
 const DEMO_BOOKINGS: Booking[] = [
-  { id: "1", nome: "Mario Rossi", email: "mario@test.com", telefono: "+39 333 1111111", giorno: "25 Aprile", fermata: "Università Cattolica", orario: "14:00", stato: "pending", pagato: false, created_at: new Date().toISOString() },
-  { id: "2", nome: "Luca Bianchi", email: "luca@test.com", telefono: "+39 333 2222222", giorno: "25 Aprile", fermata: "Cheope", orario: "14:15", stato: "pending", pagato: true, created_at: new Date().toISOString() },
-  { id: "3", nome: "Anna Verdi", email: "anna@test.com", telefono: "+39 333 3333333", giorno: "26 Aprile", fermata: "Università Cattolica", orario: "17:00", stato: "pending", pagato: false, created_at: new Date().toISOString() },
+  { id: "1", nome: "Mario Rossi", email: "mario@test.com", telefono: "+39 333 1111111", tipo_viaggio: "andata_ritorno", giorno: "25 Aprile", fermata: "Università Cattolica", orario: "14:00", orario_ritorno: "21:45", stato: "pending", pagato: false, created_at: new Date().toISOString() },
+  { id: "2", nome: "Luca Bianchi", email: "luca@test.com", telefono: "+39 333 2222222", tipo_viaggio: "andata", giorno: "25 Aprile", fermata: "Cheope", orario: "14:15", orario_ritorno: "", stato: "pending", pagato: true, created_at: new Date().toISOString() },
+  { id: "3", nome: "Anna Verdi", email: "anna@test.com", telefono: "+39 333 3333333", tipo_viaggio: "ritorno", giorno: "", fermata: "", orario: "", orario_ritorno: "23:00", stato: "pending", pagato: false, created_at: new Date().toISOString() },
 ];
 
 const DEMO_SLOTS: ShuttleSlot[] = [
@@ -230,7 +232,7 @@ const Admin = () => {
 
   const sendConfirmEmail = async (booking: Booking) => {
     if (!isSupabaseConfigured) {
-      toast({ title: "Demo", description: `Email di conferma simulata a ${booking.email}` });
+      toast({ title: "Demo", description: `Email simulata a ${booking.email}` });
       return;
     }
     try {
@@ -239,14 +241,15 @@ const Admin = () => {
           nome: booking.nome,
           email: booking.email,
           telefono: booking.telefono,
-          giorno: booking.giorno,
-          fermata: booking.fermata,
-          orario: booking.orario,
-          confirmed: true,
+          giorno: booking.giorno || "/",
+          fermata: booking.fermata || "/",
+          orario_andata: booking.orario || "/",
+          orario_ritorno: booking.orario_ritorno || "/",
+          confirmed: booking.pagato,
         },
       });
       if (error) throw error;
-      toast({ title: "Inviata", description: `Email di conferma inviata a ${booking.email}` });
+      toast({ title: "Inviata", description: `Email inviata a ${booking.email}` });
     } catch {
       toast({ title: "Errore", description: "Invio email fallito.", variant: "destructive" });
     }
@@ -361,9 +364,11 @@ const Admin = () => {
                       <TableHead>Nome</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Telefono</TableHead>
+                      <TableHead>Tipo</TableHead>
                       <TableHead>Giorno</TableHead>
                       <TableHead>Fermata</TableHead>
-                      <TableHead>Orario</TableHead>
+                      <TableHead>Andata</TableHead>
+                      <TableHead>Ritorno</TableHead>
                       <TableHead>Pagamento</TableHead>
                       <TableHead>Azioni</TableHead>
                     </TableRow>
@@ -374,9 +379,11 @@ const Admin = () => {
                         <TableCell className="font-medium">{b.nome}</TableCell>
                         <TableCell>{b.email}</TableCell>
                         <TableCell>{b.telefono}</TableCell>
-                        <TableCell>{b.giorno}</TableCell>
-                        <TableCell>{b.fermata}</TableCell>
-                        <TableCell>{b.orario}</TableCell>
+                        <TableCell className="capitalize">{b.tipo_viaggio?.replace("_", " + ") || "—"}</TableCell>
+                        <TableCell>{b.giorno || "/"}</TableCell>
+                        <TableCell>{b.fermata || "/"}</TableCell>
+                        <TableCell>{b.orario || "/"}</TableCell>
+                        <TableCell>{b.orario_ritorno || "/"}</TableCell>
                         <TableCell>
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                             b.pagato
@@ -395,7 +402,7 @@ const Admin = () => {
                               Sposta
                             </Button>
                             <Button size="sm" variant="outline" onClick={() => sendConfirmEmail(b)}>
-                              ✉ Email
+                              {b.pagato ? "✉ Riepilogo" : "✉ Pagamento"}
                             </Button>
                           </div>
                         </TableCell>

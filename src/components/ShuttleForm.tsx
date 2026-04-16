@@ -160,7 +160,15 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
 
         supabase.functions
           .invoke("send-booking-email", {
-            body: { nome, email, telefono, tipo_viaggio: tipoViaggio, giorno, fermata, orario, orario_ritorno: orarioRitorno },
+            body: {
+              nome,
+              email,
+              telefono,
+              giorno: needsAndata ? giorno : "/",
+              fermata: needsAndata ? fermata : "/",
+              orario_andata: needsAndata ? orario : "/",
+              orario_ritorno: needsRitorno ? orarioRitorno : "/",
+            },
           })
           .catch((err) => console.warn("Email send failed (non-critical):", err));
       } else {
