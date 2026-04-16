@@ -56,6 +56,8 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
   const [orarioRitorno, setOrarioRitorno] = useState("");
   const [slots, setSlots] = useState<ShuttleSlot[]>([]);
   const [bookingCounts, setBookingCounts] = useState<Record<string, number>>({});
+  const [returnCounts, setReturnCounts] = useState<Record<string, number>>({});
+  const [loadingReturnSlots, setLoadingReturnSlots] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingSchedules, setLoadingSchedules] = useState(false);
   const [accettaTermini, setAccettaTermini] = useState(false);
@@ -117,6 +119,35 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
     fetchSlots();
   }, [giorno, fermata, needsAndata]);
 
+  // Fetch return slot counts
+  useEffect(() => {
+    if (!needsRitorno || !giorno) {
+      setReturnCounts({});
+      setOrarioRitorno("");
+      return;
+    }
+    if (!isSupabaseConfigured) {
+      setReturnCounts({});
+      return;
+    }
+    const fetchReturnCounts = async () => {
+      setLoadingReturnSlots(true);
+      setOrarioRitorno("");
+      const { data } = await supabase
+        .from("bookings")
+        .select("orario_ritorno")
+        .eq("giorno", giorno)
+        .in("tipo_viaggio", ["ritorno", "andata_ritorno"]);
+      const counts: Record<string, number> = {};
+      (data || []).forEach((b: { orario_ritorno: string }) => {
+        if (b.orario_ritorno) counts[b.orario_ritorno] = (counts[b.orario_ritorno] || 0) + 1;
+      });
+      setReturnCounts(counts);
+      setLoadingReturnSlots(false);
+    };
+    fetchReturnCounts();
+  }, [giorno, needsRitorno]);
+
   // Reset dependent fields when tipo changes
   useEffect(() => {
     setGiorno("");
@@ -163,38 +194,44 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
     setLoading(true);
 
     try {
-      const bookingData = {
-        nome,
-        email,
-        telefono,
-        tipo_viaggio: tipoViaggio,
-        giorno: giorno || null,
-        fermata: needsAndata ? fermata : null,
-        orario: needsAndata ? orario : null,
-        orario_ritorno: needsRitorno ? orarioRitorno : null,
-        stato: "pending",
-        pagato: false,
-      };
-
       if (isSupabaseConfigured) {
-        const { error: bookingError } = await supabase.from("bookings").insert(bookingData);
-        if (bookingError) throw bookingError;
+        const { data, error } = await supabase.functions.invoke("create-booking", {
+          body: {
+            nome,
+            email,
+            telefono,
+            tipo_viaggio: tipoViaggio,
+            giorno,
+            fermata: needsAndata ? fermata : null,
+            orario: needsAndata ? orario : null,
+            orario_ritorno: needsRitorno ? orarioRitorno : null,
+          },
+        });
 
-        supabase.functions
-          .invoke("send-booking-email", {
-            body: {
-              nome,
-              email,
-              telefono,
-              giorno: giorno || "/",
-              fermata: needsAndata ? fermata : "/",
-              orario_andata: needsAndata ? orario : "/",
-              orario_ritorno: needsRitorno ? orarioRitorno : "/",
-            },
-          })
-          .catch((err) => console.warn("Email send failed (non-critical):", err));
+        if (error) throw error;
+        if (data?.error) {
+          toast({ title: "Errore", description: data.error, variant: "destructive" });
+          setLoading(false);
+          return;
+        }
+
+        if (data?.bumped) {
+          const msgs: string[] = [];
+          if (data.finalOrario && data.finalOrario !== orario) {
+            msgs.push(`Andata spostata alle ${data.finalOrario}`);
+          }
+          if (data.finalOrarioRitorno && data.finalOrarioRitorno !== orarioRitorno) {
+            msgs.push(`Ritorno spostato alle ${data.finalOrarioRitorno}`);
+          }
+          if (msgs.length > 0) {
+            toast({
+              title: "Slot pieno — spostamento automatico",
+              description: msgs.join(". ") + ". Controlla la mail per i dettagli.",
+            });
+          }
+        }
       } else {
-        console.log("Demo mode — booking data:", bookingData);
+        console.log("Demo mode — booking data:", { nome, email, telefono, tipoViaggio, giorno, fermata, orario, orarioRitorno });
       }
 
       onSuccess();
@@ -342,11 +379,14 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
       )}
 
       {/* Ritorno time selection */}
-      {needsRitorno && (
+      {needsRitorno && giorno && (
         <div className="space-y-2">
           <Label>Orario di ritorno *</Label>
+          {loadingReturnSlots ? (
+            <p className="text-muted-foreground text-sm">Caricamento orari...</p>
+          ) : (
           <div className="grid grid-cols-3 gap-2">
-            {RETURN_TIMES.map((t) => {
+            {RETURN_TIMES.filter((t) => (returnCounts[t] || 0) < 50).map((t) => {
               const disabled = needsAndata && orario ? timeToMinutes(t) <= timeToMinutes(orario) : false;
               return (
                 <button
@@ -367,6 +407,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
               );
             })}
           </div>
+          )}
         </div>
       )}
 
