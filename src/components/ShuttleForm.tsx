@@ -125,6 +125,13 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
     setOrarioRitorno("");
   }, [tipoViaggio]);
 
+  // Reset return time if it becomes invalid after changing departure time
+  useEffect(() => {
+    if (orario && orarioRitorno && timeToMinutes(orarioRitorno) <= timeToMinutes(orario)) {
+      setOrarioRitorno("");
+    }
+  }, [orario]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
