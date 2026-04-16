@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
+import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -194,18 +195,12 @@ const Admin = () => {
     const passengers = bookings.filter(
       (b) => b.giorno === slot.giorno && b.fermata === slot.fermata && b.orario === slot.orario && b.pagato
     );
-    const rows = [
-      ["N.", "Nome", "Telefono", "Email"],
-      ...passengers.map((p, i) => [`${i + 1}`, p.nome, p.telefono, p.email]),
-    ];
-    const csv = rows.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `andata_${slot.giorno.replace(/\s/g, "_")}_${slot.fermata.replace(/\s/g, "_")}_${slot.orario}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const data = passengers.map((p, i) => ({ "N.": i + 1, Nome: p.nome, Telefono: p.telefono, Email: p.email }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    ws["!cols"] = [{ wch: 5 }, { wch: 25 }, { wch: 18 }, { wch: 30 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Passeggeri");
+    XLSX.writeFile(wb, `andata_${slot.giorno.replace(/\s/g, "_")}_${slot.fermata.replace(/\s/g, "_")}_${slot.orario}.xlsx`);
   };
 
   const downloadReturnPassengerList = (slot: typeof returnSlotStats[0]) => {
@@ -216,18 +211,12 @@ const Admin = () => {
         (b.tipo_viaggio === "ritorno" || b.tipo_viaggio === "andata_ritorno") &&
         b.pagato
     );
-    const rows = [
-      ["N.", "Nome", "Telefono", "Email"],
-      ...passengers.map((p, i) => [`${i + 1}`, p.nome, p.telefono, p.email]),
-    ];
-    const csv = rows.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `ritorno_${slot.giorno.replace(/\s/g, "_")}_${slot.orario.replace(":", "")}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const data = passengers.map((p, i) => ({ "N.": i + 1, Nome: p.nome, Telefono: p.telefono, Email: p.email }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    ws["!cols"] = [{ wch: 5 }, { wch: 25 }, { wch: 18 }, { wch: 30 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Passeggeri");
+    XLSX.writeFile(wb, `ritorno_${slot.giorno.replace(/\s/g, "_")}_${slot.orario.replace(":", "")}.xlsx`);
   };
 
   const togglePagato = async (booking: Booking) => {
