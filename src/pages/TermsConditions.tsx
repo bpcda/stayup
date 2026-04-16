@@ -10,46 +10,40 @@ const TermsConditions = () => (
 
       <div className="prose prose-invert max-w-none space-y-6 text-muted-foreground">
         <section>
-          <h2 className="text-xl font-semibold text-foreground">1. Oggetto del Servizio</h2>
-          <p>Il presente documento disciplina le condizioni di utilizzo del servizio navetta organizzato da StayUp Events per il trasporto dei partecipanti al Grill Contest di Rivergaro.</p>
+          <h2 className="text-xl font-semibold text-foreground">1. Costo e Pagamento</h2>
+          <p>La navetta ha un costo di <strong className="text-foreground">6€</strong> da inviare esclusivamente tramite PayPal "Beni e Servizi" al link fornito in descrizione o al link che verrà inviato tramite email.</p>
+          <p><strong className="text-foreground">La navetta si ritiene prenotata solo e solamente all'avvenuto pagamento.</strong></p>
+          <p>Non è possibile pagare in contanti o all'arrivo sul bus.</p>
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-foreground">2. Prenotazione</h2>
-          <p>La prenotazione si intende confermata solo dopo il completamento del pagamento. La conferma verrà inviata all'indirizzo email indicato in fase di registrazione.</p>
-        </section>
-
-        <section>
-          <h2 className="text-xl font-semibold text-foreground">3. Pagamento</h2>
-          <p>Il pagamento deve essere effettuato entro le modalità e i tempi indicati nell'email di conferma. In caso di mancato pagamento, la prenotazione sarà automaticamente cancellata.</p>
-        </section>
-
-        <section>
-          <h2 className="text-xl font-semibold text-foreground">4. Cancellazione e Rimborsi</h2>
+          <h2 className="text-xl font-semibold text-foreground">2. Cosa è compreso</h2>
+          <p>Compreso nel prezzo avrete:</p>
           <ul className="list-disc pl-6 space-y-1">
-            <li>Cancellazione fino a 48 ore prima della partenza: rimborso completo</li>
-            <li>Cancellazione tra 48 e 24 ore prima: rimborso del 50%</li>
-            <li>Cancellazione entro le 24 ore: nessun rimborso</li>
+            <li>Andata in navetta</li>
+            <li>Ritorno in navetta</li>
+            <li>Un ticket per una birra in omaggio al Grill Contest</li>
           </ul>
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-foreground">5. Obblighi del Passeggero</h2>
-          <ul className="list-disc pl-6 space-y-1">
-            <li>Presentarsi alla fermata indicata almeno 5 minuti prima dell'orario previsto</li>
-            <li>Esibire la conferma di prenotazione al controllore</li>
-            <li>Mantenere un comportamento rispettoso durante il viaggio</li>
-          </ul>
+          <h2 className="text-xl font-semibold text-foreground">3. Rimborsi</h2>
+          <p>La restituzione dei soldi è possibile solamente nel caso in cui non saremo in grado di garantire il servizio.</p>
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-foreground">6. Responsabilità</h2>
-          <p>StayUp Events non è responsabile per ritardi dovuti a cause di forza maggiore, condizioni del traffico o eventi imprevisti. In caso di cancellazione del servizio da parte dell'organizzatore, verrà garantito il rimborso completo.</p>
+          <h2 className="text-xl font-semibold text-foreground">4. Selezione alla salita</h2>
+          <p>L'organizzazione si riserva la facoltà di selezione alla salita.</p>
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-foreground">7. Foro Competente</h2>
-          <p>Per qualsiasi controversia derivante dall'utilizzo del servizio sarà competente il Foro di Piacenza.</p>
+          <h2 className="text-xl font-semibold text-foreground">5. Variazione orari</h2>
+          <p>L'organizzazione si riserva la possibilità di variare gli orari in base alla richiesta.</p>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-semibold text-foreground">6. Contatti</h2>
+          <p>Per info e domande: <strong className="text-foreground">3711082218</strong> (Benedetta)</p>
         </section>
       </div>
     </div>
