@@ -160,12 +160,42 @@ const Admin = () => {
     });
   }, [slotStats, slotFilterGiorno, slotFilterFermata, slotFilterRiempimento]);
 
+  // Return shuttle stats
+  const RETURN_CAPIENZA = 50;
+  const GIORNI = ["25 Aprile", "26 Aprile"];
+
+  const returnSlotStats = useMemo(() => {
+    const result: { id: string; giorno: string; orario: string; capienza: number; occupati: number; rimanenti: number }[] = [];
+    GIORNI.forEach((giorno) => {
+      RETURN_TIMES.forEach((orario) => {
+        const count = bookings.filter(
+          (b) =>
+            b.giorno === giorno &&
+            b.orario_ritorno === orario &&
+            (b.tipo_viaggio === "ritorno" || b.tipo_viaggio === "andata_ritorno")
+        ).length;
+        result.push({ id: `r-${giorno}-${orario}`, giorno, orario, capienza: RETURN_CAPIENZA, occupati: count, rimanenti: RETURN_CAPIENZA - count });
+      });
+    });
+    return result;
+  }, [bookings]);
+
+  const filteredReturnSlotStats = useMemo(() => {
+    return returnSlotStats.filter((s) => {
+      if (returnFilterGiorno !== "all" && s.giorno !== returnFilterGiorno) return false;
+      if (returnFilterRiempimento === "pieno" && s.rimanenti > 0) return false;
+      if (returnFilterRiempimento === "disponibile" && s.rimanenti <= 0) return false;
+      if (returnFilterRiempimento === "quasi_pieno" && (s.rimanenti <= 0 || s.rimanenti > 5)) return false;
+      return true;
+    });
+  }, [returnSlotStats, returnFilterGiorno, returnFilterRiempimento]);
+
   const downloadPassengerList = (slot: typeof slotStats[0]) => {
     const passengers = bookings.filter(
       (b) => b.giorno === slot.giorno && b.fermata === slot.fermata && b.orario === slot.orario && b.pagato
     );
     const lines = [
-      `LISTA PASSEGGERI - ${slot.giorno} | ${slot.fermata} | ${slot.orario}`,
+      `LISTA PASSEGGERI ANDATA - ${slot.giorno} | ${slot.fermata} | ${slot.orario}`,
       `Totale pagati: ${passengers.length}/${slot.capienza}`,
       `Generata il: ${new Date().toLocaleString("it-IT")}`,
       "",
@@ -177,7 +207,33 @@ const Admin = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `passeggeri_${slot.giorno.replace(/\s/g, "_")}_${slot.fermata.replace(/\s/g, "_")}_${slot.orario}.txt`;
+    a.download = `passeggeri_andata_${slot.giorno.replace(/\s/g, "_")}_${slot.fermata.replace(/\s/g, "_")}_${slot.orario}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadReturnPassengerList = (slot: typeof returnSlotStats[0]) => {
+    const passengers = bookings.filter(
+      (b) =>
+        b.giorno === slot.giorno &&
+        b.orario_ritorno === slot.orario &&
+        (b.tipo_viaggio === "ritorno" || b.tipo_viaggio === "andata_ritorno") &&
+        b.pagato
+    );
+    const lines = [
+      `LISTA PASSEGGERI RITORNO - ${slot.giorno} | ${slot.orario}`,
+      `Totale pagati: ${passengers.length}/${slot.capienza}`,
+      `Generata il: ${new Date().toLocaleString("it-IT")}`,
+      "",
+      "N. | Nome | Telefono | Email",
+      "---|------|----------|------",
+      ...passengers.map((p, i) => `${i + 1} | ${p.nome} | ${p.telefono} | ${p.email}`),
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `passeggeri_ritorno_${slot.giorno.replace(/\s/g, "_")}_${slot.orario.replace(":", "")}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
