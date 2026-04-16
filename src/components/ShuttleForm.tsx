@@ -97,7 +97,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
 
       const [slotsRes, bookingsRes] = await Promise.all([
         supabase.from("shuttle_slots").select("*").eq("giorno", giorno).eq("fermata", fermata),
-        supabase.from("bookings").select("orario").eq("giorno", giorno).eq("fermata", fermata),
+        supabase.from("bookings").select("orario").eq("giorno", giorno).eq("fermata", fermata).eq("pagato", true),
       ]);
 
       if (slotsRes.error) {
@@ -137,6 +137,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
         .from("bookings")
         .select("orario_ritorno")
         .eq("giorno", giorno)
+        .eq("pagato", true)
         .in("tipo_viaggio", ["ritorno", "andata_ritorno"]);
       const counts: Record<string, number> = {};
       (data || []).forEach((b: { orario_ritorno: string }) => {

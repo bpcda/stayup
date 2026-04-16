@@ -6,15 +6,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const VALID_ANDATA_TIMES: Record<string, string[]> = {
-  "Università Cattolica": ["12:30", "14:00", "15:30", "17:00", "18:30", "21:00"],
-  "Cheope": ["12:45", "14:15", "15:45", "17:15", "18:45", "21:15"],
-};
 const VALID_RETURN_TIMES = ["17:45", "19:15", "21:45", "23:00", "00:30", "2:00"];
+const RETURN_SLOT_CAPACITY = 50;
 const VALID_DAYS = ["25 Aprile", "26 Aprile"];
-const VALID_STOPS = ["Università Cattolica", "Cheope"];
 const VALID_TYPES = ["andata", "ritorno", "andata_ritorno"];
-const SLOT_CAPACITY = 50;
 
 const PAYPAL_LINK = Deno.env.get("PAYPAL_LINK") || "https://paypal.me/stayup";
 
@@ -57,40 +52,59 @@ serve(async (req) => {
       return jsonError("Giorno non valido", 400);
     }
 
-    // --- Validate andata ---
+    // --- Validate andata using shuttle_slots from DB ---
     let finalOrario = orario;
     let andataBumped = false;
 
     if (needsAndata) {
-      if (!fermata || !VALID_STOPS.includes(fermata)) {
+      if (!fermata || typeof fermata !== "string") {
         return jsonError("Fermata non valida", 400);
       }
-      const validTimes = VALID_ANDATA_TIMES[fermata];
+
+      // Fetch valid slots from DB for this day+stop
+      const { data: dbSlots, error: slotsError } = await supabase
+        .from("shuttle_slots")
+        .select("orario, capienza")
+        .eq("giorno", giorno)
+        .eq("fermata", fermata)
+        .order("orario", { ascending: true });
+
+      if (slotsError || !dbSlots || dbSlots.length === 0) {
+        return jsonError("Nessuno slot disponibile per questa fermata/giorno", 400);
+      }
+
+      const validTimes = dbSlots.map((s: { orario: string }) => s.orario);
+      const capacityMap: Record<string, number> = {};
+      dbSlots.forEach((s: { orario: string; capienza: number }) => {
+        capacityMap[s.orario] = s.capienza;
+      });
+
       if (!orario || !validTimes.includes(orario)) {
         return jsonError("Orario di andata non valido per questa fermata", 400);
       }
 
-      // Check capacity from shuttle_slots + bookings count
-      const slotIdx = validTimes.indexOf(orario);
-      const { count: andataCount } = await supabase
+      // Count only PAID bookings for capacity check
+      const { data: paidBookings } = await supabase
         .from("bookings")
-        .select("*", { count: "exact", head: true })
+        .select("orario")
         .eq("giorno", giorno)
         .eq("fermata", fermata)
-        .eq("orario", orario);
+        .eq("pagato", true)
+        .in("orario", validTimes);
 
-      if ((andataCount || 0) >= SLOT_CAPACITY) {
-        // Try to bump to next available slot
+      const paidCounts: Record<string, number> = {};
+      (paidBookings || []).forEach((b: { orario: string }) => {
+        paidCounts[b.orario] = (paidCounts[b.orario] || 0) + 1;
+      });
+
+      const slotIdx = validTimes.indexOf(orario);
+      if ((paidCounts[orario] || 0) >= capacityMap[orario]) {
+        // Try bump to next available slot
         let bumped = false;
         for (let i = slotIdx + 1; i < validTimes.length; i++) {
-          const { count: nextCount } = await supabase
-            .from("bookings")
-            .select("*", { count: "exact", head: true })
-            .eq("giorno", giorno)
-            .eq("fermata", fermata)
-            .eq("orario", validTimes[i]);
-          if ((nextCount || 0) < SLOT_CAPACITY) {
-            finalOrario = validTimes[i];
+          const t = validTimes[i];
+          if ((paidCounts[t] || 0) < capacityMap[t]) {
+            finalOrario = t;
             andataBumped = true;
             bumped = true;
             break;
@@ -118,29 +132,29 @@ serve(async (req) => {
         }
       }
 
-      const returnIdx = VALID_RETURN_TIMES.indexOf(orario_ritorno);
-      const { count: returnCount } = await supabase
+      // Count only PAID return bookings
+      const { data: paidReturnBookings } = await supabase
         .from("bookings")
-        .select("*", { count: "exact", head: true })
+        .select("orario_ritorno")
         .eq("giorno", giorno)
-        .eq("orario_ritorno", orario_ritorno)
-        .in("tipo_viaggio", ["ritorno", "andata_ritorno"]);
+        .eq("pagato", true)
+        .in("tipo_viaggio", ["ritorno", "andata_ritorno"])
+        .in("orario_ritorno", VALID_RETURN_TIMES);
 
-      if ((returnCount || 0) >= SLOT_CAPACITY) {
+      const paidReturnCounts: Record<string, number> = {};
+      (paidReturnBookings || []).forEach((b: { orario_ritorno: string }) => {
+        if (b.orario_ritorno) paidReturnCounts[b.orario_ritorno] = (paidReturnCounts[b.orario_ritorno] || 0) + 1;
+      });
+
+      const returnIdx = VALID_RETURN_TIMES.indexOf(orario_ritorno);
+      if ((paidReturnCounts[orario_ritorno] || 0) >= RETURN_SLOT_CAPACITY) {
         let bumped = false;
         for (let i = returnIdx + 1; i < VALID_RETURN_TIMES.length; i++) {
           const candidate = VALID_RETURN_TIMES[i];
-          // Ensure still after andata
           if (needsAndata && finalOrario && timeToMinutes(candidate) <= timeToMinutes(finalOrario)) {
             continue;
           }
-          const { count: nextCount } = await supabase
-            .from("bookings")
-            .select("*", { count: "exact", head: true })
-            .eq("giorno", giorno)
-            .eq("orario_ritorno", candidate)
-            .in("tipo_viaggio", ["ritorno", "andata_ritorno"]);
-          if ((nextCount || 0) < SLOT_CAPACITY) {
+          if ((paidReturnCounts[candidate] || 0) < RETURN_SLOT_CAPACITY) {
             finalOrarioRitorno = candidate;
             ritornoBumped = true;
             bumped = true;
@@ -223,7 +237,7 @@ serve(async (req) => {
           Authorization: `Bearer ${RESEND_API_KEY}`,
         },
         body: JSON.stringify({
-          from: "StayUp <onboarding@resend.dev>",
+          from: "StayUp <noreply@stayupallnight.it>",
           to: [email.trim().toLowerCase()],
           subject: wasBumped
             ? "Prenotazione confermata (orario modificato) - StayUp"
