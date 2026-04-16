@@ -83,6 +83,10 @@ const Admin = () => {
   const [slotFilterFermata, setSlotFilterFermata] = useState("all");
   const [slotFilterRiempimento, setSlotFilterRiempimento] = useState("all");
 
+  // Return shuttle filters
+  const [returnFilterGiorno, setReturnFilterGiorno] = useState("all");
+  const [returnFilterRiempimento, setReturnFilterRiempimento] = useState("all");
+
   // Move dialog
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
