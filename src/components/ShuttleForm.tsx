@@ -379,11 +379,14 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
       )}
 
       {/* Ritorno time selection */}
-      {needsRitorno && (
+      {needsRitorno && giorno && (
         <div className="space-y-2">
           <Label>Orario di ritorno *</Label>
+          {loadingReturnSlots ? (
+            <p className="text-muted-foreground text-sm">Caricamento orari...</p>
+          ) : (
           <div className="grid grid-cols-3 gap-2">
-            {RETURN_TIMES.map((t) => {
+            {RETURN_TIMES.filter((t) => (returnCounts[t] || 0) < 50).map((t) => {
               const disabled = needsAndata && orario ? timeToMinutes(t) <= timeToMinutes(orario) : false;
               return (
                 <button
