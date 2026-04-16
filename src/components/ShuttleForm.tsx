@@ -130,8 +130,8 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
       return;
     }
 
-    if (needsRitorno && !orarioRitorno) {
-      toast({ title: "Errore", description: "Seleziona un orario di ritorno.", variant: "destructive" });
+    if (needsRitorno && (!giorno || !orarioRitorno)) {
+      toast({ title: "Errore", description: "Seleziona giorno e orario di ritorno.", variant: "destructive" });
       return;
     }
 
@@ -148,7 +148,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
         email,
         telefono,
         tipo_viaggio: tipoViaggio,
-        giorno: needsAndata ? giorno : null,
+        giorno: giorno || null,
         fermata: needsAndata ? fermata : null,
         orario: needsAndata ? orario : null,
         orario_ritorno: needsRitorno ? orarioRitorno : null,
@@ -166,7 +166,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
               nome,
               email,
               telefono,
-              giorno: needsAndata ? giorno : "/",
+              giorno: giorno || "/",
               fermata: needsAndata ? fermata : "/",
               orario_andata: needsAndata ? orario : "/",
               orario_ritorno: needsRitorno ? orarioRitorno : "/",
@@ -296,6 +296,29 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
             </div>
           )}
         </>
+      )}
+
+      {/* Giorno selector for solo ritorno */}
+      {needsRitorno && !needsAndata && (
+        <div className="space-y-2">
+          <Label>Giorno di ritorno *</Label>
+          <div className="grid grid-cols-2 gap-3">
+            {DAYS.map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setGiorno(d)}
+                className={`px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
+                  giorno === d
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-secondary text-foreground hover:border-muted-foreground"
+                }`}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* Ritorno time selection */}
