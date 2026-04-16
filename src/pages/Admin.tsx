@@ -238,6 +238,19 @@ const Admin = () => {
         toast({ title: "Errore", description: "Aggiornamento fallito.", variant: "destructive" });
         return;
       }
+      // Invio automatico email di conferma pagamento
+      if (newPagato) {
+        supabase.functions
+          .invoke("send-booking-email", {
+            body: {
+              nome: booking.nome, email: booking.email, telefono: booking.telefono,
+              giorno: booking.giorno || "/", fermata: booking.fermata || "/",
+              orario_andata: booking.orario || "/", orario_ritorno: booking.orario_ritorno || "/",
+              confirmed: true,
+            },
+          })
+          .catch((err) => console.warn("Confirm email failed:", err));
+      }
     }
     setBookings((prev) =>
       prev.map((b) => (b.id === booking.id ? { ...b, pagato: newPagato, stato: newPagato ? "confirmed" : "pending" } : b))
@@ -291,6 +304,7 @@ const Admin = () => {
             orario_andata: hasAndata ? newOrario : (selectedBooking.orario || "/"),
             orario_ritorno: hasRitorno ? newOrarioRitorno : (selectedBooking.orario_ritorno || "/"),
             spostamento: true,
+            confirmed: selectedBooking.pagato,
           },
         })
         .catch((err) => console.warn("Move notification email failed:", err));
