@@ -21,6 +21,14 @@ interface ShuttleFormProps {
 
 type TipoViaggio = "andata" | "ritorno" | "andata_ritorno";
 
+/** Convert "HH:MM" to minutes since midnight; handles times like "00:30" and "2:00" as next-day. */
+const timeToMinutes = (t: string): number => {
+  const [h, m] = t.split(":").map(Number);
+  // Times <= 6:00 are considered next-day (after midnight)
+  return h < 6 ? (h + 24) * 60 + m : h * 60 + m;
+};
+
+
 const DAYS = ["25 Aprile", "26 Aprile"];
 const STOPS = ["Università Cattolica", "Cheope"];
 
@@ -132,6 +140,11 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
 
     if (needsRitorno && (!giorno || !orarioRitorno)) {
       toast({ title: "Errore", description: "Seleziona giorno e orario di ritorno.", variant: "destructive" });
+      return;
+    }
+
+    if (needsAndata && needsRitorno && orario && orarioRitorno && timeToMinutes(orarioRitorno) <= timeToMinutes(orario)) {
+      toast({ title: "Errore", description: "L'orario di ritorno deve essere successivo a quello di andata.", variant: "destructive" });
       return;
     }
 
@@ -326,20 +339,26 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
         <div className="space-y-2">
           <Label>Orario di ritorno *</Label>
           <div className="grid grid-cols-3 gap-2">
-            {RETURN_TIMES.map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setOrarioRitorno(t)}
-                className={`px-3 py-2.5 rounded-lg border text-sm font-medium transition-all ${
-                  orarioRitorno === t
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-secondary text-foreground hover:border-muted-foreground"
-                }`}
-              >
-                {t}
-              </button>
-            ))}
+            {RETURN_TIMES.map((t) => {
+              const disabled = needsAndata && orario ? timeToMinutes(t) <= timeToMinutes(orario) : false;
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => setOrarioRitorno(t)}
+                  className={`px-3 py-2.5 rounded-lg border text-sm font-medium transition-all ${
+                    disabled
+                      ? "border-border bg-muted text-muted-foreground cursor-not-allowed opacity-50"
+                      : orarioRitorno === t
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-secondary text-foreground hover:border-muted-foreground"
+                  }`}
+                >
+                  {t}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
