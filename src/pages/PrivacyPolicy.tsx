@@ -11,7 +11,7 @@ const PrivacyPolicy = () => (
       <div className="prose prose-invert max-w-none space-y-6 text-muted-foreground">
         <section>
           <h2 className="text-xl font-semibold text-foreground">1. Titolare del Trattamento</h2>
-          <p>Il titolare del trattamento dei dati personali è StayUp Events ("StayUp"), contattabile all'indirizzo email: info@stayup.events</p>
+          <p>Il titolare del trattamento dei dati personali è StayUp All Night ("StayUp"), contattabile all'indirizzo email: info@stayupallnight.it</p>
         </section>
 
         <section>
@@ -56,7 +56,7 @@ const PrivacyPolicy = () => (
             <li>Opporsi al trattamento</li>
             <li>Portabilità dei dati</li>
           </ul>
-          <p className="mt-2">Per esercitare tali diritti, contattare: info@stayup.events</p>
+          <p className="mt-2">Per esercitare tali diritti, contattare: info@stayupallnight.it</p>
         </section>
 
         <section>
