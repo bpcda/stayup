@@ -407,6 +407,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
               );
             })}
           </div>
+          )}
         </div>
       )}
 
