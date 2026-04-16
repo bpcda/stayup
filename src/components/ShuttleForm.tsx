@@ -56,6 +56,8 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
   const [orarioRitorno, setOrarioRitorno] = useState("");
   const [slots, setSlots] = useState<ShuttleSlot[]>([]);
   const [bookingCounts, setBookingCounts] = useState<Record<string, number>>({});
+  const [returnCounts, setReturnCounts] = useState<Record<string, number>>({});
+  const [loadingReturnSlots, setLoadingReturnSlots] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingSchedules, setLoadingSchedules] = useState(false);
   const [accettaTermini, setAccettaTermini] = useState(false);
