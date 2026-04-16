@@ -49,11 +49,22 @@ serve(async (req) => {
             <tr><td style="padding: 8px 0; color: #a3a3a3;">Email</td><td style="padding: 8px 0; text-align: right; font-weight: 600;">${email}</td></tr>
             <tr><td style="padding: 8px 0; color: #a3a3a3;">Telefono</td><td style="padding: 8px 0; text-align: right; font-weight: 600;">${telefono || "/"}</td></tr>
           </table>
-          ${isSpostamento ? `
+          ${isSpostamento ? (isConfirmed ? `
           <div style="text-align: center; margin: 32px 0;">
-            <p style="color: #f59e0b; font-size: 16px; font-weight: 600;">I tuoi orari sono stati aggiornati. Controlla i dettagli qui sopra.</p>
+            <p style="color: #f59e0b; font-size: 16px; font-weight: 600;">⚠️ I tuoi orari sono stati aggiornati. Controlla i dettagli qui sopra.</p>
+            <p style="color: #22c55e; font-size: 14px; margin-top: 8px;">Il tuo pagamento è già stato registrato — non devi fare nulla! 🎉</p>
           </div>
-          ` : isConfirmed ? `
+          ` : `
+          <div style="text-align: center; margin: 32px 0;">
+            <p style="color: #f59e0b; font-size: 16px; font-weight: 600;">⚠️ I tuoi orari sono stati aggiornati. Controlla i dettagli qui sopra.</p>
+            <a href="${PAYPAL_LINK}" style="background: #f59e0b; color: #0a0a0a; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 16px; display: inline-block; margin-top: 16px;">
+              Paga con PayPal
+            </a>
+            <p style="color: #737373; font-size: 13px; text-align: center; line-height: 1.5; margin-top: 12px;">
+              La tua iscrizione sarà confermata manualmente dopo verifica del pagamento.
+            </p>
+          </div>
+          `) : isConfirmed ? `
           <div style="text-align: center; margin: 32px 0;">
             <p style="color: #22c55e; font-size: 16px; font-weight: 600;">Pagamento ricevuto — ci vediamo alla fermata! 🎉</p>
           </div>
@@ -80,7 +91,7 @@ serve(async (req) => {
       body: JSON.stringify({
         from: "StayUp <noreply@stayupallnight.it>",
         to: [email],
-        subject: isSpostamento ? "Orario modificato - StayUp" : isConfirmed ? "Prenotazione confermata - StayUp" : "Completa il pagamento - StayUp",
+        subject: isSpostamento ? "Orario modificato - StayUp" : isConfirmed ? "Pagamento confermato - StayUp" : "Completa il pagamento - StayUp",
         html: htmlContent,
       }),
     });
