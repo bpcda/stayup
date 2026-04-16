@@ -51,6 +51,8 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
   const [loading, setLoading] = useState(false);
   const [loadingSchedules, setLoadingSchedules] = useState(false);
   const [accettaTermini, setAccettaTermini] = useState(false);
+  const [accettaPagamento, setAccettaPagamento] = useState(false);
+  const [accettaRimborso, setAccettaRimborso] = useState(false);
 
   const needsAndata = tipoViaggio === "andata" || tipoViaggio === "andata_ritorno";
   const needsRitorno = tipoViaggio === "ritorno" || tipoViaggio === "andata_ritorno";
@@ -133,8 +135,8 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
       return;
     }
 
-    if (!accettaTermini) {
-      toast({ title: "Errore", description: "Devi accettare i termini e condizioni e l'informativa privacy.", variant: "destructive" });
+    if (!accettaTermini || !accettaPagamento || !accettaRimborso) {
+      toast({ title: "Errore", description: "Devi accettare tutte le condizioni per procedere.", variant: "destructive" });
       return;
     }
 
@@ -319,30 +321,58 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
         </div>
       )}
 
-      {/* T&C checkbox */}
+      {/* Acceptance checkboxes */}
       {tipoViaggio && (
-        <div className="flex items-start space-x-3 pt-2">
-          <Checkbox
-            id="termini"
-            checked={accettaTermini}
-            onCheckedChange={(checked) => setAccettaTermini(checked === true)}
-            className="mt-0.5"
-          />
-          <label htmlFor="termini" className="text-sm text-muted-foreground leading-snug cursor-pointer">
-            Accetto i{" "}
-            <Link to="/termini" target="_blank" className="text-primary underline hover:text-primary/80">
-              Termini e Condizioni
-            </Link>{" "}
-            e l'{" "}
-            <Link to="/privacy" target="_blank" className="text-primary underline hover:text-primary/80">
-              Informativa sulla Privacy
-            </Link>{" "}
-            *
-          </label>
+        <div className="space-y-3 pt-2 border-t border-border mt-2">
+          <p className="text-sm font-medium text-foreground pt-2">Prima di prenotare, conferma di aver letto:</p>
+
+          <div className="flex items-start space-x-3">
+            <Checkbox
+              id="pagamento"
+              checked={accettaPagamento}
+              onCheckedChange={(checked) => setAccettaPagamento(checked === true)}
+              className="mt-0.5"
+            />
+            <label htmlFor="pagamento" className="text-sm text-muted-foreground leading-snug cursor-pointer">
+              La navetta costa <strong className="text-foreground">6€</strong> da pagare tramite PayPal "Beni e Servizi". La prenotazione è valida <strong className="text-foreground">solo dopo il pagamento</strong>. Non è possibile pagare in contanti o sul bus. *
+            </label>
+          </div>
+
+          <div className="flex items-start space-x-3">
+            <Checkbox
+              id="rimborso"
+              checked={accettaRimborso}
+              onCheckedChange={(checked) => setAccettaRimborso(checked === true)}
+              className="mt-0.5"
+            />
+            <label htmlFor="rimborso" className="text-sm text-muted-foreground leading-snug cursor-pointer">
+              Il rimborso è possibile solo se l'organizzazione non sarà in grado di garantire il servizio. L'organizzazione si riserva la facoltà di selezione alla salita e di variare gli orari. *
+            </label>
+          </div>
+
+          <div className="flex items-start space-x-3">
+            <Checkbox
+              id="termini"
+              checked={accettaTermini}
+              onCheckedChange={(checked) => setAccettaTermini(checked === true)}
+              className="mt-0.5"
+            />
+            <label htmlFor="termini" className="text-sm text-muted-foreground leading-snug cursor-pointer">
+              Accetto i{" "}
+              <Link to="/termini" target="_blank" className="text-primary underline hover:text-primary/80">
+                Termini e Condizioni
+              </Link>{" "}
+              e l'{" "}
+              <Link to="/privacy" target="_blank" className="text-primary underline hover:text-primary/80">
+                Informativa sulla Privacy
+              </Link>{" "}
+              *
+            </label>
+          </div>
         </div>
       )}
 
-      <Button type="submit" variant="hero" size="lg" className="w-full mt-4" disabled={loading || !accettaTermini}>
+      <Button type="submit" variant="hero" size="lg" className="w-full mt-4" disabled={loading || !accettaTermini || !accettaPagamento || !accettaRimborso}>
         {loading ? "Invio in corso..." : "Prenota Navetta"}
       </Button>
     </form>
