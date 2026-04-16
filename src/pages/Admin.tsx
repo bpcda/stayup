@@ -44,9 +44,9 @@ interface ShuttleSlot {
 
 // Demo data
 const DEMO_BOOKINGS: Booking[] = [
-  { id: "1", nome: "Mario Rossi", email: "mario@test.com", telefono: "+39 333 1111111", giorno: "25 Aprile", fermata: "Università Cattolica", orario: "14:00", stato: "pending", pagato: false, created_at: new Date().toISOString() },
-  { id: "2", nome: "Luca Bianchi", email: "luca@test.com", telefono: "+39 333 2222222", giorno: "25 Aprile", fermata: "Cheope", orario: "14:15", stato: "pending", pagato: true, created_at: new Date().toISOString() },
-  { id: "3", nome: "Anna Verdi", email: "anna@test.com", telefono: "+39 333 3333333", giorno: "26 Aprile", fermata: "Università Cattolica", orario: "17:00", stato: "pending", pagato: false, created_at: new Date().toISOString() },
+  { id: "1", nome: "Mario Rossi", email: "mario@test.com", telefono: "+39 333 1111111", tipo_viaggio: "andata_ritorno", giorno: "25 Aprile", fermata: "Università Cattolica", orario: "14:00", orario_ritorno: "21:45", stato: "pending", pagato: false, created_at: new Date().toISOString() },
+  { id: "2", nome: "Luca Bianchi", email: "luca@test.com", telefono: "+39 333 2222222", tipo_viaggio: "andata", giorno: "25 Aprile", fermata: "Cheope", orario: "14:15", orario_ritorno: "", stato: "pending", pagato: true, created_at: new Date().toISOString() },
+  { id: "3", nome: "Anna Verdi", email: "anna@test.com", telefono: "+39 333 3333333", tipo_viaggio: "ritorno", giorno: "", fermata: "", orario: "", orario_ritorno: "23:00", stato: "pending", pagato: false, created_at: new Date().toISOString() },
 ];
 
 const DEMO_SLOTS: ShuttleSlot[] = [
