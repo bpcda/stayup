@@ -194,20 +194,16 @@ const Admin = () => {
     const passengers = bookings.filter(
       (b) => b.giorno === slot.giorno && b.fermata === slot.fermata && b.orario === slot.orario && b.pagato
     );
-    const lines = [
-      `LISTA PASSEGGERI ANDATA - ${slot.giorno} | ${slot.fermata} | ${slot.orario}`,
-      `Totale pagati: ${passengers.length}/${slot.capienza}`,
-      `Generata il: ${new Date().toLocaleString("it-IT")}`,
-      "",
-      "N. | Nome | Telefono | Email",
-      "---|------|----------|------",
-      ...passengers.map((p, i) => `${i + 1} | ${p.nome} | ${p.telefono} | ${p.email}`),
+    const rows = [
+      ["N.", "Nome", "Telefono", "Email"],
+      ...passengers.map((p, i) => [`${i + 1}`, p.nome, p.telefono, p.email]),
     ];
-    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+    const csv = rows.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `passeggeri_andata_${slot.giorno.replace(/\s/g, "_")}_${slot.fermata.replace(/\s/g, "_")}_${slot.orario}.txt`;
+    a.download = `andata_${slot.giorno.replace(/\s/g, "_")}_${slot.fermata.replace(/\s/g, "_")}_${slot.orario}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -220,20 +216,16 @@ const Admin = () => {
         (b.tipo_viaggio === "ritorno" || b.tipo_viaggio === "andata_ritorno") &&
         b.pagato
     );
-    const lines = [
-      `LISTA PASSEGGERI RITORNO - ${slot.giorno} | ${slot.orario}`,
-      `Totale pagati: ${passengers.length}/${slot.capienza}`,
-      `Generata il: ${new Date().toLocaleString("it-IT")}`,
-      "",
-      "N. | Nome | Telefono | Email",
-      "---|------|----------|------",
-      ...passengers.map((p, i) => `${i + 1} | ${p.nome} | ${p.telefono} | ${p.email}`),
+    const rows = [
+      ["N.", "Nome", "Telefono", "Email"],
+      ...passengers.map((p, i) => [`${i + 1}`, p.nome, p.telefono, p.email]),
     ];
-    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+    const csv = rows.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `passeggeri_ritorno_${slot.giorno.replace(/\s/g, "_")}_${slot.orario.replace(":", "")}.txt`;
+    a.download = `ritorno_${slot.giorno.replace(/\s/g, "_")}_${slot.orario.replace(":", "")}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
