@@ -88,7 +88,9 @@ const Admin = () => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [newFermata, setNewFermata] = useState("");
   const [newOrario, setNewOrario] = useState("");
+  const [newOrarioRitorno, setNewOrarioRitorno] = useState("");
 
+  const RETURN_TIMES = ["17:45", "19:15", "21:45", "23:00", "00:30", "2:00"];
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (password === ADMIN_PASSWORD) {
@@ -196,38 +198,75 @@ const Admin = () => {
 
   const openMoveDialog = (booking: Booking) => {
     setSelectedBooking(booking);
-    setNewFermata(booking.fermata);
-    setNewOrario(booking.orario);
+    setNewFermata(booking.fermata || "");
+    setNewOrario(booking.orario || "");
+    setNewOrarioRitorno(booking.orario_ritorno || "");
     setMoveDialogOpen(true);
   };
 
   const handleMove = async () => {
-    if (!selectedBooking || !newFermata || !newOrario) return;
+    if (!selectedBooking) return;
 
-    // Check capacity
-    const targetSlot = slotStats.find(
-      (s) => s.giorno === selectedBooking.giorno && s.fermata === newFermata && s.orario === newOrario
-    );
-    if (targetSlot && targetSlot.rimanenti <= 0) {
-      toast({ title: "Errore", description: "Nessun posto disponibile su questa navetta.", variant: "destructive" });
-      return;
+    const hasAndata = selectedBooking.tipo_viaggio === "andata" || selectedBooking.tipo_viaggio === "andata_ritorno";
+    const hasRitorno = selectedBooking.tipo_viaggio === "ritorno" || selectedBooking.tipo_viaggio === "andata_ritorno";
+
+    if (hasAndata && (!newFermata || !newOrario)) return;
+    if (hasRitorno && !newOrarioRitorno) return;
+
+    // Check capacity for andata
+    if (hasAndata && (newFermata !== selectedBooking.fermata || newOrario !== selectedBooking.orario)) {
+      const targetSlot = slotStats.find(
+        (s) => s.giorno === selectedBooking.giorno && s.fermata === newFermata && s.orario === newOrario
+      );
+      if (targetSlot && targetSlot.rimanenti <= 0) {
+        toast({ title: "Errore", description: "Nessun posto disponibile su questa navetta.", variant: "destructive" });
+        return;
+      }
+    }
+
+    const updateData: Record<string, string | null> = {};
+    if (hasAndata) {
+      updateData.fermata = newFermata;
+      updateData.orario = newOrario;
+    }
+    if (hasRitorno) {
+      updateData.orario_ritorno = newOrarioRitorno;
     }
 
     if (isSupabaseConfigured) {
       const { error } = await supabase
         .from("bookings")
-        .update({ fermata: newFermata, orario: newOrario })
+        .update(updateData)
         .eq("id", selectedBooking.id);
       if (error) {
         toast({ title: "Errore", description: "Spostamento fallito.", variant: "destructive" });
         return;
       }
+
+      // Send notification email
+      const updatedAndata = hasAndata ? newOrario : (selectedBooking.orario || "/");
+      const updatedRitorno = hasRitorno ? newOrarioRitorno : (selectedBooking.orario_ritorno || "/");
+      supabase.functions
+        .invoke("send-booking-email", {
+          body: {
+            nome: selectedBooking.nome,
+            email: selectedBooking.email,
+            telefono: selectedBooking.telefono,
+            giorno: selectedBooking.giorno || "/",
+            fermata: hasAndata ? newFermata : (selectedBooking.fermata || "/"),
+            orario_andata: updatedAndata,
+            orario_ritorno: updatedRitorno,
+            spostamento: true,
+          },
+        })
+        .catch((err) => console.warn("Move notification email failed:", err));
     }
+
     setBookings((prev) =>
-      prev.map((b) => (b.id === selectedBooking.id ? { ...b, fermata: newFermata, orario: newOrario } : b))
+      prev.map((b) => (b.id === selectedBooking.id ? { ...b, ...updateData } : b))
     );
     setMoveDialogOpen(false);
-    toast({ title: "Spostato", description: `${selectedBooking.nome} → ${newFermata} ${newOrario}` });
+    toast({ title: "Spostato", description: `${selectedBooking.nome} spostato con successo. Email di notifica inviata.` });
   };
 
   const sendConfirmEmail = async (booking: Booking) => {
@@ -507,38 +546,60 @@ const Admin = () => {
               <DialogTitle>Sposta {selectedBooking?.nome}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Fermata</Label>
-                <Select value={newFermata} onValueChange={(v) => { setNewFermata(v); setNewOrario(""); }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {STOPS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Orario</Label>
-                <Select value={newOrario} onValueChange={setNewOrario}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {(TIMES[newFermata] || []).map((t) => {
-                      const slot = slotStats.find(
-                        (s) => s.giorno === selectedBooking?.giorno && s.fermata === newFermata && s.orario === t
-                      );
-                      const isFull = slot ? slot.rimanenti <= 0 : false;
-                      return (
-                        <SelectItem key={t} value={t} disabled={isFull}>
-                          {t} {slot ? `(${slot.rimanenti} posti)` : ""} {isFull ? "— PIENO" : ""}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
+              {(selectedBooking?.tipo_viaggio === "andata" || selectedBooking?.tipo_viaggio === "andata_ritorno") && (
+                <>
+                  <p className="text-sm font-medium text-muted-foreground">Andata</p>
+                  <div className="space-y-2">
+                    <Label>Fermata</Label>
+                    <Select value={newFermata} onValueChange={(v) => { setNewFermata(v); setNewOrario(""); }}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {STOPS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Orario Andata</Label>
+                    <Select value={newOrario} onValueChange={setNewOrario}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {(TIMES[newFermata] || []).map((t) => {
+                          const slot = slotStats.find(
+                            (s) => s.giorno === selectedBooking?.giorno && s.fermata === newFermata && s.orario === t
+                          );
+                          const isFull = slot ? slot.rimanenti <= 0 : false;
+                          return (
+                            <SelectItem key={t} value={t} disabled={isFull}>
+                              {t} {slot ? `(${slot.rimanenti} posti)` : ""} {isFull ? "— PIENO" : ""}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
+
+              {(selectedBooking?.tipo_viaggio === "ritorno" || selectedBooking?.tipo_viaggio === "andata_ritorno") && (
+                <>
+                  <p className="text-sm font-medium text-muted-foreground">Ritorno</p>
+                  <div className="space-y-2">
+                    <Label>Orario Ritorno</Label>
+                    <Select value={newOrarioRitorno} onValueChange={setNewOrarioRitorno}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {RETURN_TIMES.map((t) => (
+                          <SelectItem key={t} value={t}>{t}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setMoveDialogOpen(false)}>Annulla</Button>
-              <Button onClick={handleMove} disabled={!newOrario}>Conferma spostamento</Button>
+              <Button onClick={handleMove}>Conferma spostamento</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
