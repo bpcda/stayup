@@ -91,7 +91,7 @@ serve(async (req) => {
       body: JSON.stringify({
         from: "StayUp <noreply@stayupallnight.it>",
         to: [email],
-        subject: isSpostamento ? "Orario modificato - StayUp" : isConfirmed ? "Prenotazione confermata - StayUp" : "Completa il pagamento - StayUp",
+        subject: isSpostamento ? "Orario modificato - StayUp" : isConfirmed ? "Pagamento confermato - StayUp" : "Completa il pagamento - StayUp",
         html: htmlContent,
       }),
     });
