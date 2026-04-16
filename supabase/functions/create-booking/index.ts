@@ -6,8 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const VALID_RETURN_TIMES = ["17:45", "19:15", "21:45", "23:00", "00:30", "2:00"];
-const RETURN_SLOT_CAPACITY = 50;
 const VALID_DAYS = ["25 Aprile", "26 Aprile"];
 const VALID_TYPES = ["andata", "ritorno", "andata_ritorno"];
 
@@ -61,7 +59,6 @@ serve(async (req) => {
         return jsonError("Fermata non valida", 400);
       }
 
-      // Fetch valid slots from DB for this day+stop
       const { data: dbSlots, error: slotsError } = await supabase
         .from("shuttle_slots")
         .select("orario, capienza")
@@ -99,7 +96,6 @@ serve(async (req) => {
 
       const slotIdx = validTimes.indexOf(orario);
       if ((paidCounts[orario] || 0) >= capacityMap[orario]) {
-        // Try bump to next available slot
         let bumped = false;
         for (let i = slotIdx + 1; i < validTimes.length; i++) {
           const t = validTimes[i];
@@ -116,12 +112,28 @@ serve(async (req) => {
       }
     }
 
-    // --- Validate ritorno ---
+    // --- Validate ritorno using shuttle_return_slots from DB ---
     let finalOrarioRitorno = orario_ritorno;
     let ritornoBumped = false;
 
     if (needsRitorno) {
-      if (!orario_ritorno || !VALID_RETURN_TIMES.includes(orario_ritorno)) {
+      const { data: dbReturnSlots, error: returnSlotsError } = await supabase
+        .from("shuttle_return_slots")
+        .select("orario, capienza")
+        .eq("giorno", giorno)
+        .order("orario", { ascending: true });
+
+      if (returnSlotsError || !dbReturnSlots || dbReturnSlots.length === 0) {
+        return jsonError("Nessuno slot di ritorno disponibile per questo giorno", 400);
+      }
+
+      const validReturnTimes = dbReturnSlots.map((s: { orario: string }) => s.orario);
+      const returnCapacityMap: Record<string, number> = {};
+      dbReturnSlots.forEach((s: { orario: string; capienza: number }) => {
+        returnCapacityMap[s.orario] = s.capienza;
+      });
+
+      if (!orario_ritorno || !validReturnTimes.includes(orario_ritorno)) {
         return jsonError("Orario di ritorno non valido", 400);
       }
 
@@ -139,22 +151,22 @@ serve(async (req) => {
         .eq("giorno", giorno)
         .eq("pagato", true)
         .in("tipo_viaggio", ["ritorno", "andata_ritorno"])
-        .in("orario_ritorno", VALID_RETURN_TIMES);
+        .in("orario_ritorno", validReturnTimes);
 
       const paidReturnCounts: Record<string, number> = {};
       (paidReturnBookings || []).forEach((b: { orario_ritorno: string }) => {
         if (b.orario_ritorno) paidReturnCounts[b.orario_ritorno] = (paidReturnCounts[b.orario_ritorno] || 0) + 1;
       });
 
-      const returnIdx = VALID_RETURN_TIMES.indexOf(orario_ritorno);
-      if ((paidReturnCounts[orario_ritorno] || 0) >= RETURN_SLOT_CAPACITY) {
+      const returnIdx = validReturnTimes.indexOf(orario_ritorno);
+      if ((paidReturnCounts[orario_ritorno] || 0) >= returnCapacityMap[orario_ritorno]) {
         let bumped = false;
-        for (let i = returnIdx + 1; i < VALID_RETURN_TIMES.length; i++) {
-          const candidate = VALID_RETURN_TIMES[i];
+        for (let i = returnIdx + 1; i < validReturnTimes.length; i++) {
+          const candidate = validReturnTimes[i];
           if (needsAndata && finalOrario && timeToMinutes(candidate) <= timeToMinutes(finalOrario)) {
             continue;
           }
-          if ((paidReturnCounts[candidate] || 0) < RETURN_SLOT_CAPACITY) {
+          if ((paidReturnCounts[candidate] || 0) < returnCapacityMap[candidate]) {
             finalOrarioRitorno = candidate;
             ritornoBumped = true;
             bumped = true;
