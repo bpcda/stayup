@@ -1,53 +1,61 @@
 import { Link } from "react-router-dom";
+import { Trans, useTranslation } from "react-i18next";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
-const TermsConditions = () => (
-  <div className="min-h-screen px-4 py-8 md:py-16">
-    <div className="max-w-2xl mx-auto">
-      <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors mb-8 inline-block">
-        ← Home
-      </Link>
-      <h1 className="text-3xl font-bold mb-8 font-heading">Termini e Condizioni</h1>
+const TermsConditions = () => {
+  const { t } = useTranslation();
+  return (
+    <div className="min-h-screen px-4 py-8 md:py-16">
+      <div className="max-w-2xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            ← {t("common.home")}
+          </Link>
+          <LanguageSwitcher />
+        </div>
+        <h1 className="text-3xl font-bold mb-8 font-heading">{t("terms.title")}</h1>
 
-      <div className="prose prose-invert max-w-none space-y-6 text-muted-foreground">
-        <section>
-          <h2 className="text-xl font-semibold text-foreground">1. Costo e Pagamento</h2>
-          <p>La navetta ha un costo di <strong className="text-foreground">6€</strong> da inviare esclusivamente tramite PayPal "Beni e Servizi" al link fornito in descrizione o al link che verrà inviato tramite email.</p>
-          <p><strong className="text-foreground">La navetta si ritiene prenotata solo e solamente all'avvenuto pagamento.</strong></p>
-          <p>Non è possibile pagare in contanti o all'arrivo sul bus.</p>
-        </section>
+        <div className="prose prose-invert max-w-none space-y-6 text-muted-foreground">
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">{t("terms.s1Title")}</h2>
+            <p><Trans i18nKey="terms.s1B1" components={{ strong: <strong className="text-foreground" /> }} /></p>
+            <p><Trans i18nKey="terms.s1B2" components={{ strong: <strong className="text-foreground" /> }} /></p>
+            <p>{t("terms.s1B3")}</p>
+          </section>
 
-        <section>
-          <h2 className="text-xl font-semibold text-foreground">2. Cosa è compreso</h2>
-          <p>Compreso nel prezzo avrete:</p>
-          <ul className="list-disc pl-6 space-y-1">
-            <li>Andata in navetta</li>
-            <li>Ritorno in navetta</li>
-            <li>Un ticket per una birra in omaggio al Grill Contest</li>
-          </ul>
-        </section>
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">{t("terms.s2Title")}</h2>
+            <p>{t("terms.s2Body")}</p>
+            <ul className="list-disc pl-6 space-y-1">
+              <li>{t("terms.s2L1")}</li>
+              <li>{t("terms.s2L2")}</li>
+              <li>{t("terms.s2L3")}</li>
+            </ul>
+          </section>
 
-        <section>
-          <h2 className="text-xl font-semibold text-foreground">3. Rimborsi</h2>
-          <p>La restituzione dei soldi è possibile solamente nel caso in cui non saremo in grado di garantire il servizio.</p>
-        </section>
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">{t("terms.s3Title")}</h2>
+            <p>{t("terms.s3Body")}</p>
+          </section>
 
-        <section>
-          <h2 className="text-xl font-semibold text-foreground">4. Selezione alla salita</h2>
-          <p>L'organizzazione si riserva la facoltà di selezione alla salita.</p>
-        </section>
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">{t("terms.s4Title")}</h2>
+            <p>{t("terms.s4Body")}</p>
+          </section>
 
-        <section>
-          <h2 className="text-xl font-semibold text-foreground">5. Variazione orari</h2>
-          <p>L'organizzazione si riserva la possibilità di variare gli orari in base alla richiesta.</p>
-        </section>
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">{t("terms.s5Title")}</h2>
+            <p>{t("terms.s5Body")}</p>
+          </section>
 
-        <section>
-          <h2 className="text-xl font-semibold text-foreground">6. Contatti</h2>
-          <p>Per info e domande: <strong className="text-foreground">3711082218</strong> (Benedetta)</p>
-        </section>
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">{t("terms.s6Title")}</h2>
+            <p><Trans i18nKey="terms.s6Body" components={{ strong: <strong className="text-foreground" /> }} /></p>
+          </section>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default TermsConditions;

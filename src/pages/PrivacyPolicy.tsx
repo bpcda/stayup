@@ -1,71 +1,79 @@
 import { Link } from "react-router-dom";
+import { Trans, useTranslation } from "react-i18next";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
-const PrivacyPolicy = () => (
-  <div className="min-h-screen px-4 py-8 md:py-16">
-    <div className="max-w-2xl mx-auto">
-      <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors mb-8 inline-block">
-        ← Home
-      </Link>
-      <h1 className="text-3xl font-bold mb-8 font-heading">Informativa sulla Privacy</h1>
+const PrivacyPolicy = () => {
+  const { t } = useTranslation();
+  return (
+    <div className="min-h-screen px-4 py-8 md:py-16">
+      <div className="max-w-2xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            ← {t("common.home")}
+          </Link>
+          <LanguageSwitcher />
+        </div>
+        <h1 className="text-3xl font-bold mb-8 font-heading">{t("privacy.title")}</h1>
 
-      <div className="prose prose-invert max-w-none space-y-6 text-muted-foreground">
-        <section>
-          <h2 className="text-xl font-semibold text-foreground">1. Titolare del Trattamento</h2>
-          <p>Il titolare del trattamento dei dati personali è StayUp All Night ("StayUp"), contattabile all'indirizzo email: info@stayupallnight.it</p>
-        </section>
+        <div className="prose prose-invert max-w-none space-y-6 text-muted-foreground">
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">{t("privacy.s1Title")}</h2>
+            <p>{t("privacy.s1Body")}</p>
+          </section>
 
-        <section>
-          <h2 className="text-xl font-semibold text-foreground">2. Dati Raccolti</h2>
-          <p>Raccogliamo i seguenti dati personali attraverso il modulo di prenotazione navetta:</p>
-          <ul className="list-disc pl-6 space-y-1">
-            <li>Nome e Cognome</li>
-            <li>Indirizzo email</li>
-            <li>Numero di telefono</li>
-          </ul>
-        </section>
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">{t("privacy.s2Title")}</h2>
+            <p>{t("privacy.s2Body")}</p>
+            <ul className="list-disc pl-6 space-y-1">
+              <li>{t("privacy.s2L1")}</li>
+              <li>{t("privacy.s2L2")}</li>
+              <li>{t("privacy.s2L3")}</li>
+            </ul>
+          </section>
 
-        <section>
-          <h2 className="text-xl font-semibold text-foreground">3. Finalità del Trattamento</h2>
-          <p>I dati personali sono trattati per le seguenti finalità:</p>
-          <ul className="list-disc pl-6 space-y-1">
-            <li>Gestione della prenotazione del servizio navetta</li>
-            <li>Comunicazioni relative al servizio prenotato (conferma, variazioni, cancellazioni)</li>
-            <li>Gestione del pagamento</li>
-            <li>Adempimento di obblighi di legge</li>
-          </ul>
-        </section>
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">{t("privacy.s3Title")}</h2>
+            <p>{t("privacy.s3Body")}</p>
+            <ul className="list-disc pl-6 space-y-1">
+              <li>{t("privacy.s3L1")}</li>
+              <li>{t("privacy.s3L2")}</li>
+              <li>{t("privacy.s3L3")}</li>
+              <li>{t("privacy.s3L4")}</li>
+            </ul>
+          </section>
 
-        <section>
-          <h2 className="text-xl font-semibold text-foreground">4. Base Giuridica</h2>
-          <p>Il trattamento è basato sul consenso dell'interessato (art. 6, par. 1, lett. a del GDPR) e sull'esecuzione di un contratto (art. 6, par. 1, lett. b del GDPR).</p>
-        </section>
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">{t("privacy.s4Title")}</h2>
+            <p>{t("privacy.s4Body")}</p>
+          </section>
 
-        <section>
-          <h2 className="text-xl font-semibold text-foreground">5. Conservazione dei Dati</h2>
-          <p>I dati personali saranno conservati per il tempo strettamente necessario alla gestione del servizio e comunque non oltre 12 mesi dalla data dell'evento, salvo obblighi di legge.</p>
-        </section>
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">{t("privacy.s5Title")}</h2>
+            <p>{t("privacy.s5Body")}</p>
+          </section>
 
-        <section>
-          <h2 className="text-xl font-semibold text-foreground">6. Diritti dell'Interessato</h2>
-          <p>Ai sensi degli articoli 15-22 del GDPR, l'utente ha diritto di:</p>
-          <ul className="list-disc pl-6 space-y-1">
-            <li>Accedere ai propri dati personali</li>
-            <li>Rettificare dati inesatti</li>
-            <li>Ottenere la cancellazione dei dati</li>
-            <li>Limitare il trattamento</li>
-            <li>Opporsi al trattamento</li>
-            <li>Portabilità dei dati</li>
-          </ul>
-          <p className="mt-2">Per esercitare tali diritti, contattare: info@stayupallnight.it</p>
-        </section>
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">{t("privacy.s6Title")}</h2>
+            <p>{t("privacy.s6Body")}</p>
+            <ul className="list-disc pl-6 space-y-1">
+              <li>{t("privacy.s6L1")}</li>
+              <li>{t("privacy.s6L2")}</li>
+              <li>{t("privacy.s6L3")}</li>
+              <li>{t("privacy.s6L4")}</li>
+              <li>{t("privacy.s6L5")}</li>
+              <li>{t("privacy.s6L6")}</li>
+            </ul>
+            <p className="mt-2">{t("privacy.s6Contact")}</p>
+          </section>
 
-        <section>
-          <h2 className="text-xl font-semibold text-foreground">7. Sicurezza</h2>
-          <p>Adottiamo misure tecniche e organizzative adeguate per proteggere i dati personali da accessi non autorizzati, perdita o distruzione.</p>
-        </section>
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">{t("privacy.s7Title")}</h2>
+            <p>{t("privacy.s7Body")}</p>
+          </section>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default PrivacyPolicy;
