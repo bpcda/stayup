@@ -339,6 +339,7 @@ const Admin = () => {
             orario_ritorno: hasRitorno ? newOrarioRitorno : (selectedBooking.orario_ritorno || "/"),
             spostamento: true,
             confirmed: selectedBooking.pagato,
+            testMode,
           },
         })
         .catch((err) => console.warn("Move notification email failed:", err));
