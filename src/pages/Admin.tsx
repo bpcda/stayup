@@ -260,6 +260,7 @@ const Admin = () => {
               giorno: booking.giorno || "/", fermata: booking.fermata || "/",
               orario_andata: booking.orario || "/", orario_ritorno: booking.orario_ritorno || "/",
               confirmed: true,
+              testMode,
             },
           })
           .catch((err) => console.warn("Confirm email failed:", err));
@@ -268,7 +269,27 @@ const Admin = () => {
     setBookings((prev) =>
       prev.map((b) => (b.id === booking.id ? { ...b, pagato: newPagato, stato: newPagato ? "confirmed" : "pending" } : b))
     );
-    toast({ title: "Aggiornato", description: `${booking.nome} → ${newPagato ? "Pagato" : "Non pagato"}` });
+    toast({ title: "Aggiornato", description: `${booking.nome} → ${newPagato ? "Pagato" : "Non pagato"}${testMode && newPagato ? " (TEST: nessuna mail)" : ""}` });
+  };
+
+  const askDeleteBooking = (booking: Booking) => {
+    setBookingToDelete(booking);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteBooking = async () => {
+    if (!bookingToDelete) return;
+    if (isSupabaseConfigured) {
+      const { error } = await supabase.from("bookings").delete().eq("id", bookingToDelete.id);
+      if (error) {
+        toast({ title: "Errore", description: "Eliminazione fallita.", variant: "destructive" });
+        return;
+      }
+    }
+    setBookings((prev) => prev.filter((b) => b.id !== bookingToDelete.id));
+    setDeleteDialogOpen(false);
+    setBookingToDelete(null);
+    toast({ title: "Eliminato", description: `${bookingToDelete.nome} rimosso dalla tabella.` });
   };
 
   const openMoveDialog = (booking: Booking) => {
