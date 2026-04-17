@@ -481,12 +481,27 @@ const Admin = () => {
             <Link to="/"><img src={stayupLogo} alt="StayUp" className="w-16 h-auto" /></Link>
             <h1 className="text-2xl font-bold font-heading">Dashboard Admin</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant={testMode ? "default" : "outline"}
+              size="sm"
+              onClick={() => setTestMode((v) => !v)}
+              className={testMode ? "bg-yellow-500 hover:bg-yellow-600 text-black" : ""}
+              title="Quando attivo, nessuna mail viene inviata. Le scritture su DB avvengono normalmente."
+            >
+              {testMode ? "🧪 TEST ON" : "🧪 TEST OFF"}
+            </Button>
             <Button variant="outline" size="sm" onClick={fetchData}>↻ Aggiorna</Button>
             <Button variant="outline" size="sm" asChild><Link to="/">← Home</Link></Button>
             <Button variant="outline" size="sm" onClick={() => setAuthenticated(false)}>Logout</Button>
           </div>
         </div>
+
+        {testMode && (
+          <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 px-4 py-2 text-sm text-yellow-300">
+            <strong>Modalità TEST attiva:</strong> tutte le operazioni scrivono sul database, ma <em>nessuna email viene inviata</em> (né dalle azioni admin né dalle nuove prenotazioni dal sito pubblico).
+          </div>
+        )}
 
         {/* Statistics */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
