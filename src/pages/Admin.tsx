@@ -17,8 +17,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import stayupLogo from "@/assets/stayup-logo.png";
-
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || "admin123";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Booking {
   id: string;
@@ -54,8 +53,7 @@ const STOPS = ["Università Cattolica", "Cheope"];
 const GIORNI = ["25 Aprile", "26 Aprile"];
 
 const Admin = () => {
-  const [authenticated, setAuthenticated] = useState(false);
-  const [password, setPassword] = useState("");
+  const { signOut, user } = useAuth();
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [slots, setSlots] = useState<ShuttleSlot[]>([]);
@@ -109,15 +107,11 @@ const Admin = () => {
   const [addSlotType, setAddSlotType] = useState<"andata" | "ritorno">("andata");
   const [newSlotData, setNewSlotData] = useState({ giorno: "25 Aprile", fermata: "Università Cattolica", orario: "", capienza: 50 });
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      setAuthenticated(true);
-      fetchData();
-    } else {
-      toast({ title: "Errore", description: "Password non valida.", variant: "destructive" });
-    }
-  };
+  // Auto-fetch on mount (AdminGuard ensures we are admin & authed)
+  useEffect(() => {
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchData = async () => {
     setLoading(true);
@@ -470,29 +464,6 @@ const Admin = () => {
     toast({ title: "Aggiunto", description: "Nuovo slot creato." });
   };
 
-  // Login screen
-  if (!authenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <Card className="w-full max-w-sm">
-          <CardHeader className="text-center">
-            <Link to="/"><img src={stayupLogo} alt="StayUp" className="w-20 h-auto mx-auto mb-2" /></Link>
-            <CardTitle className="font-heading">Admin</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Inserisci password" required />
-              </div>
-              <Button type="submit" className="w-full">Accedi</Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen px-4 py-8">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -514,7 +485,10 @@ const Admin = () => {
             </Button>
             <Button variant="outline" size="sm" onClick={fetchData}>↻ Aggiorna</Button>
             <Button variant="outline" size="sm" asChild><Link to="/">← Home</Link></Button>
-            <Button variant="outline" size="sm" onClick={() => setAuthenticated(false)}>Logout</Button>
+            {user?.email && (
+              <span className="text-xs text-muted-foreground hidden sm:inline">{user.email}</span>
+            )}
+            <Button variant="outline" size="sm" onClick={signOut}>Logout</Button>
           </div>
         </div>
 
