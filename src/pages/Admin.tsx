@@ -40,6 +40,7 @@ interface ShuttleSlot {
   fermata: string;
   orario: string;
   capienza: number;
+  trip_group_id: string | null;
 }
 
 interface ReturnSlot {
