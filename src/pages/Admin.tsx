@@ -831,7 +831,8 @@ const Admin = () => {
                       <TableHead>Fermata</TableHead>
                       <TableHead>Orario</TableHead>
                       <TableHead className="text-center">Capienza</TableHead>
-                      <TableHead className="text-center">Occupati</TableHead>
+                      <TableHead className="text-center" title="Totale prenotazioni (anche non pagate)">Prenotati</TableHead>
+                      <TableHead className="text-center" title="Solo pagati">Occupati</TableHead>
                       <TableHead className="text-center">Rimanenti</TableHead>
                       <TableHead className="text-center">Azioni</TableHead>
                     </TableRow>
@@ -843,7 +844,8 @@ const Admin = () => {
                         <TableCell>{s.fermata}</TableCell>
                         <TableCell>{s.orario}</TableCell>
                         <TableCell className="text-center">{s.capienza}</TableCell>
-                        <TableCell className="text-center">{s.occupati}</TableCell>
+                        <TableCell className="text-center text-muted-foreground">{s.prenotati}</TableCell>
+                        <TableCell className="text-center font-medium">{s.occupati}</TableCell>
                         <TableCell className="text-center">
                           <span className={s.rimanenti <= 0 ? "text-red-400 font-bold" : s.rimanenti <= 5 ? "text-yellow-400 font-medium" : ""}>
                             {s.rimanenti}
