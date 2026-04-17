@@ -8,6 +8,28 @@
     "confirm": "Conferma",
     "language": "Lingua"
   },
+  "auth": {
+    "title": "Accesso Admin",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Accedi",
+    "signingIn": "Accesso in corso...",
+    "signOut": "Esci",
+    "noSignup": "L'accesso è riservato agli amministratori. La registrazione non è disponibile.",
+    "errors": {
+      "title": "Errore di accesso",
+      "invalid": "Email o password non valide.",
+      "notConfirmed": "Devi confermare l'email prima di accedere. Controlla la tua casella."
+    },
+    "success": {
+      "title": "Accesso effettuato",
+      "message": "Benvenuto."
+    },
+    "forbidden": {
+      "title": "Accesso negato",
+      "message": "Il tuo account non ha i permessi di amministratore."
+    }
+  },
   "index": {
     "wip": "Work in Progress",
     "cta": "Grill Contest Rivergaro 2026"
