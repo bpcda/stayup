@@ -27,7 +27,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { nome, email, telefono, tipo_viaggio, giorno, fermata, orario, orario_ritorno } = body;
+    const { nome, email, telefono, tipo_viaggio, giorno, fermata, orario, orario_ritorno, testMode } = body;
 
     // --- Basic validation ---
     if (!nome || typeof nome !== "string" || nome.trim().length === 0) {
