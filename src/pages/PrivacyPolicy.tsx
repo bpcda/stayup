@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import Footer from "@/components/Footer";
 
 const PrivacyPolicy = () => {
   const { t } = useTranslation();
@@ -72,6 +73,7 @@ const PrivacyPolicy = () => {
           </section>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

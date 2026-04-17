@@ -52,6 +52,7 @@ const GrillContest = () => {
           )}
         </section>
       </div>
+      <Footer />
     </div>
   );
 };
