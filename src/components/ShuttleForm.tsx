@@ -306,7 +306,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
       {needsAndata && (
         <>
           <div className="space-y-2">
-            <Label>Giorno di andata *</Label>
+            <Label>{t("form.departureDay")} *</Label>
             <div className="grid grid-cols-2 gap-3">
               {DAYS.map((d) => (
                 <button
@@ -326,7 +326,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label>Fermata di partenza *</Label>
+            <Label>{t("form.stop")} *</Label>
             <div className="grid grid-cols-2 gap-3">
               {STOPS.map((s) => (
                 <button
@@ -347,11 +347,11 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
 
           {giorno && fermata && (
             <div className="space-y-2">
-              <Label>Orario di partenza *</Label>
+              <Label>{t("form.departureTime")} *</Label>
               {loadingSchedules ? (
-                <p className="text-muted-foreground text-sm">Caricamento orari...</p>
+                <p className="text-muted-foreground text-sm">{t("form.loadingTimes")}</p>
               ) : slots.length === 0 ? (
-                <p className="text-muted-foreground text-sm">Nessun orario disponibile per questa combinazione.</p>
+                <p className="text-muted-foreground text-sm">{t("form.noTimes")}</p>
               ) : (
                 <div className="grid grid-cols-3 gap-2">
                   {slots.map((s) => (
@@ -378,7 +378,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
       {/* Giorno selector for solo ritorno */}
       {needsRitorno && !needsAndata && (
         <div className="space-y-2">
-          <Label>Giorno di ritorno *</Label>
+          <Label>{t("form.returnDay")} *</Label>
           <div className="grid grid-cols-2 gap-3">
             {DAYS.map((d) => (
               <button
@@ -401,11 +401,11 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
       {/* Ritorno time selection — now from DB */}
       {needsRitorno && giorno && (
         <div className="space-y-2">
-          <Label>Orario di ritorno *</Label>
+          <Label>{t("form.returnTime")} *</Label>
           {loadingReturnSlots ? (
-            <p className="text-muted-foreground text-sm">Caricamento orari...</p>
+            <p className="text-muted-foreground text-sm">{t("form.loadingTimes")}</p>
           ) : returnSlots.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Nessun orario di ritorno disponibile.</p>
+            <p className="text-muted-foreground text-sm">{t("form.noReturnTimes")}</p>
           ) : (
             <div className="grid grid-cols-3 gap-2">
               {returnSlots.map((rs) => {
@@ -436,7 +436,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
       {/* Acceptance checkboxes */}
       {tipoViaggio && (
         <div className="space-y-3 pt-2 border-t border-border mt-2">
-          <p className="text-sm font-medium text-foreground pt-2">Prima di prenotare, conferma di aver letto:</p>
+          <p className="text-sm font-medium text-foreground pt-2">{t("form.beforeBooking")}</p>
 
           <div className="flex items-start space-x-3">
             <Checkbox
@@ -446,7 +446,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
               className="mt-0.5"
             />
             <label htmlFor="pagamento" className="text-sm text-muted-foreground leading-snug cursor-pointer">
-              La navetta costa <strong className="text-foreground">6€</strong> da pagare tramite PayPal "Beni e Servizi". La prenotazione è valida <strong className="text-foreground">solo dopo il pagamento</strong>. Non è possibile pagare in contanti o sul bus. *
+              <Trans i18nKey="form.consentPayment" components={{ strong: <strong className="text-foreground" /> }} />
             </label>
           </div>
 
@@ -458,7 +458,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
               className="mt-0.5"
             />
             <label htmlFor="rimborso" className="text-sm text-muted-foreground leading-snug cursor-pointer">
-              Il rimborso è possibile solo se l'organizzazione non sarà in grado di garantire il servizio. L'organizzazione si riserva la facoltà di selezione alla salita e di variare gli orari. *
+              {t("form.consentRefund")}
             </label>
           </div>
 
@@ -470,22 +470,20 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
               className="mt-0.5"
             />
             <label htmlFor="termini" className="text-sm text-muted-foreground leading-snug cursor-pointer">
-              Accetto i{" "}
-              <Link to="/termini" target="_blank" className="text-primary underline hover:text-primary/80">
-                Termini e Condizioni
-              </Link>{" "}
-              e l'{" "}
-              <Link to="/privacy" target="_blank" className="text-primary underline hover:text-primary/80">
-                Informativa sulla Privacy
-              </Link>{" "}
-              *
+              <Trans
+                i18nKey="form.consentTerms"
+                components={{
+                  termsLink: <Link to="/termini" target="_blank" className="text-primary underline hover:text-primary/80" />,
+                  privacyLink: <Link to="/privacy" target="_blank" className="text-primary underline hover:text-primary/80" />,
+                }}
+              />
             </label>
           </div>
         </div>
       )}
 
       <Button type="submit" variant="hero" size="lg" className="w-full mt-4" disabled={loading || !accettaTermini || !accettaPagamento || !accettaRimborso}>
-        {loading ? "Invio in corso..." : "Prenota Navetta"}
+        {loading ? t("form.submitting") : t("form.submitBtn")}
       </Button>
     </form>
   );
