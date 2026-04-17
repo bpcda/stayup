@@ -8,6 +8,28 @@
     "confirm": "Confirm",
     "language": "Language"
   },
+  "auth": {
+    "title": "Admin Sign In",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign in",
+    "signingIn": "Signing in...",
+    "signOut": "Sign out",
+    "noSignup": "Access is restricted to administrators. Sign up is not available.",
+    "errors": {
+      "title": "Sign-in error",
+      "invalid": "Invalid email or password.",
+      "notConfirmed": "Please confirm your email before signing in. Check your inbox."
+    },
+    "success": {
+      "title": "Signed in",
+      "message": "Welcome."
+    },
+    "forbidden": {
+      "title": "Access denied",
+      "message": "Your account does not have admin permissions."
+    }
+  },
   "index": {
     "wip": "Work in Progress",
     "cta": "Grill Contest Rivergaro 2026"
