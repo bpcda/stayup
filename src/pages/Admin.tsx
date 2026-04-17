@@ -581,7 +581,15 @@ const Admin = () => {
         {/* Filters */}
         <Card>
           <CardHeader><CardTitle className="text-lg">Filtri</CardTitle></CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="space-y-1">
+              <Label className="text-xs">Cerca (nome, email, telefono)</Label>
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cerca iscritti..."
+              />
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-1">
                 <Label className="text-xs">Giorno</Label>
@@ -621,7 +629,14 @@ const Admin = () => {
         {/* Bookings table */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Lista Iscritti ({filteredBookings.length})</CardTitle>
+            <CardTitle className="text-lg">
+              Lista Iscritti ({filteredBookings.length})
+              {filteredBookings.length > PAGE_SIZE && (
+                <span className="ml-2 text-sm font-normal text-muted-foreground">
+                  — pag. {pageSafe}/{totalPages}
+                </span>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -629,57 +644,104 @@ const Admin = () => {
             ) : filteredBookings.length === 0 ? (
               <p className="text-muted-foreground text-sm">Nessun iscritto trovato.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Telefono</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Giorno</TableHead>
-                      <TableHead>Fermata</TableHead>
-                      <TableHead>Andata</TableHead>
-                      <TableHead>Ritorno</TableHead>
-                      <TableHead>Pagamento</TableHead>
-                      <TableHead>Azioni</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredBookings.map((b) => (
-                      <TableRow key={b.id}>
-                        <TableCell className="font-medium">{b.nome}</TableCell>
-                        <TableCell>{b.email}</TableCell>
-                        <TableCell>{b.telefono}</TableCell>
-                        <TableCell className="capitalize">{b.tipo_viaggio?.replace("_", " + ") || "—"}</TableCell>
-                        <TableCell>{b.giorno || "/"}</TableCell>
-                        <TableCell>{b.fermata || "/"}</TableCell>
-                        <TableCell>{b.orario || "/"}</TableCell>
-                        <TableCell>{b.orario_ritorno || "/"}</TableCell>
-                        <TableCell>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            b.pagato ? "bg-green-900/30 text-green-400" : "bg-red-900/30 text-red-400"
-                          }`}>
-                            {b.pagato ? "Pagato" : "Non pagato"}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1 flex-wrap">
-                            <Button size="sm" variant="outline" onClick={() => togglePagato(b)}>
-                              {b.pagato ? "↩ Annulla" : "✓ Pagato"}
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => openMoveDialog(b)}>Sposta</Button>
-                            <Button size="sm" variant="outline" onClick={() => sendConfirmEmail(b)}>
-                              {b.pagato ? "✉ Riepilogo" : "✉ Pagamento"}
-                            </Button>
-                            <Button size="sm" variant="destructive" onClick={() => askDeleteBooking(b)}>🗑 Elimina</Button>
-                          </div>
-                        </TableCell>
+              <>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Telefono</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Giorno</TableHead>
+                        <TableHead>Fermata</TableHead>
+                        <TableHead>Andata</TableHead>
+                        <TableHead>Ritorno</TableHead>
+                        <TableHead>Pagamento</TableHead>
+                        <TableHead>Azioni</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedBookings.map((b) => (
+                        <TableRow key={b.id}>
+                          <TableCell className="font-medium">{b.nome}</TableCell>
+                          <TableCell>{b.email}</TableCell>
+                          <TableCell>{b.telefono}</TableCell>
+                          <TableCell className="capitalize">{b.tipo_viaggio?.replace("_", " + ") || "—"}</TableCell>
+                          <TableCell>{b.giorno || "/"}</TableCell>
+                          <TableCell>{b.fermata || "/"}</TableCell>
+                          <TableCell>{b.orario || "/"}</TableCell>
+                          <TableCell>{b.orario_ritorno || "/"}</TableCell>
+                          <TableCell>
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              b.pagato ? "bg-green-900/30 text-green-400" : "bg-red-900/30 text-red-400"
+                            }`}>
+                              {b.pagato ? "Pagato" : "Non pagato"}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1 flex-wrap">
+                              <Button size="sm" variant="outline" onClick={() => togglePagato(b)}>
+                                {b.pagato ? "↩ Annulla" : "✓ Pagato"}
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => openMoveDialog(b)}>Sposta</Button>
+                              <Button size="sm" variant="outline" onClick={() => sendConfirmEmail(b)}>
+                                {b.pagato ? "✉ Riepilogo" : "✉ Pagamento"}
+                              </Button>
+                              <Button size="sm" variant="destructive" onClick={() => askDeleteBooking(b)}>🗑 Elimina</Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between gap-2 pt-4 flex-wrap">
+                    <p className="text-xs text-muted-foreground">
+                      Mostrando {(pageSafe - 1) * PAGE_SIZE + 1}–{Math.min(pageSafe * PAGE_SIZE, filteredBookings.length)} di {filteredBookings.length}
+                    </p>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setCurrentPage(1)}
+                        disabled={pageSafe === 1}
+                      >
+                        «
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={pageSafe === 1}
+                      >
+                        ‹ Prec
+                      </Button>
+                      <span className="px-3 text-sm font-medium">
+                        {pageSafe} / {totalPages}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={pageSafe === totalPages}
+                      >
+                        Succ ›
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setCurrentPage(totalPages)}
+                        disabled={pageSafe === totalPages}
+                      >
+                        »
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
