@@ -44,7 +44,7 @@ const FALLBACK_SCHEDULES: Record<string, string[]> = {
 
 const FALLBACK_RETURN_TIMES = ["17:45", "19:15", "21:45", "23:00", "00:30", "2:00"];
 
-const TIPO_VALUES: TipoViaggio[] = ["andata", "ritorno", "andata_ritorno"];
+const TIPO_VALUES: TipoViaggio[] = ["andata_ritorno", "andata", "ritorno"];
 
 const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
   const { t } = useTranslation();
