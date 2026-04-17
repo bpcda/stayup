@@ -19,7 +19,15 @@ serve(async (req) => {
       throw new Error("RESEND_API_KEY is not configured");
     }
 
-    const { nome, email, telefono, giorno, fermata, orario_andata, orario_ritorno, confirmed, spostamento } = await req.json();
+    const { nome, email, telefono, giorno, fermata, orario_andata, orario_ritorno, confirmed, spostamento, testMode } = await req.json();
+
+    if (testMode === true) {
+      console.log("[TEST MODE] Email NOT sent. Payload:", { nome, email, confirmed, spostamento });
+      return new Response(JSON.stringify({ success: true, testMode: true, skipped: true }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (!nome || !email) {
       return new Response(
