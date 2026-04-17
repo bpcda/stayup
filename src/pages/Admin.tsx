@@ -224,14 +224,13 @@ const Admin = () => {
   // Return slot stats — capacity counts ONLY paid bookings
   const returnSlotStats = useMemo(() => {
     return returnSlots.map((slot) => {
-      const count = bookings.filter(
-        (b) =>
-          b.giorno === slot.giorno &&
-          b.orario_ritorno === slot.orario &&
-          (b.tipo_viaggio === "ritorno" || b.tipo_viaggio === "andata_ritorno") &&
-          b.pagato
-      ).length;
-      return { ...slot, occupati: count, rimanenti: slot.capienza - count };
+      const matches = (b: Booking) =>
+        b.giorno === slot.giorno &&
+        b.orario_ritorno === slot.orario &&
+        (b.tipo_viaggio === "ritorno" || b.tipo_viaggio === "andata_ritorno");
+      const prenotati = bookings.filter(matches).length;
+      const occupati = bookings.filter((b) => matches(b) && b.pagato).length;
+      return { ...slot, prenotati, occupati, rimanenti: slot.capienza - occupati };
     });
   }, [returnSlots, bookings]);
 
