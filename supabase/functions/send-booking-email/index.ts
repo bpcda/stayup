@@ -42,7 +42,7 @@ serve(async (req) => {
     const htmlContent = `
       <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #f5f5f5; border-radius: 12px; overflow: hidden;">
         <div style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 24px; text-align: center;">
-          <h1 style="margin: 0; font-size: 24px; color: #0a0a0a; font-weight: 700;">StayUp</h1>
+          <img src="https://drebkzidqxekaepjpsmc.supabase.co/storage/v1/object/public/misc/stayup.png" alt="StayUp" width="120" style="display: inline-block; max-width: 120px; height: auto;" />
         </div>
         <div style="padding: 32px 24px;">
           <h2 style="color: #f59e0b; margin: 0 0 20px; font-size: 20px;">${isSpostamento ? "Orario modificato ⚠️" : isConfirmed ? "Prenotazione confermata ✅" : "Completa il pagamento"}</h2>
