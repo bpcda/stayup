@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import ShuttleForm from "@/components/ShuttleForm";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import eventLogo from "@/assets/loghi-evento.png";
+import grillLogo from "@/assets/grill-contest-logo.png";
+import stayupLogo from "@/assets/stayup-logo-dark.png";
 
 const GrillContest = () => {
   const [submitted, setSubmitted] = useState(false);
@@ -20,14 +21,27 @@ const GrillContest = () => {
         </div>
 
         <section className="text-center mb-12">
-          <Link to="/" className="inline-block mb-6">
-            <div className="bg-foreground rounded-2xl px-8 py-6 inline-flex items-center justify-center">
-              <img
-                src={eventLogo}
-                alt="Grill Contest × StayUp"
-                className="w-auto h-24 md:h-28 max-w-full"
-              />
+          <Link
+            to="/"
+            aria-label="Grill Contest × StayUp"
+            className="flex items-center justify-center gap-4 sm:gap-6 md:gap-8 mb-6 w-full"
+          >
+            <img
+              src={grillLogo}
+              alt="Grill Contest"
+              className="h-20 sm:h-24 md:h-28 lg:h-32 w-auto object-contain shrink"
+            />
+            <div
+              aria-hidden="true"
+              className="text-foreground font-light leading-none select-none text-3xl sm:text-4xl md:text-5xl lg:text-6xl"
+            >
+              ×
             </div>
+            <img
+              src={stayupLogo}
+              alt="StayUp"
+              className="h-16 sm:h-20 md:h-24 lg:h-28 w-auto object-contain shrink"
+            />
           </Link>
           <h1 className="text-3xl md:text-4xl font-bold mb-4 font-heading">
             {t("grill.title")}
