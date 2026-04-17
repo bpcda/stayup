@@ -62,6 +62,19 @@ const Admin = () => {
   const [returnSlots, setReturnSlots] = useState<ReturnSlot[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // TEST mode: persistito in localStorage, condiviso con form pubblico
+  const [testMode, setTestMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("stayup_test_mode") === "1";
+  });
+  useEffect(() => {
+    localStorage.setItem("stayup_test_mode", testMode ? "1" : "0");
+  }, [testMode]);
+
+  // Delete confirmation
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bookingToDelete, setBookingToDelete] = useState<Booking | null>(null);
+
   // Filters
   const [filterGiorno, setFilterGiorno] = useState("all");
   const [filterFermata, setFilterFermata] = useState("all");
