@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { Trans, useTranslation } from "react-i18next";
 import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,13 +44,15 @@ const FALLBACK_SCHEDULES: Record<string, string[]> = {
 
 const FALLBACK_RETURN_TIMES = ["17:45", "19:15", "21:45", "23:00", "00:30", "2:00"];
 
-const TIPO_OPTIONS: { value: TipoViaggio; label: string }[] = [
-  { value: "andata", label: "Solo Andata" },
-  { value: "ritorno", label: "Solo Ritorno" },
-  { value: "andata_ritorno", label: "Andata e Ritorno" },
-];
+const TIPO_VALUES: TipoViaggio[] = ["andata", "ritorno", "andata_ritorno"];
 
 const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
+  const { t } = useTranslation();
+  const tipoLabels: Record<TipoViaggio, string> = {
+    andata: t("form.tripOnewayOut"),
+    ritorno: t("form.tripOnewayBack"),
+    andata_ritorno: t("form.tripRound"),
+  };
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
