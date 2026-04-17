@@ -59,47 +59,71 @@ serve(async (req) => {
         return jsonError("Fermata non valida", 400);
       }
 
-      const { data: dbSlots, error: slotsError } = await supabase
+      // Carica TUTTI gli slot del giorno (entrambe fermate) per calcolare capacità condivisa per trip_group_id
+      const { data: allDaySlots, error: slotsError } = await supabase
         .from("shuttle_slots")
-        .select("orario, capienza")
+        .select("orario, capienza, fermata, trip_group_id")
         .eq("giorno", giorno)
-        .eq("fermata", fermata)
         .order("orario", { ascending: true });
 
-      if (slotsError || !dbSlots || dbSlots.length === 0) {
+      if (slotsError || !allDaySlots || allDaySlots.length === 0) {
+        return jsonError("Nessuno slot disponibile per questo giorno", 400);
+      }
+
+      // Slot della fermata richiesta dall'utente
+      const stopSlots = allDaySlots.filter((s: { fermata: string }) => s.fermata === fermata);
+      if (stopSlots.length === 0) {
         return jsonError("Nessuno slot disponibile per questa fermata/giorno", 400);
       }
 
-      const validTimes = dbSlots.map((s: { orario: string }) => s.orario);
+      const validTimes = stopSlots.map((s: { orario: string }) => s.orario);
       const capacityMap: Record<string, number> = {};
-      dbSlots.forEach((s: { orario: string; capienza: number }) => {
+      const tripGroupByOrario: Record<string, string | null> = {};
+      stopSlots.forEach((s: { orario: string; capienza: number; trip_group_id: string | null }) => {
         capacityMap[s.orario] = s.capienza;
+        tripGroupByOrario[s.orario] = s.trip_group_id;
       });
 
       if (!orario || !validTimes.includes(orario)) {
         return jsonError("Orario di andata non valido per questa fermata", 400);
       }
 
-      // Count only PAID bookings for capacity check
-      const { data: paidBookings } = await supabase
-        .from("bookings")
-        .select("orario")
-        .eq("giorno", giorno)
-        .eq("fermata", fermata)
-        .eq("pagato", true)
-        .in("orario", validTimes);
-
-      const paidCounts: Record<string, number> = {};
-      (paidBookings || []).forEach((b: { orario: string }) => {
-        paidCounts[b.orario] = (paidCounts[b.orario] || 0) + 1;
+      // Mappa trip_group_id -> tutti gli (orario,fermata) che lo condividono
+      const groupMembers: Record<string, { orario: string; fermata: string }[]> = {};
+      allDaySlots.forEach((s: { orario: string; fermata: string; trip_group_id: string | null }) => {
+        if (!s.trip_group_id) return;
+        if (!groupMembers[s.trip_group_id]) groupMembers[s.trip_group_id] = [];
+        groupMembers[s.trip_group_id].push({ orario: s.orario, fermata: s.fermata });
       });
 
+      // Conta prenotazioni PAGATE per trip_group_id (capacità condivisa)
+      const { data: paidBookings } = await supabase
+        .from("bookings")
+        .select("orario, fermata")
+        .eq("giorno", giorno)
+        .eq("pagato", true);
+
+      // Funzione: conta i pagati che appartengono al trip_group di un dato orario della fermata corrente
+      const countForOrario = (o: string): number => {
+        const tg = tripGroupByOrario[o];
+        if (!tg) {
+          // Fallback: conta solo stessa fermata+orario se non c'è gruppo
+          return (paidBookings || []).filter((b: { orario: string; fermata: string }) =>
+            b.orario === o && b.fermata === fermata
+          ).length;
+        }
+        const members = groupMembers[tg] || [];
+        return (paidBookings || []).filter((b: { orario: string; fermata: string }) =>
+          members.some((m) => m.orario === b.orario && m.fermata === b.fermata)
+        ).length;
+      };
+
       const slotIdx = validTimes.indexOf(orario);
-      if ((paidCounts[orario] || 0) >= capacityMap[orario]) {
+      if (countForOrario(orario) >= capacityMap[orario]) {
         let bumped = false;
         for (let i = slotIdx + 1; i < validTimes.length; i++) {
           const t = validTimes[i];
-          if ((paidCounts[t] || 0) < capacityMap[t]) {
+          if (countForOrario(t) < capacityMap[t]) {
             finalOrario = t;
             andataBumped = true;
             bumped = true;
@@ -237,6 +261,9 @@ serve(async (req) => {
                 Paga con PayPal
               </a>
             </div>
+            <p style="color: #f59e0b; font-size: 13px; text-align: center; line-height: 1.5; margin: 0 0 12px; font-weight: 600;">
+              ⚠️ Nella causale del pagamento inserisci il tuo nome e quello degli amici per cui paghi (se prenoti per più persone).
+            </p>
             <p style="color: #737373; font-size: 13px; text-align: center; line-height: 1.5;">
               La tua iscrizione sarà confermata manualmente dopo verifica del pagamento.
             </p>
