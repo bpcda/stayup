@@ -362,6 +362,7 @@ const Admin = () => {
           giorno: booking.giorno || "/", fermata: booking.fermata || "/",
           orario_andata: booking.orario || "/", orario_ritorno: booking.orario_ritorno || "/",
           confirmed: booking.pagato,
+          testMode,
         },
       });
       if (error) throw error;
