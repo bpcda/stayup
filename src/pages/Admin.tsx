@@ -972,6 +972,32 @@ const Admin = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Booking Confirmation Dialog */}
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Eliminare {bookingToDelete?.nome}?</DialogTitle>
+            </DialogHeader>
+            <div className="py-4 space-y-2 text-sm">
+              <p className="text-muted-foreground">
+                Stai per eliminare definitivamente questa prenotazione dalla tabella. L'azione non è reversibile.
+              </p>
+              {bookingToDelete && (
+                <div className="rounded-md border border-border bg-muted/30 p-3 space-y-1">
+                  <p><strong>{bookingToDelete.nome}</strong> — {bookingToDelete.email}</p>
+                  <p className="text-muted-foreground text-xs">
+                    {bookingToDelete.giorno} · {bookingToDelete.fermata || "—"} · Andata {bookingToDelete.orario || "—"} · Ritorno {bookingToDelete.orario_ritorno || "—"}
+                  </p>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Annulla</Button>
+              <Button variant="destructive" onClick={confirmDeleteBooking}>Elimina definitivamente</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
