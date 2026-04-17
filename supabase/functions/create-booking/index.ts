@@ -27,7 +27,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { nome, email, telefono, tipo_viaggio, giorno, fermata, orario, orario_ritorno } = body;
+    const { nome, email, telefono, tipo_viaggio, giorno, fermata, orario, orario_ritorno, testMode } = body;
 
     // --- Basic validation ---
     if (!nome || typeof nome !== "string" || nome.trim().length === 0) {
@@ -199,10 +199,12 @@ serve(async (req) => {
       return jsonError("Errore durante il salvataggio della prenotazione", 500);
     }
 
-    // --- Send email ---
+    // --- Send email (skipped in test mode) ---
     const wasBumped = andataBumped || ritornoBumped;
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    if (RESEND_API_KEY) {
+    if (testMode === true) {
+      console.log("[TEST MODE] create-booking: email NOT sent for", email);
+    } else if (RESEND_API_KEY) {
       let bumpNotice = "";
       if (andataBumped) {
         bumpNotice += `<p style="color: #f59e0b; font-weight: 600;">⚠️ Lo slot di andata delle ${orario} era pieno. Sei stato/a spostato/a alle <strong>${finalOrario}</strong>.</p>`;
@@ -214,7 +216,7 @@ serve(async (req) => {
       const htmlContent = `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #f5f5f5; border-radius: 12px; overflow: hidden;">
           <div style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 24px; text-align: center;">
-            <h1 style="margin: 0; font-size: 24px; color: #0a0a0a; font-weight: 700;">StayUp</h1>
+            <img src="https://drebkzidqxekaepjpsmc.supabase.co/storage/v1/object/public/misc/stayup.png" alt="StayUp" width="120" style="display: inline-block; max-width: 120px; height: auto;" />
           </div>
           <div style="padding: 32px 24px;">
             <h2 style="color: #f59e0b; margin: 0 0 20px; font-size: 20px;">Completa il pagamento</h2>

@@ -62,6 +62,19 @@ const Admin = () => {
   const [returnSlots, setReturnSlots] = useState<ReturnSlot[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // TEST mode: persistito in localStorage, condiviso con form pubblico
+  const [testMode, setTestMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("stayup_test_mode") === "1";
+  });
+  useEffect(() => {
+    localStorage.setItem("stayup_test_mode", testMode ? "1" : "0");
+  }, [testMode]);
+
+  // Delete confirmation
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bookingToDelete, setBookingToDelete] = useState<Booking | null>(null);
+
   // Filters
   const [filterGiorno, setFilterGiorno] = useState("all");
   const [filterFermata, setFilterFermata] = useState("all");
@@ -247,6 +260,7 @@ const Admin = () => {
               giorno: booking.giorno || "/", fermata: booking.fermata || "/",
               orario_andata: booking.orario || "/", orario_ritorno: booking.orario_ritorno || "/",
               confirmed: true,
+              testMode,
             },
           })
           .catch((err) => console.warn("Confirm email failed:", err));
@@ -255,7 +269,27 @@ const Admin = () => {
     setBookings((prev) =>
       prev.map((b) => (b.id === booking.id ? { ...b, pagato: newPagato, stato: newPagato ? "confirmed" : "pending" } : b))
     );
-    toast({ title: "Aggiornato", description: `${booking.nome} → ${newPagato ? "Pagato" : "Non pagato"}` });
+    toast({ title: "Aggiornato", description: `${booking.nome} → ${newPagato ? "Pagato" : "Non pagato"}${testMode && newPagato ? " (TEST: nessuna mail)" : ""}` });
+  };
+
+  const askDeleteBooking = (booking: Booking) => {
+    setBookingToDelete(booking);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteBooking = async () => {
+    if (!bookingToDelete) return;
+    if (isSupabaseConfigured) {
+      const { error } = await supabase.from("bookings").delete().eq("id", bookingToDelete.id);
+      if (error) {
+        toast({ title: "Errore", description: "Eliminazione fallita.", variant: "destructive" });
+        return;
+      }
+    }
+    setBookings((prev) => prev.filter((b) => b.id !== bookingToDelete.id));
+    setDeleteDialogOpen(false);
+    setBookingToDelete(null);
+    toast({ title: "Eliminato", description: `${bookingToDelete.nome} rimosso dalla tabella.` });
   };
 
   const openMoveDialog = (booking: Booking) => {
@@ -305,6 +339,7 @@ const Admin = () => {
             orario_ritorno: hasRitorno ? newOrarioRitorno : (selectedBooking.orario_ritorno || "/"),
             spostamento: true,
             confirmed: selectedBooking.pagato,
+            testMode,
           },
         })
         .catch((err) => console.warn("Move notification email failed:", err));
@@ -327,6 +362,7 @@ const Admin = () => {
           giorno: booking.giorno || "/", fermata: booking.fermata || "/",
           orario_andata: booking.orario || "/", orario_ritorno: booking.orario_ritorno || "/",
           confirmed: booking.pagato,
+          testMode,
         },
       });
       if (error) throw error;
@@ -445,12 +481,27 @@ const Admin = () => {
             <Link to="/"><img src={stayupLogo} alt="StayUp" className="w-16 h-auto" /></Link>
             <h1 className="text-2xl font-bold font-heading">Dashboard Admin</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant={testMode ? "default" : "outline"}
+              size="sm"
+              onClick={() => setTestMode((v) => !v)}
+              className={testMode ? "bg-yellow-500 hover:bg-yellow-600 text-black" : ""}
+              title="Quando attivo, nessuna mail viene inviata. Le scritture su DB avvengono normalmente."
+            >
+              {testMode ? "🧪 TEST ON" : "🧪 TEST OFF"}
+            </Button>
             <Button variant="outline" size="sm" onClick={fetchData}>↻ Aggiorna</Button>
             <Button variant="outline" size="sm" asChild><Link to="/">← Home</Link></Button>
             <Button variant="outline" size="sm" onClick={() => setAuthenticated(false)}>Logout</Button>
           </div>
         </div>
+
+        {testMode && (
+          <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 px-4 py-2 text-sm text-yellow-300">
+            <strong>Modalità TEST attiva:</strong> tutte le operazioni scrivono sul database, ma <em>nessuna email viene inviata</em> (né dalle azioni admin né dalle nuove prenotazioni dal sito pubblico).
+          </div>
+        )}
 
         {/* Statistics */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -600,6 +651,7 @@ const Admin = () => {
                             <Button size="sm" variant="outline" onClick={() => sendConfirmEmail(b)}>
                               {b.pagato ? "✉ Riepilogo" : "✉ Pagamento"}
                             </Button>
+                            <Button size="sm" variant="destructive" onClick={() => askDeleteBooking(b)}>🗑 Elimina</Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -917,6 +969,32 @@ const Admin = () => {
             <DialogFooter>
               <Button variant="outline" onClick={() => setAddSlotDialog(false)}>Annulla</Button>
               <Button onClick={saveAddSlot}>Aggiungi</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Booking Confirmation Dialog */}
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Eliminare {bookingToDelete?.nome}?</DialogTitle>
+            </DialogHeader>
+            <div className="py-4 space-y-2 text-sm">
+              <p className="text-muted-foreground">
+                Stai per eliminare definitivamente questa prenotazione dalla tabella. L'azione non è reversibile.
+              </p>
+              {bookingToDelete && (
+                <div className="rounded-md border border-border bg-muted/30 p-3 space-y-1">
+                  <p><strong>{bookingToDelete.nome}</strong> — {bookingToDelete.email}</p>
+                  <p className="text-muted-foreground text-xs">
+                    {bookingToDelete.giorno} · {bookingToDelete.fermata || "—"} · Andata {bookingToDelete.orario || "—"} · Ritorno {bookingToDelete.orario_ritorno || "—"}
+                  </p>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Annulla</Button>
+              <Button variant="destructive" onClick={confirmDeleteBooking}>Elimina definitivamente</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

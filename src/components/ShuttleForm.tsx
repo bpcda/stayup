@@ -210,6 +210,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
 
     try {
       if (isSupabaseConfigured) {
+        const testMode = typeof window !== "undefined" && localStorage.getItem("stayup_test_mode") === "1";
         const { data, error } = await supabase.functions.invoke("create-booking", {
           body: {
             nome,
@@ -220,6 +221,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
             fermata: needsAndata ? fermata : null,
             orario: needsAndata ? orario : null,
             orario_ritorno: needsRitorno ? orarioRitorno : null,
+            testMode,
           },
         });
 
