@@ -21,11 +21,13 @@ const GrillContest = () => {
 
         <section className="text-center mb-12">
           <Link to="/" className="inline-block mb-6">
-            <img
-              src={eventLogo}
-              alt="Grill Contest"
-              className="w-40 md:w-48 h-auto mx-auto"
-            />
+            <div className="bg-foreground rounded-2xl px-8 py-6 inline-flex items-center justify-center">
+              <img
+                src={eventLogo}
+                alt="Grill Contest × StayUp"
+                className="w-auto h-24 md:h-28 max-w-full"
+              />
+            </div>
           </Link>
           <h1 className="text-3xl md:text-4xl font-bold mb-4 font-heading">
             {t("grill.title")}
