@@ -444,24 +444,58 @@ const Admin = () => {
       toast({ title: "Errore", description: "Inserisci un orario.", variant: "destructive" });
       return;
     }
-    const table = addSlotType === "andata" ? "shuttle_slots" : "shuttle_return_slots";
-    const insertPayload: any = { giorno: newSlotData.giorno, orario: newSlotData.orario, capienza: newSlotData.capienza };
-    if (addSlotType === "andata") insertPayload.fermata = newSlotData.fermata;
 
-    if (isSupabaseConfigured) {
-      const { data, error } = await supabase.from(table).insert(insertPayload).select().single();
-      if (error) {
-        toast({ title: "Errore", description: "Inserimento fallito.", variant: "destructive" });
-        return;
-      }
-      if (addSlotType === "andata") {
-        setSlots((prev) => [...prev, data]);
-      } else {
+    // RITORNO: comportamento invariato (singola riga)
+    if (addSlotType === "ritorno") {
+      const insertPayload: any = { giorno: newSlotData.giorno, orario: newSlotData.orario, capienza: newSlotData.capienza };
+      if (isSupabaseConfigured) {
+        const { data, error } = await supabase.from("shuttle_return_slots").insert(insertPayload).select().single();
+        if (error) {
+          toast({ title: "Errore", description: error.message, variant: "destructive" });
+          return;
+        }
         setReturnSlots((prev) => [...prev, data]);
       }
+      setAddSlotDialog(false);
+      toast({ title: "Aggiunto", description: "Nuovo slot ritorno creato." });
+      return;
+    }
+
+    // ANDATA: la navetta è UNA sola — parte dall'Università, +15 min al Cheope
+    // L'admin inserisce solo l'orario di partenza dall'università.
+    const uniOrario = newSlotData.orario.trim();
+    const match = uniOrario.match(/^(\d{1,2}):(\d{2})$/);
+    if (!match) {
+      toast({ title: "Errore", description: "Formato orario non valido (HH:MM).", variant: "destructive" });
+      return;
+    }
+    const h = parseInt(match[1], 10);
+    const m = parseInt(match[2], 10);
+    if (h > 23 || m > 59) {
+      toast({ title: "Errore", description: "Orario non valido.", variant: "destructive" });
+      return;
+    }
+    // Calcola Cheope = Uni + 15 min
+    const totalMin = h * 60 + m + 15;
+    const ch = Math.floor(totalMin / 60) % 24;
+    const cm = totalMin % 60;
+    const cheopeOrario = `${String(ch).padStart(2, "0")}:${String(cm).padStart(2, "0")}`;
+
+    if (isSupabaseConfigured) {
+      const tripGroupId = crypto.randomUUID();
+      const rows = [
+        { giorno: newSlotData.giorno, fermata: "Università Cattolica", orario: uniOrario, capienza: newSlotData.capienza, trip_group_id: tripGroupId },
+        { giorno: newSlotData.giorno, fermata: "Cheope", orario: cheopeOrario, capienza: newSlotData.capienza, trip_group_id: tripGroupId },
+      ];
+      const { data, error } = await supabase.from("shuttle_slots").insert(rows).select();
+      if (error) {
+        toast({ title: "Errore", description: error.message, variant: "destructive" });
+        return;
+      }
+      setSlots((prev) => [...prev, ...(data || [])]);
     }
     setAddSlotDialog(false);
-    toast({ title: "Aggiunto", description: "Nuovo slot creato." });
+    toast({ title: "Aggiunto", description: `Navetta creata: Università ${uniOrario} → Cheope ${cheopeOrario}` });
   };
 
   return (
