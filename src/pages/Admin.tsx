@@ -40,6 +40,7 @@ interface ShuttleSlot {
   fermata: string;
   orario: string;
   capienza: number;
+  trip_group_id: string | null;
 }
 
 interface ReturnSlot {
@@ -182,15 +183,32 @@ const Admin = () => {
     return filteredBookings.slice(start, start + PAGE_SIZE);
   }, [filteredBookings, pageSafe]);
 
-  // Shuttle slot stats — capacity counts ONLY paid bookings
+  // Helper: per ogni slot di andata, ricava i membri del suo trip_group (entrambe fermate)
+  // così capienza/occupati/prenotati sono CONDIVISI fra Università e Cheope.
+  const slotGroupMembers = useMemo(() => {
+    const map: Record<string, { fermata: string; orario: string }[]> = {};
+    slots.forEach((s) => {
+      if (!s.trip_group_id) return;
+      if (!map[s.trip_group_id]) map[s.trip_group_id] = [];
+      map[s.trip_group_id].push({ fermata: s.fermata, orario: s.orario });
+    });
+    return map;
+  }, [slots]);
+
+  // Shuttle slot stats — capacity counts ONLY paid bookings, condiviso sul trip_group
   const slotStats = useMemo(() => {
     return slots.map((slot) => {
-      const count = bookings.filter(
-        (b) => b.giorno === slot.giorno && b.fermata === slot.fermata && b.orario === slot.orario && b.pagato
-      ).length;
-      return { ...slot, occupati: count, rimanenti: slot.capienza - count };
+      const members = slot.trip_group_id
+        ? slotGroupMembers[slot.trip_group_id] || [{ fermata: slot.fermata, orario: slot.orario }]
+        : [{ fermata: slot.fermata, orario: slot.orario }];
+      const matches = (b: Booking) =>
+        b.giorno === slot.giorno &&
+        members.some((m) => m.fermata === b.fermata && m.orario === b.orario);
+      const prenotati = bookings.filter(matches).length;
+      const occupati = bookings.filter((b) => matches(b) && b.pagato).length;
+      return { ...slot, prenotati, occupati, rimanenti: slot.capienza - occupati };
     });
-  }, [slots, bookings]);
+  }, [slots, bookings, slotGroupMembers]);
 
   const filteredSlotStats = useMemo(() => {
     return slotStats.filter((s) => {
@@ -206,14 +224,13 @@ const Admin = () => {
   // Return slot stats — capacity counts ONLY paid bookings
   const returnSlotStats = useMemo(() => {
     return returnSlots.map((slot) => {
-      const count = bookings.filter(
-        (b) =>
-          b.giorno === slot.giorno &&
-          b.orario_ritorno === slot.orario &&
-          (b.tipo_viaggio === "ritorno" || b.tipo_viaggio === "andata_ritorno") &&
-          b.pagato
-      ).length;
-      return { ...slot, occupati: count, rimanenti: slot.capienza - count };
+      const matches = (b: Booking) =>
+        b.giorno === slot.giorno &&
+        b.orario_ritorno === slot.orario &&
+        (b.tipo_viaggio === "ritorno" || b.tipo_viaggio === "andata_ritorno");
+      const prenotati = bookings.filter(matches).length;
+      const occupati = bookings.filter((b) => matches(b) && b.pagato).length;
+      return { ...slot, prenotati, occupati, rimanenti: slot.capienza - occupati };
     });
   }, [returnSlots, bookings]);
 
@@ -228,12 +245,17 @@ const Admin = () => {
   }, [returnSlotStats, returnFilterGiorno, returnFilterRiempimento]);
 
   const downloadPassengerList = (slot: typeof slotStats[0]) => {
+    const members = slot.trip_group_id
+      ? slotGroupMembers[slot.trip_group_id] || [{ fermata: slot.fermata, orario: slot.orario }]
+      : [{ fermata: slot.fermata, orario: slot.orario }];
     const passengers = bookings.filter(
-      (b) => b.giorno === slot.giorno && b.fermata === slot.fermata && b.orario === slot.orario && b.pagato
+      (b) => b.giorno === slot.giorno && b.pagato && members.some((m) => m.fermata === b.fermata && m.orario === b.orario)
     );
-    const data = passengers.map((p, i) => ({ "N.": i + 1, Nome: p.nome, Telefono: p.telefono, Email: p.email }));
+    const data = passengers.map((p, i) => ({
+      "N.": i + 1, Nome: p.nome, Telefono: p.telefono, Email: p.email, Fermata: p.fermata, Orario: p.orario,
+    }));
     const ws = XLSX.utils.json_to_sheet(data);
-    ws["!cols"] = [{ wch: 5 }, { wch: 25 }, { wch: 18 }, { wch: 30 }];
+    ws["!cols"] = [{ wch: 5 }, { wch: 25 }, { wch: 18 }, { wch: 30 }, { wch: 22 }, { wch: 8 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Passeggeri");
     XLSX.writeFile(wb, `andata_${slot.giorno.replace(/\s/g, "_")}_${slot.fermata.replace(/\s/g, "_")}_${slot.orario}.xlsx`);
@@ -809,7 +831,8 @@ const Admin = () => {
                       <TableHead>Fermata</TableHead>
                       <TableHead>Orario</TableHead>
                       <TableHead className="text-center">Capienza</TableHead>
-                      <TableHead className="text-center">Occupati</TableHead>
+                      <TableHead className="text-center" title="Totale prenotazioni (anche non pagate)">Prenotati</TableHead>
+                      <TableHead className="text-center" title="Solo pagati">Occupati</TableHead>
                       <TableHead className="text-center">Rimanenti</TableHead>
                       <TableHead className="text-center">Azioni</TableHead>
                     </TableRow>
@@ -821,7 +844,8 @@ const Admin = () => {
                         <TableCell>{s.fermata}</TableCell>
                         <TableCell>{s.orario}</TableCell>
                         <TableCell className="text-center">{s.capienza}</TableCell>
-                        <TableCell className="text-center">{s.occupati}</TableCell>
+                        <TableCell className="text-center text-muted-foreground">{s.prenotati}</TableCell>
+                        <TableCell className="text-center font-medium">{s.occupati}</TableCell>
                         <TableCell className="text-center">
                           <span className={s.rimanenti <= 0 ? "text-red-400 font-bold" : s.rimanenti <= 5 ? "text-yellow-400 font-medium" : ""}>
                             {s.rimanenti}
@@ -887,7 +911,8 @@ const Admin = () => {
                       <TableHead>Giorno</TableHead>
                       <TableHead>Orario Ritorno</TableHead>
                       <TableHead className="text-center">Capienza</TableHead>
-                      <TableHead className="text-center">Occupati</TableHead>
+                      <TableHead className="text-center" title="Totale prenotazioni (anche non pagate)">Prenotati</TableHead>
+                      <TableHead className="text-center" title="Solo pagati">Occupati</TableHead>
                       <TableHead className="text-center">Rimanenti</TableHead>
                       <TableHead className="text-center">Azioni</TableHead>
                     </TableRow>
@@ -898,7 +923,8 @@ const Admin = () => {
                         <TableCell>{s.giorno}</TableCell>
                         <TableCell>{s.orario}</TableCell>
                         <TableCell className="text-center">{s.capienza}</TableCell>
-                        <TableCell className="text-center">{s.occupati}</TableCell>
+                        <TableCell className="text-center text-muted-foreground">{s.prenotati}</TableCell>
+                        <TableCell className="text-center font-medium">{s.occupati}</TableCell>
                         <TableCell className="text-center">
                           <span className={s.rimanenti <= 0 ? "text-red-400 font-bold" : s.rimanenti <= 5 ? "text-yellow-400 font-medium" : ""}>
                             {s.rimanenti}
