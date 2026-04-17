@@ -651,6 +651,7 @@ const Admin = () => {
                             <Button size="sm" variant="outline" onClick={() => sendConfirmEmail(b)}>
                               {b.pagato ? "✉ Riepilogo" : "✉ Pagamento"}
                             </Button>
+                            <Button size="sm" variant="destructive" onClick={() => askDeleteBooking(b)}>🗑 Elimina</Button>
                           </div>
                         </TableCell>
                       </TableRow>
