@@ -12,17 +12,21 @@ const GrillContest = () => {
   return (
     <div className="min-h-screen px-4 py-8 md:py-16">
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-12">
+        <div className="flex items-center justify-between mb-8">
           <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
             ← {t("common.home")}
-          </Link>
-          <Link to="/">
-            <img src={eventLogo} alt="Grill Contest" className="w-20 h-auto" />
           </Link>
           <LanguageSwitcher />
         </div>
 
         <section className="text-center mb-12">
+          <Link to="/" className="inline-block mb-8">
+            <img
+              src={eventLogo}
+              alt="Grill Contest"
+              className="w-full max-w-md md:max-w-lg h-auto mx-auto"
+            />
+          </Link>
           <h1 className="text-3xl md:text-4xl font-bold mb-4 font-heading">
             {t("grill.title")}
           </h1>
