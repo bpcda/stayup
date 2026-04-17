@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import ShuttleForm from "@/components/ShuttleForm";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import Footer from "@/components/Footer";
 import eventLogo from "@/assets/loghi-evento.png";
 
 const GrillContest = () => {
