@@ -185,27 +185,27 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
     e.preventDefault();
 
     if (!nome || !email || !telefono || !tipoViaggio) {
-      toast({ title: "Errore", description: "Compila tutti i campi obbligatori.", variant: "destructive" });
+      toast({ title: t("common.confirm"), description: t("form.errors.required"), variant: "destructive" });
       return;
     }
 
     if (needsAndata && (!giorno || !fermata || !orario)) {
-      toast({ title: "Errore", description: "Seleziona giorno, fermata e orario per l'andata.", variant: "destructive" });
+      toast({ title: t("common.confirm"), description: t("form.errors.andataMissing"), variant: "destructive" });
       return;
     }
 
     if (needsRitorno && (!giorno || !orarioRitorno)) {
-      toast({ title: "Errore", description: "Seleziona giorno e orario di ritorno.", variant: "destructive" });
+      toast({ title: t("common.confirm"), description: t("form.errors.ritornoMissing"), variant: "destructive" });
       return;
     }
 
     if (needsAndata && needsRitorno && orario && orarioRitorno && timeToMinutes(orarioRitorno) <= timeToMinutes(orario)) {
-      toast({ title: "Errore", description: "L'orario di ritorno deve essere successivo a quello di andata.", variant: "destructive" });
+      toast({ title: t("common.confirm"), description: t("form.errors.returnBeforeDeparture"), variant: "destructive" });
       return;
     }
 
     if (!accettaTermini || !accettaPagamento || !accettaRimborso) {
-      toast({ title: "Errore", description: "Devi accettare tutte le condizioni per procedere.", variant: "destructive" });
+      toast({ title: t("common.confirm"), description: t("form.errors.consentMissing"), variant: "destructive" });
       return;
     }
 
@@ -230,7 +230,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
 
         if (error) throw error;
         if (data?.error) {
-          toast({ title: "Errore", description: data.error, variant: "destructive" });
+          toast({ title: t("common.confirm"), description: data.error, variant: "destructive" });
           setLoading(false);
           return;
         }
@@ -238,15 +238,15 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
         if (data?.bumped) {
           const msgs: string[] = [];
           if (data.finalOrario && data.finalOrario !== orario) {
-            msgs.push(`Andata spostata alle ${data.finalOrario}`);
+            msgs.push(t("form.bumped.andata", { time: data.finalOrario }));
           }
           if (data.finalOrarioRitorno && data.finalOrarioRitorno !== orarioRitorno) {
-            msgs.push(`Ritorno spostato alle ${data.finalOrarioRitorno}`);
+            msgs.push(t("form.bumped.ritorno", { time: data.finalOrarioRitorno }));
           }
           if (msgs.length > 0) {
             toast({
-              title: "Slot pieno — spostamento automatico",
-              description: msgs.join(". ") + ". Controlla la mail per i dettagli.",
+              title: t("form.bumped.title"),
+              description: msgs.join(". ") + ". " + t("form.bumped.checkEmail"),
             });
           }
         }
@@ -257,7 +257,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
       onSuccess();
     } catch (err: any) {
       console.error("Submit error:", err);
-      toast({ title: "Errore", description: "Si è verificato un errore. Riprova.", variant: "destructive" });
+      toast({ title: t("common.confirm"), description: t("form.errors.generic"), variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -267,36 +267,36 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
     <form onSubmit={handleSubmit} className="space-y-5">
       {/* Personal data */}
       <div className="space-y-2">
-        <Label htmlFor="nome">Nome e Cognome *</Label>
-        <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Mario Rossi" required />
+        <Label htmlFor="nome">{t("form.name")} *</Label>
+        <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder={t("form.namePlaceholder")} required />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="email">Email *</Label>
-        <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="mario@email.com" required />
+        <Label htmlFor="email">{t("form.email")} *</Label>
+        <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("form.emailPlaceholder")} required />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="telefono">Telefono *</Label>
-        <Input id="telefono" type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="+39 333 1234567" required />
+        <Label htmlFor="telefono">{t("form.phone")} *</Label>
+        <Input id="telefono" type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder={t("form.phonePlaceholder")} required />
       </div>
 
       {/* Trip type */}
       <div className="space-y-2">
-        <Label>Cosa ti serve? *</Label>
+        <Label>{t("form.tripType")} *</Label>
         <div className="grid grid-cols-3 gap-2">
-          {TIPO_OPTIONS.map((opt) => (
+          {TIPO_VALUES.map((value) => (
             <button
-              key={opt.value}
+              key={value}
               type="button"
-              onClick={() => setTipoViaggio(opt.value)}
+              onClick={() => setTipoViaggio(value)}
               className={`px-3 py-3 rounded-lg border text-sm font-medium transition-all ${
-                tipoViaggio === opt.value
+                tipoViaggio === value
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-border bg-secondary text-foreground hover:border-muted-foreground"
               }`}
             >
-              {opt.label}
+              {tipoLabels[value]}
             </button>
           ))}
         </div>
