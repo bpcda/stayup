@@ -79,6 +79,9 @@ const Admin = () => {
   const [filterGiorno, setFilterGiorno] = useState("all");
   const [filterFermata, setFilterFermata] = useState("all");
   const [filterPagato, setFilterPagato] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 20;
 
   // Shuttle filters
   const [slotFilterGiorno, setSlotFilterGiorno] = useState("all");
@@ -159,20 +162,37 @@ const Admin = () => {
   }, [bookings]);
 
   const filteredBookings = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
     return bookings.filter((b) => {
       if (filterGiorno !== "all" && b.giorno !== filterGiorno) return false;
       if (filterFermata !== "all" && b.fermata !== filterFermata) return false;
       if (filterPagato === "pagato" && !b.pagato) return false;
       if (filterPagato === "non_pagato" && b.pagato) return false;
+      if (q) {
+        const hay = `${b.nome ?? ""} ${b.email ?? ""} ${b.telefono ?? ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
       return true;
     });
-  }, [bookings, filterGiorno, filterFermata, filterPagato]);
+  }, [bookings, filterGiorno, filterFermata, filterPagato, searchQuery]);
 
-  // Shuttle slot stats
+  // Reset page when filters/search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterGiorno, filterFermata, filterPagato, searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredBookings.length / PAGE_SIZE));
+  const pageSafe = Math.min(currentPage, totalPages);
+  const paginatedBookings = useMemo(() => {
+    const start = (pageSafe - 1) * PAGE_SIZE;
+    return filteredBookings.slice(start, start + PAGE_SIZE);
+  }, [filteredBookings, pageSafe]);
+
+  // Shuttle slot stats — capacity counts ONLY paid bookings
   const slotStats = useMemo(() => {
     return slots.map((slot) => {
       const count = bookings.filter(
-        (b) => b.giorno === slot.giorno && b.fermata === slot.fermata && b.orario === slot.orario
+        (b) => b.giorno === slot.giorno && b.fermata === slot.fermata && b.orario === slot.orario && b.pagato
       ).length;
       return { ...slot, occupati: count, rimanenti: slot.capienza - count };
     });
@@ -189,14 +209,15 @@ const Admin = () => {
     });
   }, [slotStats, slotFilterGiorno, slotFilterFermata, slotFilterRiempimento]);
 
-  // Return slot stats from DB
+  // Return slot stats — capacity counts ONLY paid bookings
   const returnSlotStats = useMemo(() => {
     return returnSlots.map((slot) => {
       const count = bookings.filter(
         (b) =>
           b.giorno === slot.giorno &&
           b.orario_ritorno === slot.orario &&
-          (b.tipo_viaggio === "ritorno" || b.tipo_viaggio === "andata_ritorno")
+          (b.tipo_viaggio === "ritorno" || b.tipo_viaggio === "andata_ritorno") &&
+          b.pagato
       ).length;
       return { ...slot, occupati: count, rimanenti: slot.capienza - count };
     });
