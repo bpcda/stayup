@@ -183,15 +183,32 @@ const Admin = () => {
     return filteredBookings.slice(start, start + PAGE_SIZE);
   }, [filteredBookings, pageSafe]);
 
-  // Shuttle slot stats — capacity counts ONLY paid bookings
+  // Helper: per ogni slot di andata, ricava i membri del suo trip_group (entrambe fermate)
+  // così capienza/occupati/prenotati sono CONDIVISI fra Università e Cheope.
+  const slotGroupMembers = useMemo(() => {
+    const map: Record<string, { fermata: string; orario: string }[]> = {};
+    slots.forEach((s) => {
+      if (!s.trip_group_id) return;
+      if (!map[s.trip_group_id]) map[s.trip_group_id] = [];
+      map[s.trip_group_id].push({ fermata: s.fermata, orario: s.orario });
+    });
+    return map;
+  }, [slots]);
+
+  // Shuttle slot stats — capacity counts ONLY paid bookings, condiviso sul trip_group
   const slotStats = useMemo(() => {
     return slots.map((slot) => {
-      const count = bookings.filter(
-        (b) => b.giorno === slot.giorno && b.fermata === slot.fermata && b.orario === slot.orario && b.pagato
-      ).length;
-      return { ...slot, occupati: count, rimanenti: slot.capienza - count };
+      const members = slot.trip_group_id
+        ? slotGroupMembers[slot.trip_group_id] || [{ fermata: slot.fermata, orario: slot.orario }]
+        : [{ fermata: slot.fermata, orario: slot.orario }];
+      const matches = (b: Booking) =>
+        b.giorno === slot.giorno &&
+        members.some((m) => m.fermata === b.fermata && m.orario === b.orario);
+      const prenotati = bookings.filter(matches).length;
+      const occupati = bookings.filter((b) => matches(b) && b.pagato).length;
+      return { ...slot, prenotati, occupati, rimanenti: slot.capienza - occupati };
     });
-  }, [slots, bookings]);
+  }, [slots, bookings, slotGroupMembers]);
 
   const filteredSlotStats = useMemo(() => {
     return slotStats.filter((s) => {
