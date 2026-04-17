@@ -68,7 +68,10 @@ serve(async (req) => {
             <a href="${PAYPAL_LINK}" style="background: #f59e0b; color: #0a0a0a; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 16px; display: inline-block; margin-top: 16px;">
               Paga con PayPal
             </a>
-            <p style="color: #737373; font-size: 13px; text-align: center; line-height: 1.5; margin-top: 12px;">
+            <p style="color: #f59e0b; font-size: 13px; line-height: 1.5; margin-top: 12px; font-weight: 600;">
+              ⚠️ Nella causale del pagamento inserisci il tuo nome e quello degli amici per cui paghi (se prenoti per più persone).
+            </p>
+            <p style="color: #737373; font-size: 13px; text-align: center; line-height: 1.5; margin-top: 8px;">
               La tua iscrizione sarà confermata manualmente dopo verifica del pagamento.
             </p>
           </div>
