@@ -20,11 +20,11 @@ const GrillContest = () => {
         </div>
 
         <section className="text-center mb-12">
-          <Link to="/" className="inline-block mb-8">
+          <Link to="/" className="inline-block mb-6">
             <img
               src={eventLogo}
               alt="Grill Contest"
-              className="w-full max-w-md md:max-w-lg h-auto mx-auto"
+              className="w-40 md:w-48 h-auto mx-auto"
             />
           </Link>
           <h1 className="text-3xl md:text-4xl font-bold mb-4 font-heading">
