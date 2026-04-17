@@ -261,6 +261,9 @@ serve(async (req) => {
                 Paga con PayPal
               </a>
             </div>
+            <p style="color: #f59e0b; font-size: 13px; text-align: center; line-height: 1.5; margin: 0 0 12px; font-weight: 600;">
+              ⚠️ Nella causale del pagamento inserisci il tuo nome e quello degli amici per cui paghi (se prenoti per più persone).
+            </p>
             <p style="color: #737373; font-size: 13px; text-align: center; line-height: 1.5;">
               La tua iscrizione sarà confermata manualmente dopo verifica del pagamento.
             </p>
