@@ -80,7 +80,7 @@ const Admin = () => {
   const [filterPagato, setFilterPagato] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const PAGE_SIZE = 20;
+  const PAGE_SIZE = 5;
 
   // Shuttle filters
   const [slotFilterGiorno, setSlotFilterGiorno] = useState("all");
