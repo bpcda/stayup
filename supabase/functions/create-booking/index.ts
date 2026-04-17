@@ -199,10 +199,12 @@ serve(async (req) => {
       return jsonError("Errore durante il salvataggio della prenotazione", 500);
     }
 
-    // --- Send email ---
+    // --- Send email (skipped in test mode) ---
     const wasBumped = andataBumped || ritornoBumped;
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    if (RESEND_API_KEY) {
+    if (testMode === true) {
+      console.log("[TEST MODE] create-booking: email NOT sent for", email);
+    } else if (RESEND_API_KEY) {
       let bumpNotice = "";
       if (andataBumped) {
         bumpNotice += `<p style="color: #f59e0b; font-weight: 600;">⚠️ Lo slot di andata delle ${orario} era pieno. Sei stato/a spostato/a alle <strong>${finalOrario}</strong>.</p>`;
