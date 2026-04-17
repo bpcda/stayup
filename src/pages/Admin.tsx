@@ -1038,18 +1038,12 @@ const Admin = () => {
                 </Select>
               </div>
               {addSlotType === "andata" && (
-                <div className="space-y-2">
-                  <Label>Fermata</Label>
-                  <Select value={newSlotData.fermata} onValueChange={(v) => setNewSlotData((p) => ({ ...p, fermata: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {STOPS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                <div className="rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+                  La navetta è unica: parte dall'<strong>Università Cattolica</strong> e 15 minuti dopo passa dal <strong>Cheope</strong>. Verranno create automaticamente entrambe le fermate con capienza condivisa.
                 </div>
               )}
               <div className="space-y-2">
-                <Label>Orario (HH:MM)</Label>
+                <Label>{addSlotType === "andata" ? "Orario partenza Università (HH:MM)" : "Orario (HH:MM)"}</Label>
                 <Input value={newSlotData.orario} onChange={(e) => setNewSlotData((p) => ({ ...p, orario: e.target.value }))} placeholder="14:00" />
               </div>
               <div className="space-y-2">
