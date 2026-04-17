@@ -3,8 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import ShuttleForm from "@/components/ShuttleForm";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import grillLogo from "@/assets/grill-contest-logo.png";
-import stayupLogo from "@/assets/stayup-logo-dark.png";
+import eventLogo from "@/assets/loghi-evento.png";
 
 const GrillContest = () => {
   const [submitted, setSubmitted] = useState(false);
