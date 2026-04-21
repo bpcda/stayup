@@ -147,7 +147,7 @@ const Admin = () => {
     const totale = bookings.length;
     const pagati = bookings.filter((b) => b.pagato).length;
     const nonPagati = totale - pagati;
-    const incasso = pagati * 6;
+    const incasso = pagati * 5.45;
     const soloAndata = bookings.filter((b) => b.tipo_viaggio === "andata").length;
     const soloRitorno = bookings.filter((b) => b.tipo_viaggio === "ritorno").length;
     const andataRitorno = bookings.filter((b) => b.tipo_viaggio === "andata_ritorno").length;
