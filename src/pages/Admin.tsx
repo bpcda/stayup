@@ -925,9 +925,12 @@ const Admin = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredReturnSlotStats.map((s) => (
-                      <TableRow key={s.id}>
+                      <TableRow key={s.id} className={s.nascosto ? "opacity-60" : ""}>
                         <TableCell>{s.giorno}</TableCell>
-                        <TableCell>{s.orario}</TableCell>
+                        <TableCell>
+                          {s.orario}
+                          {s.nascosto && <span className="ml-2 text-[10px] uppercase px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Nascosto</span>}
+                        </TableCell>
                         <TableCell className="text-center">{s.capienza}</TableCell>
                         <TableCell className="text-center text-muted-foreground">{s.prenotati}</TableCell>
                         <TableCell className="text-center font-medium">{s.occupati}</TableCell>
