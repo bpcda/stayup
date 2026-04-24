@@ -394,19 +394,28 @@ const AdminEventi = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">Pres.</TableHead>
                     <TableHead>Nome</TableHead>
-                    <TableHead>Telefono</TableHead>
-                    <TableHead>Stato</TableHead>
+                    <TableHead>Contatto</TableHead>
                     <TableHead>Iscritto il</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {participants.map((p) => (
-                    <TableRow key={p.id}>
-                      <TableCell>{[p.profiles?.first_name, p.profiles?.last_name].filter(Boolean).join(" ") || <span className="text-muted-foreground text-xs">{p.user_id.slice(0,8)}…</span>}</TableCell>
-                      <TableCell>{p.profiles?.phone ?? "—"}</TableCell>
-                      <TableCell><Badge variant="outline">{p.status}</Badge></TableCell>
+                    <TableRow key={p.id} className={p.attended ? "bg-muted/30" : ""}>
+                      <TableCell>
+                        <Checkbox
+                          checked={p.attended}
+                          onCheckedChange={(v) => toggleAttended(p, !!v)}
+                          aria-label="Segna come presente"
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">{displayName(p)}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        <div>{p.profiles?.email ?? "—"}</div>
+                        {p.profiles?.phone && <div className="text-xs">{p.profiles.phone}</div>}
+                      </TableCell>
                       <TableCell className="text-sm text-muted-foreground">{new Date(p.created_at).toLocaleDateString("it-IT")}</TableCell>
                       <TableCell className="text-right">
                         <Button size="icon" variant="ghost" onClick={() => removeParticipant(p.id)}>
