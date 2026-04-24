@@ -15,6 +15,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
 import stayupLogo from "@/assets/stayup-logo.png";
 import { useAuth } from "@/hooks/useAuth";
@@ -41,6 +42,7 @@ interface ShuttleSlot {
   orario: string;
   capienza: number;
   trip_group_id: string | null;
+  nascosto?: boolean;
 }
 
 interface ReturnSlot {
@@ -48,6 +50,7 @@ interface ReturnSlot {
   giorno: string;
   orario: string;
   capienza: number;
+  nascosto?: boolean;
 }
 
 const STOPS = ["Università Cattolica", "Cheope"];
@@ -101,7 +104,7 @@ const Admin = () => {
   // Slot edit dialog
   const [editSlotDialog, setEditSlotDialog] = useState(false);
   const [editSlotType, setEditSlotType] = useState<"andata" | "ritorno">("andata");
-  const [editSlotData, setEditSlotData] = useState<{ id: string; giorno: string; fermata: string; orario: string; capienza: number }>({ id: "", giorno: "", fermata: "", orario: "", capienza: 50 });
+  const [editSlotData, setEditSlotData] = useState<{ id: string; giorno: string; fermata: string; orario: string; capienza: number; nascosto: boolean }>({ id: "", giorno: "", fermata: "", orario: "", capienza: 50, nascosto: false });
 
   // Add slot dialog
   const [addSlotDialog, setAddSlotDialog] = useState(false);
@@ -147,7 +150,7 @@ const Admin = () => {
     const totale = bookings.length;
     const pagati = bookings.filter((b) => b.pagato).length;
     const nonPagati = totale - pagati;
-    const incasso = pagati * 6;
+    const incasso = (pagati * 5.45).toFixed(2);
     const soloAndata = bookings.filter((b) => b.tipo_viaggio === "andata").length;
     const soloRitorno = bookings.filter((b) => b.tipo_viaggio === "ritorno").length;
     const andataRitorno = bookings.filter((b) => b.tipo_viaggio === "andata_ritorno").length;
@@ -410,15 +413,15 @@ const Admin = () => {
   };
 
   // === SLOT MANAGEMENT ===
-  const openEditSlot = (type: "andata" | "ritorno", slot: { id: string; giorno: string; fermata?: string; orario: string; capienza: number }) => {
+  const openEditSlot = (type: "andata" | "ritorno", slot: { id: string; giorno: string; fermata?: string; orario: string; capienza: number; nascosto?: boolean }) => {
     setEditSlotType(type);
-    setEditSlotData({ id: slot.id, giorno: slot.giorno, fermata: (slot as any).fermata || "", orario: slot.orario, capienza: slot.capienza });
+    setEditSlotData({ id: slot.id, giorno: slot.giorno, fermata: (slot as any).fermata || "", orario: slot.orario, capienza: slot.capienza, nascosto: !!slot.nascosto });
     setEditSlotDialog(true);
   };
 
   const saveEditSlot = async () => {
     const table = editSlotType === "andata" ? "shuttle_slots" : "shuttle_return_slots";
-    const updatePayload: any = { giorno: editSlotData.giorno, orario: editSlotData.orario, capienza: editSlotData.capienza };
+    const updatePayload: any = { giorno: editSlotData.giorno, orario: editSlotData.orario, capienza: editSlotData.capienza, nascosto: editSlotData.nascosto };
     if (editSlotType === "andata") updatePayload.fermata = editSlotData.fermata;
 
     if (isSupabaseConfigured) {
@@ -839,10 +842,13 @@ const Admin = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredSlotStats.map((s) => (
-                      <TableRow key={s.id}>
+                      <TableRow key={s.id} className={s.nascosto ? "opacity-60" : ""}>
                         <TableCell>{s.giorno}</TableCell>
                         <TableCell>{s.fermata}</TableCell>
-                        <TableCell>{s.orario}</TableCell>
+                        <TableCell>
+                          {s.orario}
+                          {s.nascosto && <span className="ml-2 text-[10px] uppercase px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Nascosto</span>}
+                        </TableCell>
                         <TableCell className="text-center">{s.capienza}</TableCell>
                         <TableCell className="text-center text-muted-foreground">{s.prenotati}</TableCell>
                         <TableCell className="text-center font-medium">{s.occupati}</TableCell>
@@ -919,9 +925,12 @@ const Admin = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredReturnSlotStats.map((s) => (
-                      <TableRow key={s.id}>
+                      <TableRow key={s.id} className={s.nascosto ? "opacity-60" : ""}>
                         <TableCell>{s.giorno}</TableCell>
-                        <TableCell>{s.orario}</TableCell>
+                        <TableCell>
+                          {s.orario}
+                          {s.nascosto && <span className="ml-2 text-[10px] uppercase px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Nascosto</span>}
+                        </TableCell>
                         <TableCell className="text-center">{s.capienza}</TableCell>
                         <TableCell className="text-center text-muted-foreground">{s.prenotati}</TableCell>
                         <TableCell className="text-center font-medium">{s.occupati}</TableCell>
@@ -1040,6 +1049,16 @@ const Admin = () => {
               <div className="space-y-2">
                 <Label>Capienza</Label>
                 <Input type="number" value={editSlotData.capienza} onChange={(e) => setEditSlotData((p) => ({ ...p, capienza: parseInt(e.target.value) || 0 }))} />
+              </div>
+              <div className="flex items-center space-x-2 pt-2">
+                <Checkbox
+                  id="nascosto-slot"
+                  checked={editSlotData.nascosto}
+                  onCheckedChange={(v) => setEditSlotData((p) => ({ ...p, nascosto: v === true }))}
+                />
+                <Label htmlFor="nascosto-slot" className="cursor-pointer">
+                  Nascondi questo slot dal form pubblico
+                </Label>
               </div>
             </div>
             <DialogFooter>

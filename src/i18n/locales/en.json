@@ -39,7 +39,7 @@
     "description": "The Rivergaro Grill Contest is one of Italy's most renowned BBQ festivals, with over 40 food trucks, DJ sets and a historic barbecue competition along the Trebbia river.",
     "shuttleTitle": "Shuttle Booking",
     "successTitle": "Request received!",
-    "successMessage": "Check your email to complete the payment."
+    "successMessage": "Check your email to complete the payment. (Due to the new domain, check the SPAM folder)"
   },
   "form": {
     "name": "Full Name",
