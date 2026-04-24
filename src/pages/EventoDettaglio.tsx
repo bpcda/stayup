@@ -4,6 +4,7 @@ import { ArrowLeft, Phone, Share2, MapPin, ChevronDown, ChevronUp, ExternalLink,
 import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -20,7 +21,7 @@ type EventDetail = {
   is_public: boolean;
 };
 
-const CONTACT_PHONE = "+393331234567"; // TODO: sostituire con numero reale
+
 
 const formatDateLong = (iso: string) => {
   const d = new Date(iso);
