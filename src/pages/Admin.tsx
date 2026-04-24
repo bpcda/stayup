@@ -412,9 +412,9 @@ const Admin = () => {
   };
 
   // === SLOT MANAGEMENT ===
-  const openEditSlot = (type: "andata" | "ritorno", slot: { id: string; giorno: string; fermata?: string; orario: string; capienza: number }) => {
+  const openEditSlot = (type: "andata" | "ritorno", slot: { id: string; giorno: string; fermata?: string; orario: string; capienza: number; nascosto?: boolean }) => {
     setEditSlotType(type);
-    setEditSlotData({ id: slot.id, giorno: slot.giorno, fermata: (slot as any).fermata || "", orario: slot.orario, capienza: slot.capienza });
+    setEditSlotData({ id: slot.id, giorno: slot.giorno, fermata: (slot as any).fermata || "", orario: slot.orario, capienza: slot.capienza, nascosto: !!slot.nascosto });
     setEditSlotDialog(true);
   };
 
