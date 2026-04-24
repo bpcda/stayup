@@ -1,0 +1,10 @@
+project_id = "stayup-dev"
+
+[functions.create-booking]
+verify_jwt = false
+
+[functions.send-booking-email]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false
