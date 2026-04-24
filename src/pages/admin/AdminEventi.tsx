@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Pencil, Trash2, Users, Calendar, MapPin, Eye, EyeOff, Download } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Plus, Pencil, Trash2, Users, Calendar, MapPin, Eye, EyeOff } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -306,8 +307,10 @@ const AdminEventi = () => {
                           <Button size="icon" variant="ghost" title={e.is_active ? "Disattiva" : "Attiva"} onClick={() => toggleField(e, "is_active")}>
                             {e.is_active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                           </Button>
-                          <Button size="icon" variant="ghost" title="Iscritti" onClick={() => openParticipants(e)}>
-                            <Users className="h-4 w-4" />
+                          <Button size="icon" variant="ghost" title="Iscritti" asChild>
+                            <Link to={`/admin/eventi/${e.id}/iscritti`}>
+                              <Users className="h-4 w-4" />
+                            </Link>
                           </Button>
                           <Button size="icon" variant="ghost" title="Modifica" onClick={() => openEdit(e)}>
                             <Pencil className="h-4 w-4" />
@@ -374,65 +377,6 @@ const AdminEventi = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditOpen(false)}>Annulla</Button>
             <Button onClick={save}>Salva</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Participants dialog */}
-      <Dialog open={partOpen} onOpenChange={setPartOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Iscritti — {partEvent?.title}</DialogTitle>
-            <DialogDescription>{participants.length} iscritti</DialogDescription>
-          </DialogHeader>
-          <div className="max-h-[60vh] overflow-y-auto">
-            {partLoading ? (
-              <p className="text-center text-muted-foreground py-8">Caricamento...</p>
-            ) : participants.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">Nessun iscritto.</p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">Pres.</TableHead>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Contatto</TableHead>
-                    <TableHead>Iscritto il</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {participants.map((p) => (
-                    <TableRow key={p.id} className={p.attended ? "bg-muted/30" : ""}>
-                      <TableCell>
-                        <Checkbox
-                          checked={p.attended}
-                          onCheckedChange={(v) => toggleAttended(p, !!v)}
-                          aria-label="Segna come presente"
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">{displayName(p)}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        <div>{p.profiles?.email ?? "—"}</div>
-                        {p.profiles?.phone && <div className="text-xs">{p.profiles.phone}</div>}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{new Date(p.created_at).toLocaleDateString("it-IT")}</TableCell>
-                      <TableCell className="text-right">
-                        <Button size="icon" variant="ghost" onClick={() => removeParticipant(p.id)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPartOpen(false)}>Chiudi</Button>
-            <Button onClick={exportCsv} disabled={participants.length === 0}>
-              <Download className="h-4 w-4 mr-2" />Esporta CSV
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
