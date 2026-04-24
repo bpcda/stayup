@@ -34,7 +34,8 @@ const timeToMinutes = (t: string): number => {
   return h < 6 ? (h + 24) * 60 + m : h * 60 + m;
 };
 
-const DAYS = ["25 Aprile", "26 Aprile"];
+// Legacy fallback only — actual list is fetched dynamically below
+const DAYS_FALLBACK = ["25 Aprile", "26 Aprile"];
 const STOPS = ["Università Cattolica", "Cheope"];
 
 const FALLBACK_SCHEDULES: Record<string, string[]> = {
