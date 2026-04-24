@@ -4,6 +4,7 @@ import { ArrowLeft, Phone, Share2, MapPin, ChevronDown, ChevronUp, ExternalLink,
 import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -20,7 +21,7 @@ type EventDetail = {
   is_public: boolean;
 };
 
-const CONTACT_PHONE = "+393331234567"; // TODO: sostituire con numero reale
+
 
 const formatDateLong = (iso: string) => {
   const d = new Date(iso);
@@ -34,6 +35,8 @@ const EventoDettaglio = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { settings } = useSiteSettings();
+  const contactPhone = settings.contact_phone?.replace(/\s+/g, "") || "";
 
   const [event, setEvent] = useState<EventDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -170,13 +173,15 @@ const EventoDettaglio = () => {
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2">
-            <a
-              href={`tel:${CONTACT_PHONE}`}
-              aria-label="Chiama"
-              className="h-11 w-11 rounded-full bg-background/95 text-primary shadow-md flex items-center justify-center hover:bg-background transition"
-            >
-              <Phone className="h-5 w-5" />
-            </a>
+            {contactPhone && (
+              <a
+                href={`tel:${contactPhone}`}
+                aria-label="Chiama"
+                className="h-11 w-11 rounded-full bg-background/95 text-primary shadow-md flex items-center justify-center hover:bg-background transition"
+              >
+                <Phone className="h-5 w-5" />
+              </a>
+            )}
             <button
               onClick={share}
               aria-label="Condividi"

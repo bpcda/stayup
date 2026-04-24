@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bus, Calendar, FileText, Users, ArrowRight } from "lucide-react";
+import { Bus, Calendar, FileText, Users, ArrowRight, Settings } from "lucide-react";
 
 const sections = [
   {
@@ -14,6 +14,12 @@ const sections = [
     title: "Shuttle",
     description: "Prenotazioni, slot di andata e ritorno, esportazioni.",
     icon: Bus,
+  },
+  {
+    to: "/admin/impostazioni",
+    title: "Impostazioni",
+    description: "Telefono, email, social: dati globali del sito.",
+    icon: Settings,
   },
   {
     to: "/admin/utenti",
