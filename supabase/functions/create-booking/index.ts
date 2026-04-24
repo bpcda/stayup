@@ -47,9 +47,12 @@ serve(async (req) => {
     const needsAndata = tipo_viaggio === "andata" || tipo_viaggio === "andata_ritorno";
     const needsRitorno = tipo_viaggio === "ritorno" || tipo_viaggio === "andata_ritorno";
 
-    if (!giorno || !VALID_DAYS.includes(giorno)) {
+    if (!giorno || typeof giorno !== "string" || giorno.trim().length === 0) {
       return jsonError("Giorno non valido", 400);
     }
+    // Note: the giorno label is validated implicitly later — when we look up
+    // shuttle_slots / shuttle_return_slots for that day. If no slots exist
+    // we return a clear error to the user.
 
     // --- Validate andata using shuttle_slots from DB ---
     let finalOrario = orario;
