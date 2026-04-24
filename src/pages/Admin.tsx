@@ -440,15 +440,61 @@ const Admin = () => {
   };
 
   // === SLOT MANAGEMENT ===
-  const openEditSlot = (type: "andata" | "ritorno", slot: { id: string; giorno: string; fermata?: string; orario: string; capienza: number; nascosto?: boolean }) => {
+  // Try to reconstruct a Date from a slot's existing `data` (preferred) or
+  // its legacy `giorno`+`orario` fields (best effort: 25/26 Aprile of current year).
+  const slotToDate = (slot: { data?: string | null; giorno?: string; orario?: string }): Date | undefined => {
+    if (slot.data) {
+      const d = new Date(slot.data);
+      if (!isNaN(d.getTime())) return d;
+    }
+    if (slot.giorno && slot.orario) {
+      const m = slot.giorno.match(/^(\d{1,2})\s+([A-Za-zÀ-ÿ]+)/);
+      if (m) {
+        const day = parseInt(m[1], 10);
+        const monthIdx = MESI_IT.findIndex((mn) => mn.toLowerCase() === m[2].toLowerCase());
+        if (monthIdx >= 0) {
+          const y = new Date().getFullYear();
+          return combineDateTime(new Date(y, monthIdx, day), slot.orario);
+        }
+      }
+    }
+    return undefined;
+  };
+
+  const openEditSlot = (type: "andata" | "ritorno", slot: { id: string; giorno: string; fermata?: string; orario: string; capienza: number; nascosto?: boolean; data?: string | null }) => {
     setEditSlotType(type);
-    setEditSlotData({ id: slot.id, giorno: slot.giorno, fermata: (slot as any).fermata || "", orario: slot.orario, capienza: slot.capienza, nascosto: !!slot.nascosto });
+    setEditSlotData({
+      id: slot.id,
+      data: slotToDate(slot),
+      giorno: slot.giorno,
+      fermata: (slot as any).fermata || "",
+      orario: slot.orario,
+      capienza: slot.capienza,
+      nascosto: !!slot.nascosto,
+    });
     setEditSlotDialog(true);
   };
 
   const saveEditSlot = async () => {
+    if (!editSlotData.data) {
+      toast({ title: "Errore", description: "Seleziona una data.", variant: "destructive" });
+      return;
+    }
+    if (!/^\d{1,2}:\d{2}$/.test(editSlotData.orario)) {
+      toast({ title: "Errore", description: "Formato orario non valido (HH:MM).", variant: "destructive" });
+      return;
+    }
+    const fullDate = combineDateTime(editSlotData.data, editSlotData.orario);
+    const giornoLabel = formatGiornoLabel(fullDate);
+
     const table = editSlotType === "andata" ? "shuttle_slots" : "shuttle_return_slots";
-    const updatePayload: any = { giorno: editSlotData.giorno, orario: editSlotData.orario, capienza: editSlotData.capienza, nascosto: editSlotData.nascosto };
+    const updatePayload: any = {
+      giorno: giornoLabel,
+      orario: editSlotData.orario,
+      capienza: editSlotData.capienza,
+      nascosto: editSlotData.nascosto,
+      data: fullDate.toISOString(),
+    };
     if (editSlotType === "andata") updatePayload.fermata = editSlotData.fermata;
 
     if (isSupabaseConfigured) {
@@ -487,36 +533,20 @@ const Admin = () => {
 
   const openAddSlot = (type: "andata" | "ritorno") => {
     setAddSlotType(type);
-    setNewSlotData({ giorno: "25 Aprile", fermata: "Università Cattolica", orario: "", capienza: 50 });
+    setNewSlotData({ data: undefined, fermata: "Università Cattolica", orario: "", capienza: 50 });
     setAddSlotDialog(true);
   };
 
   const saveAddSlot = async () => {
+    if (!newSlotData.data) {
+      toast({ title: "Errore", description: "Seleziona una data dal calendario.", variant: "destructive" });
+      return;
+    }
     if (!newSlotData.orario) {
       toast({ title: "Errore", description: "Inserisci un orario.", variant: "destructive" });
       return;
     }
-
-    // RITORNO: comportamento invariato (singola riga)
-    if (addSlotType === "ritorno") {
-      const insertPayload: any = { giorno: newSlotData.giorno, orario: newSlotData.orario, capienza: newSlotData.capienza };
-      if (isSupabaseConfigured) {
-        const { data, error } = await supabase.from("shuttle_return_slots").insert(insertPayload).select().single();
-        if (error) {
-          toast({ title: "Errore", description: error.message, variant: "destructive" });
-          return;
-        }
-        setReturnSlots((prev) => [...prev, data]);
-      }
-      setAddSlotDialog(false);
-      toast({ title: "Aggiunto", description: "Nuovo slot ritorno creato." });
-      return;
-    }
-
-    // ANDATA: la navetta è UNA sola — parte dall'Università, +15 min al Cheope
-    // L'admin inserisce solo l'orario di partenza dall'università.
-    const uniOrario = newSlotData.orario.trim();
-    const match = uniOrario.match(/^(\d{1,2}):(\d{2})$/);
+    const match = newSlotData.orario.trim().match(/^(\d{1,2}):(\d{2})$/);
     if (!match) {
       toast({ title: "Errore", description: "Formato orario non valido (HH:MM).", variant: "destructive" });
       return;
@@ -527,17 +557,45 @@ const Admin = () => {
       toast({ title: "Errore", description: "Orario non valido.", variant: "destructive" });
       return;
     }
-    // Calcola Cheope = Uni + 15 min
+
+    const giornoLabel = formatGiornoLabel(newSlotData.data);
+
+    // RITORNO: comportamento invariato (singola riga)
+    if (addSlotType === "ritorno") {
+      const fullDate = combineDateTime(newSlotData.data, newSlotData.orario);
+      const insertPayload: any = {
+        giorno: giornoLabel,
+        orario: newSlotData.orario,
+        capienza: newSlotData.capienza,
+        data: fullDate.toISOString(),
+      };
+      if (isSupabaseConfigured) {
+        const { data, error } = await supabase.from("shuttle_return_slots").insert(insertPayload).select().single();
+        if (error) {
+          toast({ title: "Errore", description: error.message, variant: "destructive" });
+          return;
+        }
+        setReturnSlots((prev) => [...prev, data]);
+      }
+      setAddSlotDialog(false);
+      toast({ title: "Aggiunto", description: `Slot ritorno: ${giornoLabel} ore ${newSlotData.orario}` });
+      return;
+    }
+
+    // ANDATA: la navetta è UNA sola — parte dall'Università, +15 min al Cheope
+    const uniOrario = newSlotData.orario.trim();
     const totalMin = h * 60 + m + 15;
     const ch = Math.floor(totalMin / 60) % 24;
     const cm = totalMin % 60;
     const cheopeOrario = `${String(ch).padStart(2, "0")}:${String(cm).padStart(2, "0")}`;
+    const uniDate = combineDateTime(newSlotData.data, uniOrario);
+    const cheopeDate = combineDateTime(newSlotData.data, cheopeOrario);
 
     if (isSupabaseConfigured) {
       const tripGroupId = crypto.randomUUID();
       const rows = [
-        { giorno: newSlotData.giorno, fermata: "Università Cattolica", orario: uniOrario, capienza: newSlotData.capienza, trip_group_id: tripGroupId },
-        { giorno: newSlotData.giorno, fermata: "Cheope", orario: cheopeOrario, capienza: newSlotData.capienza, trip_group_id: tripGroupId },
+        { giorno: giornoLabel, fermata: "Università Cattolica", orario: uniOrario, capienza: newSlotData.capienza, trip_group_id: tripGroupId, data: uniDate.toISOString() },
+        { giorno: giornoLabel, fermata: "Cheope", orario: cheopeOrario, capienza: newSlotData.capienza, trip_group_id: tripGroupId, data: cheopeDate.toISOString() },
       ];
       const { data, error } = await supabase.from("shuttle_slots").insert(rows).select();
       if (error) {
@@ -547,7 +605,7 @@ const Admin = () => {
       setSlots((prev) => [...prev, ...(data || [])]);
     }
     setAddSlotDialog(false);
-    toast({ title: "Aggiunto", description: `Navetta creata: Università ${uniOrario} → Cheope ${cheopeOrario}` });
+    toast({ title: "Aggiunto", description: `Navetta ${giornoLabel}: Università ${uniOrario} → Cheope ${cheopeOrario}` });
   };
 
   return (
