@@ -110,7 +110,11 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
         (bookingsRes.data || []).forEach((b: { orario: string }) => {
           counts[b.orario] = (counts[b.orario] || 0) + 1;
         });
-        setSlots((slotsRes.data || []).filter((s: ShuttleSlot) => s.capienza > (counts[s.orario] || 0)));
+        setSlots(
+          (slotsRes.data || [])
+            .filter((s: ShuttleSlot & { nascosto?: boolean }) => !s.nascosto)
+            .filter((s: ShuttleSlot) => s.capienza > (counts[s.orario] || 0))
+        );
         setBookingCounts(counts);
       }
       setLoadingSchedules(false);
@@ -156,8 +160,12 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
         (bookingsRes.data || []).forEach((b: { orario_ritorno: string }) => {
           if (b.orario_ritorno) counts[b.orario_ritorno] = (counts[b.orario_ritorno] || 0) + 1;
         });
-        // Filter out full return slots
-        setReturnSlots((slotsRes.data || []).filter((s: ReturnSlot) => s.capienza > (counts[s.orario] || 0)));
+        // Filter out hidden + full return slots
+        setReturnSlots(
+          (slotsRes.data || [])
+            .filter((s: ReturnSlot & { nascosto?: boolean }) => !s.nascosto)
+            .filter((s: ReturnSlot) => s.capienza > (counts[s.orario] || 0))
+        );
         setReturnCounts(counts);
       }
       setLoadingReturnSlots(false);
