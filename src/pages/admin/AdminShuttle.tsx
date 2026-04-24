@@ -543,7 +543,7 @@ const Admin = () => {
               {testMode ? "🧪 TEST ON" : "🧪 TEST OFF"}
             </Button>
             <Button variant="outline" size="sm" onClick={fetchData}>↻ Aggiorna</Button>
-            <Button variant="outline" size="sm" asChild><Link to="/">← Home</Link></Button>
+            <Button variant="outline" size="sm" asChild><Link to="/admin">← Dashboard</Link></Button>
             {user?.email && (
               <span className="text-xs text-muted-foreground hidden sm:inline">{user.email}</span>
             )}
