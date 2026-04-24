@@ -144,11 +144,14 @@ serve(async (req) => {
     let ritornoBumped = false;
 
     if (needsRitorno) {
-      const { data: dbReturnSlots, error: returnSlotsError } = await supabase
+      const { data: dbReturnSlotsRaw, error: returnSlotsError } = await supabase
         .from("shuttle_return_slots")
-        .select("orario, capienza")
+        .select("orario, capienza, nascosto")
         .eq("giorno", giorno)
         .order("orario", { ascending: true });
+
+      // Escludi slot nascosti
+      const dbReturnSlots = (dbReturnSlotsRaw || []).filter((s: { nascosto?: boolean }) => !s.nascosto);
 
       if (returnSlotsError || !dbReturnSlots || dbReturnSlots.length === 0) {
         return jsonError("Nessuno slot di ritorno disponibile per questo giorno", 400);
