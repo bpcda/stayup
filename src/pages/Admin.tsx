@@ -1108,13 +1108,27 @@ const Admin = () => {
             <DialogHeader><DialogTitle>Modifica Slot {editSlotType === "andata" ? "Andata" : "Ritorno"}</DialogTitle></DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>Giorno</Label>
-                <Select value={editSlotData.giorno} onValueChange={(v) => setEditSlotData((p) => ({ ...p, giorno: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {GIORNI.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <Label>Data</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn("w-full justify-start text-left font-normal", !editSlotData.data && "text-muted-foreground")}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {editSlotData.data ? formatGiornoLabel(editSlotData.data) : "Seleziona una data"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={editSlotData.data}
+                      onSelect={(d) => setEditSlotData((p) => ({ ...p, data: d }))}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
               {editSlotType === "andata" && (
                 <div className="space-y-2">
