@@ -13,6 +13,7 @@ import AdminHome from "./pages/admin/AdminHome";
 import AdminShuttle from "./pages/admin/AdminShuttle";
 import AdminEventi from "./pages/admin/AdminEventi";
 import AdminEventoIscritti from "./pages/admin/AdminEventoIscritti";
+import AdminImpostazioni from "./pages/admin/AdminImpostazioni";
 import Auth from "./pages/Auth";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
@@ -40,6 +41,7 @@ const AppRoutes = () => (
       <Route path="/admin/shuttle" element={<AdminGuard><AdminShuttle /></AdminGuard>} />
       <Route path="/admin/eventi" element={<AdminGuard><AdminEventi /></AdminGuard>} />
       <Route path="/admin/eventi/:id/iscritti" element={<AdminGuard><AdminEventoIscritti /></AdminGuard>} />
+      <Route path="/admin/impostazioni" element={<AdminGuard><AdminImpostazioni /></AdminGuard>} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/termini" element={<TermsConditions />} />
       <Route path="*" element={<NotFound />} />
