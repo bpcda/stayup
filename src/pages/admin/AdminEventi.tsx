@@ -59,10 +59,6 @@ const AdminEventi = () => {
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const [partOpen, setPartOpen] = useState(false);
-  const [partEvent, setPartEvent] = useState<EventRow | null>(null);
-  const [participants, setParticipants] = useState<Participant[]>([]);
-  const [partLoading, setPartLoading] = useState(false);
 
   const load = async () => {
     if (!isSupabaseConfigured) { setLoading(false); return; }
@@ -146,76 +142,6 @@ const AdminEventi = () => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
       setEvents(prev => prev.map(x => x.id === e.id ? { ...x, [field]: !next } : x));
     }
-  };
-
-  const openParticipants = async (e: EventRow) => {
-    setPartEvent(e);
-    setPartOpen(true);
-    setPartLoading(true);
-    const { data, error } = await supabase
-      .from("event_participations")
-      .select("id, user_id, status, created_at, attended, attended_at, profiles:profiles!event_participations_user_id_fkey(first_name, last_name, phone, email)")
-      .eq("event_id", e.id)
-      .order("created_at", { ascending: false });
-    if (error) {
-      // fallback senza join se la FK non è dichiarata
-      const { data: d2 } = await supabase
-        .from("event_participations")
-        .select("id, user_id, status, created_at, attended, attended_at")
-        .eq("event_id", e.id)
-        .order("created_at", { ascending: false });
-      setParticipants((d2 as Participant[]) ?? []);
-    } else {
-      setParticipants((data as unknown as Participant[]) ?? []);
-    }
-    setPartLoading(false);
-  };
-
-  const removeParticipant = async (id: string) => {
-    const { error } = await supabase.from("event_participations").delete().eq("id", id);
-    if (error) {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
-      return;
-    }
-    setParticipants(prev => prev.filter(p => p.id !== id));
-    toast({ title: "Iscrizione rimossa" });
-  };
-
-  const toggleAttended = async (p: Participant, value: boolean) => {
-    setParticipants(prev => prev.map(x => x.id === p.id ? { ...x, attended: value, attended_at: value ? new Date().toISOString() : null } : x));
-    const { error } = await supabase
-      .from("event_participations")
-      .update({ attended: value, attended_at: value ? new Date().toISOString() : null })
-      .eq("id", p.id);
-    if (error) {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
-      setParticipants(prev => prev.map(x => x.id === p.id ? { ...x, attended: !value } : x));
-    }
-  };
-
-  const exportCsv = () => {
-    if (!partEvent || participants.length === 0) return;
-    const rows = [
-      ["Nome", "Cognome", "Email", "Telefono", "Stato", "Presente", "Iscritto il", "Check-in il"],
-      ...participants.map(p => [
-        p.profiles?.first_name ?? "",
-        p.profiles?.last_name ?? "",
-        p.profiles?.email ?? "",
-        p.profiles?.phone ?? "",
-        p.status,
-        p.attended ? "Sì" : "No",
-        new Date(p.created_at).toLocaleString("it-IT"),
-        p.attended_at ? new Date(p.attended_at).toLocaleString("it-IT") : "",
-      ]),
-    ];
-    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `iscritti_${partEvent.title.replace(/\s+/g, "_")}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   return (
