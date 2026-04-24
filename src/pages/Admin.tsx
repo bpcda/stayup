@@ -188,6 +188,24 @@ const Admin = () => {
     return { totale, pagati, nonPagati, incasso, soloAndata, soloRitorno, andataRitorno, iscrittiOggi };
   }, [bookings]);
 
+  // Dynamic list of giorno labels from all sources (slots + return slots + bookings).
+  // Sorted by associated `data` if present, otherwise legacy alphabetical.
+  const GIORNI = useMemo(() => {
+    const map = new Map<string, number>(); // label -> sortable timestamp
+    const add = (label: string | null | undefined, data?: string | null) => {
+      if (!label) return;
+      const ts = data ? new Date(data).getTime() : Number.POSITIVE_INFINITY;
+      const prev = map.get(label);
+      if (prev === undefined || ts < prev) map.set(label, ts);
+    };
+    slots.forEach((s: any) => add(s.giorno, s.data));
+    returnSlots.forEach((s: any) => add(s.giorno, s.data));
+    bookings.forEach((b: any) => add(b.giorno, b.data_andata || b.data_ritorno));
+    const arr = Array.from(map.entries()).sort((a, b) => a[1] - b[1]).map(([l]) => l);
+    return arr.length ? arr : GIORNI_LEGACY;
+  }, [slots, returnSlots, bookings]);
+
+
   const filteredBookings = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return bookings.filter((b) => {
