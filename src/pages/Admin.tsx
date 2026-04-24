@@ -81,7 +81,9 @@ interface ReturnSlot {
 }
 
 const STOPS = ["Università Cattolica", "Cheope"];
-const GIORNI = ["25 Aprile", "26 Aprile"];
+// Legacy fallback only; the actual list shown in filters is derived dynamically
+// from `slots` + `returnSlots` + `bookings` so admins see every date in use.
+const GIORNI_LEGACY = ["25 Aprile", "26 Aprile"];
 
 const Admin = () => {
   const { signOut, user } = useAuth();
