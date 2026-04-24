@@ -176,7 +176,37 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
     fetchReturnSlots();
   }, [giorno, needsRitorno]);
 
-  // Reset dependent fields when tipo changes
+  // Fetch the list of distinct days that have at least one visible slot.
+  // Sorted by `data` (timestamptz) when available, otherwise by giorno text.
+  useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setAvailableDays(DAYS_FALLBACK);
+      return;
+    }
+    const fetchDays = async () => {
+      const [aRes, rRes] = await Promise.all([
+        supabase.from("shuttle_slots").select("giorno, data, nascosto"),
+        supabase.from("shuttle_return_slots").select("giorno, data, nascosto"),
+      ]);
+      const map = new Map<string, number>();
+      const collect = (rows: any[] | null) => {
+        (rows || []).forEach((r) => {
+          if (r.nascosto) return;
+          if (!r.giorno) return;
+          const ts = r.data ? new Date(r.data).getTime() : Number.POSITIVE_INFINITY;
+          const prev = map.get(r.giorno);
+          if (prev === undefined || ts < prev) map.set(r.giorno, ts);
+        });
+      };
+      collect(aRes.data);
+      collect(rRes.data);
+      const arr = Array.from(map.entries()).sort((a, b) => a[1] - b[1]).map(([l]) => l);
+      setAvailableDays(arr.length ? arr : DAYS_FALLBACK);
+    };
+    fetchDays().catch(() => setAvailableDays(DAYS_FALLBACK));
+  }, []);
+
+
   useEffect(() => {
     setGiorno("");
     setFermata("");
