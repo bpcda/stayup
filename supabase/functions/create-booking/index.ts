@@ -60,11 +60,14 @@ serve(async (req) => {
       }
 
       // Carica TUTTI gli slot del giorno (entrambe fermate) per calcolare capacità condivisa per trip_group_id
-      const { data: allDaySlots, error: slotsError } = await supabase
+      const { data: allDaySlotsRaw, error: slotsError } = await supabase
         .from("shuttle_slots")
-        .select("orario, capienza, fermata, trip_group_id")
+        .select("orario, capienza, fermata, trip_group_id, nascosto")
         .eq("giorno", giorno)
         .order("orario", { ascending: true });
+
+      // Escludi slot nascosti dal form pubblico
+      const allDaySlots = (allDaySlotsRaw || []).filter((s: { nascosto?: boolean }) => !s.nascosto);
 
       if (slotsError || !allDaySlots || allDaySlots.length === 0) {
         return jsonError("Nessuno slot disponibile per questo giorno", 400);
