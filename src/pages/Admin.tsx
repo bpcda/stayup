@@ -41,6 +41,7 @@ interface ShuttleSlot {
   orario: string;
   capienza: number;
   trip_group_id: string | null;
+  nascosto?: boolean;
 }
 
 interface ReturnSlot {
@@ -48,6 +49,7 @@ interface ReturnSlot {
   giorno: string;
   orario: string;
   capienza: number;
+  nascosto?: boolean;
 }
 
 const STOPS = ["Università Cattolica", "Cheope"];
