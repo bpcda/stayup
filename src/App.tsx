@@ -19,6 +19,7 @@ import TermsConditions from "./pages/TermsConditions";
 import ChiSiamo from "./pages/ChiSiamo";
 import Contatti from "./pages/Contatti";
 import Eventi from "./pages/Eventi";
+import EventoDettaglio from "./pages/EventoDettaglio";
 import Profilo from "./pages/Profilo";
 import NotFound from "./pages/NotFound";
 
@@ -31,6 +32,7 @@ const AppRoutes = () => (
       <Route path="/chi-siamo" element={<ChiSiamo />} />
       <Route path="/contatti" element={<Contatti />} />
       <Route path="/eventi" element={<Eventi />} />
+      <Route path="/eventi/:slug" element={<EventoDettaglio />} />
       <Route path="/profilo" element={<Profilo />} />
       <Route path="/grill-contest" element={<GrillContest />} />
       <Route path="/auth" element={<Auth />} />
