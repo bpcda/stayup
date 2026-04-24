@@ -1173,13 +1173,27 @@ const Admin = () => {
             <DialogHeader><DialogTitle>Nuovo Slot {addSlotType === "andata" ? "Andata" : "Ritorno"}</DialogTitle></DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>Giorno</Label>
-                <Select value={newSlotData.giorno} onValueChange={(v) => setNewSlotData((p) => ({ ...p, giorno: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {GIORNI.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <Label>Data</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn("w-full justify-start text-left font-normal", !newSlotData.data && "text-muted-foreground")}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {newSlotData.data ? formatGiornoLabel(newSlotData.data) : "Seleziona una data"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={newSlotData.data}
+                      onSelect={(d) => setNewSlotData((p) => ({ ...p, data: d }))}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
               {addSlotType === "andata" && (
                 <div className="rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
