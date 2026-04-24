@@ -34,20 +34,6 @@ type EventRow = {
   created_at?: string;
 };
 
-type Participant = {
-  id: string;
-  user_id: string;
-  status: string;
-  created_at: string;
-  attended: boolean;
-  attended_at: string | null;
-  profiles?: { first_name: string | null; last_name: string | null; phone: string | null; email: string | null } | null;
-};
-
-const displayName = (p: Participant) => {
-  const full = [p.profiles?.first_name, p.profiles?.last_name].filter(Boolean).join(" ").trim();
-  return full || p.profiles?.email || `${p.user_id.slice(0, 8)}…`;
-};
 
 const empty = (): Partial<EventRow> => ({
   title: "",
