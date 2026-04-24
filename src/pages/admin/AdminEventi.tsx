@@ -102,8 +102,12 @@ const AdminEventi = () => {
       toast({ title: "Titolo obbligatorio", variant: "destructive" });
       return;
     }
-    const payload = {
+    const slugify = (s: string) =>
+      s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "evento";
+    const payload: Record<string, unknown> = {
       title: editing.title!.trim(),
+      slug: slugify(editing.title!.trim()) + "-" + Math.random().toString(36).slice(2, 7),
       description: editing.description?.toString().trim() || null,
       location: editing.location?.toString().trim() || null,
       starts_at: fromLocalInput((editing.starts_at as string) || ""),
