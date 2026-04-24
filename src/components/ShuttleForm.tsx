@@ -110,7 +110,11 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
         (bookingsRes.data || []).forEach((b: { orario: string }) => {
           counts[b.orario] = (counts[b.orario] || 0) + 1;
         });
-        setSlots((slotsRes.data || []).filter((s: ShuttleSlot) => s.capienza > (counts[s.orario] || 0)));
+        setSlots(
+          (slotsRes.data || [])
+            .filter((s: ShuttleSlot & { nascosto?: boolean }) => !s.nascosto)
+            .filter((s: ShuttleSlot) => s.capienza > (counts[s.orario] || 0))
+        );
         setBookingCounts(counts);
       }
       setLoadingSchedules(false);
