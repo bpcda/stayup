@@ -103,7 +103,7 @@ const Admin = () => {
   // Slot edit dialog
   const [editSlotDialog, setEditSlotDialog] = useState(false);
   const [editSlotType, setEditSlotType] = useState<"andata" | "ritorno">("andata");
-  const [editSlotData, setEditSlotData] = useState<{ id: string; giorno: string; fermata: string; orario: string; capienza: number }>({ id: "", giorno: "", fermata: "", orario: "", capienza: 50 });
+  const [editSlotData, setEditSlotData] = useState<{ id: string; giorno: string; fermata: string; orario: string; capienza: number; nascosto: boolean }>({ id: "", giorno: "", fermata: "", orario: "", capienza: 50, nascosto: false });
 
   // Add slot dialog
   const [addSlotDialog, setAddSlotDialog] = useState(false);
