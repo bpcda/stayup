@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Pencil, Trash2, Users, Calendar, MapPin, Eye, EyeOff, Download } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,14 @@ type Participant = {
   user_id: string;
   status: string;
   created_at: string;
-  profiles?: { first_name: string | null; last_name: string | null; phone: string | null } | null;
+  attended: boolean;
+  attended_at: string | null;
+  profiles?: { first_name: string | null; last_name: string | null; phone: string | null; email: string | null } | null;
+};
+
+const displayName = (p: Participant) => {
+  const full = [p.profiles?.first_name, p.profiles?.last_name].filter(Boolean).join(" ").trim();
+  return full || p.profiles?.email || `${p.user_id.slice(0, 8)}…`;
 };
 
 const empty = (): Partial<EventRow> => ({
@@ -160,14 +168,14 @@ const AdminEventi = () => {
     setPartLoading(true);
     const { data, error } = await supabase
       .from("event_participations")
-      .select("id, user_id, status, created_at, profiles:profiles!event_participations_user_id_fkey(first_name, last_name, phone)")
+      .select("id, user_id, status, created_at, attended, attended_at, profiles:profiles!event_participations_user_id_fkey(first_name, last_name, phone, email)")
       .eq("event_id", e.id)
       .order("created_at", { ascending: false });
     if (error) {
       // fallback senza join se la FK non è dichiarata
       const { data: d2 } = await supabase
         .from("event_participations")
-        .select("id, user_id, status, created_at")
+        .select("id, user_id, status, created_at, attended, attended_at")
         .eq("event_id", e.id)
         .order("created_at", { ascending: false });
       setParticipants((d2 as Participant[]) ?? []);
@@ -187,16 +195,31 @@ const AdminEventi = () => {
     toast({ title: "Iscrizione rimossa" });
   };
 
+  const toggleAttended = async (p: Participant, value: boolean) => {
+    setParticipants(prev => prev.map(x => x.id === p.id ? { ...x, attended: value, attended_at: value ? new Date().toISOString() : null } : x));
+    const { error } = await supabase
+      .from("event_participations")
+      .update({ attended: value, attended_at: value ? new Date().toISOString() : null })
+      .eq("id", p.id);
+    if (error) {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      setParticipants(prev => prev.map(x => x.id === p.id ? { ...x, attended: !value } : x));
+    }
+  };
+
   const exportCsv = () => {
     if (!partEvent || participants.length === 0) return;
     const rows = [
-      ["Nome", "Cognome", "Telefono", "Stato", "Iscritto il"],
+      ["Nome", "Cognome", "Email", "Telefono", "Stato", "Presente", "Iscritto il", "Check-in il"],
       ...participants.map(p => [
         p.profiles?.first_name ?? "",
         p.profiles?.last_name ?? "",
+        p.profiles?.email ?? "",
         p.profiles?.phone ?? "",
         p.status,
+        p.attended ? "Sì" : "No",
         new Date(p.created_at).toLocaleString("it-IT"),
+        p.attended_at ? new Date(p.attended_at).toLocaleString("it-IT") : "",
       ]),
     ];
     const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
@@ -371,19 +394,28 @@ const AdminEventi = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">Pres.</TableHead>
                     <TableHead>Nome</TableHead>
-                    <TableHead>Telefono</TableHead>
-                    <TableHead>Stato</TableHead>
+                    <TableHead>Contatto</TableHead>
                     <TableHead>Iscritto il</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {participants.map((p) => (
-                    <TableRow key={p.id}>
-                      <TableCell>{[p.profiles?.first_name, p.profiles?.last_name].filter(Boolean).join(" ") || <span className="text-muted-foreground text-xs">{p.user_id.slice(0,8)}…</span>}</TableCell>
-                      <TableCell>{p.profiles?.phone ?? "—"}</TableCell>
-                      <TableCell><Badge variant="outline">{p.status}</Badge></TableCell>
+                    <TableRow key={p.id} className={p.attended ? "bg-muted/30" : ""}>
+                      <TableCell>
+                        <Checkbox
+                          checked={p.attended}
+                          onCheckedChange={(v) => toggleAttended(p, !!v)}
+                          aria-label="Segna come presente"
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">{displayName(p)}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        <div>{p.profiles?.email ?? "—"}</div>
+                        {p.profiles?.phone && <div className="text-xs">{p.profiles.phone}</div>}
+                      </TableCell>
                       <TableCell className="text-sm text-muted-foreground">{new Date(p.created_at).toLocaleDateString("it-IT")}</TableCell>
                       <TableCell className="text-right">
                         <Button size="icon" variant="ghost" onClick={() => removeParticipant(p.id)}>
