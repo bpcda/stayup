@@ -117,7 +117,8 @@ const AdminEventi = () => {
     };
     let error;
     if (editing.id) {
-      ({ error } = await supabase.from("events").update(payload).eq("id", editing.id));
+      const { slug: _omit, ...updatePayload } = payload as { slug?: string };
+      ({ error } = await supabase.from("events").update(updatePayload).eq("id", editing.id));
     } else {
       ({ error } = await supabase.from("events").insert(payload));
     }
