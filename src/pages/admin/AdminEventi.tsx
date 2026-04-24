@@ -61,6 +61,34 @@ const AdminEventi = () => {
   const [editing, setEditing] = useState<Partial<EventRow> | null>(null);
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [uploadingCover, setUploadingCover] = useState(false);
+
+  const handleCoverUpload = async (file: File) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "File non valido", description: "Carica un'immagine.", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "File troppo grande", description: "Massimo 5 MB.", variant: "destructive" });
+      return;
+    }
+    setUploadingCover(true);
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("event-covers")
+      .upload(path, file, { contentType: file.type, upsert: false });
+    if (upErr) {
+      setUploadingCover(false);
+      toast({ title: "Upload fallito", description: upErr.message, variant: "destructive" });
+      return;
+    }
+    const { data: pub } = supabase.storage.from("event-covers").getPublicUrl(path);
+    setEditing((prev) => prev ? { ...prev, cover_image_url: pub.publicUrl } : prev);
+    setUploadingCover(false);
+    toast({ title: "Immagine caricata" });
+  };
 
 
   const load = async () => {
@@ -265,20 +293,41 @@ const AdminEventi = () => {
               <Input id="location" value={editing?.location ?? ""} onChange={(e) => setEditing({ ...editing!, location: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cover_image_url">URL immagine di copertina</Label>
-              <Input
-                id="cover_image_url"
-                placeholder="https://…"
-                value={(editing?.cover_image_url as string) ?? ""}
-                onChange={(e) => setEditing({ ...editing!, cover_image_url: e.target.value })}
-              />
+              <Label htmlFor="cover_image_file">Immagine di copertina</Label>
+              <div className="flex items-center gap-3">
+                <Input
+                  id="cover_image_file"
+                  type="file"
+                  accept="image/*"
+                  disabled={uploadingCover}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleCoverUpload(f);
+                    e.target.value = "";
+                  }}
+                />
+                {editing?.cover_image_url && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditing({ ...editing!, cover_image_url: "" })}
+                  >
+                    Rimuovi
+                  </Button>
+                )}
+              </div>
+              {uploadingCover && <p className="text-xs text-muted-foreground">Caricamento in corso…</p>}
               {editing?.cover_image_url && (
                 <img
                   src={editing.cover_image_url as string}
                   alt="Anteprima copertina"
-                  className="mt-2 w-full max-h-40 object-cover rounded-md border border-border"
+                  className="mt-2 w-full max-h-48 object-cover rounded-md border border-border"
                 />
               )}
+              <p className="text-xs text-muted-foreground">
+                Formato consigliato 16:9 o 3:4, max 5 MB. L'immagine viene salvata nello storage e linkata automaticamente.
+              </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
