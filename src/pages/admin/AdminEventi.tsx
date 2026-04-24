@@ -24,6 +24,7 @@ import AdminPageHeader from "@/components/admin/AdminPageHeader";
 
 type EventRow = {
   id: string;
+  slug?: string | null;
   title: string;
   description: string | null;
   location: string | null;
@@ -31,6 +32,7 @@ type EventRow = {
   ends_at: string | null;
   is_active: boolean;
   is_public: boolean;
+  cover_image_url: string | null;
   created_at?: string;
 };
 
@@ -43,6 +45,7 @@ const empty = (): Partial<EventRow> => ({
   ends_at: "",
   is_active: true,
   is_public: true,
+  cover_image_url: "",
 });
 
 // "2026-04-25T18:30" <-> ISO
@@ -65,7 +68,7 @@ const AdminEventi = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("events")
-      .select("id, title, description, location, starts_at, ends_at, is_active, is_public, created_at")
+      .select("id, slug, title, description, location, starts_at, ends_at, is_active, is_public, cover_image_url, created_at")
       .order("starts_at", { ascending: false, nullsFirst: false });
     if (error) toast({ title: "Errore", description: error.message, variant: "destructive" });
     else setEvents((data as EventRow[]) ?? []);
@@ -104,6 +107,7 @@ const AdminEventi = () => {
       ends_at: fromLocalInput((editing.ends_at as string) || ""),
       is_active: !!editing.is_active,
       is_public: !!editing.is_public,
+      cover_image_url: editing.cover_image_url?.toString().trim() || null,
     };
     let error;
     if (editing.id) {
@@ -259,6 +263,22 @@ const AdminEventi = () => {
             <div className="space-y-2">
               <Label htmlFor="location">Luogo</Label>
               <Input id="location" value={editing?.location ?? ""} onChange={(e) => setEditing({ ...editing!, location: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cover_image_url">URL immagine di copertina</Label>
+              <Input
+                id="cover_image_url"
+                placeholder="https://…"
+                value={(editing?.cover_image_url as string) ?? ""}
+                onChange={(e) => setEditing({ ...editing!, cover_image_url: e.target.value })}
+              />
+              {editing?.cover_image_url && (
+                <img
+                  src={editing.cover_image_url as string}
+                  alt="Anteprima copertina"
+                  className="mt-2 w-full max-h-40 object-cover rounded-md border border-border"
+                />
+              )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">

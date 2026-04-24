@@ -1,21 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Calendar, MapPin, Search } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 type EventRow = {
   id: string;
+  slug: string | null;
   title: string;
   description: string | null;
   location: string | null;
   starts_at: string | null;
   ends_at: string | null;
+  cover_image_url: string | null;
 };
 
 const filters: { key: "all" | "upcoming" | "past"; label: string }[] = [
@@ -44,7 +46,7 @@ const Eventi = () => {
     setLoading(true);
     const { data: ev, error } = await supabase
       .from("events")
-      .select("id, title, description, location, starts_at, ends_at")
+      .select("id, slug, title, description, location, starts_at, ends_at, cover_image_url")
       .eq("is_active", true)
       .eq("is_public", true)
       .order("starts_at", { ascending: true });
@@ -167,59 +169,76 @@ const Eventi = () => {
           {list.map((e) => {
             const isPast = e.starts_at ? new Date(e.starts_at).getTime() < Date.now() : false;
             const isRegistered = registeredIds.has(e.id);
+            const href = e.slug ? `/eventi/${e.slug}` : `/eventi`;
             return (
-              <Card key={e.id} className="hover:border-primary/40 transition-colors flex flex-col">
-                <CardHeader>
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    {isRegistered && <Badge>Iscritto</Badge>}
-                    {isPast && <Badge variant="outline">Concluso</Badge>}
+              <Link
+                key={e.id}
+                to={href}
+                className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl"
+              >
+                <Card className="h-full overflow-hidden flex flex-col transition-all group-hover:border-primary/50 group-hover:-translate-y-0.5 group-hover:shadow-lg">
+                  <div className="relative aspect-[16/10] w-full overflow-hidden bg-secondary">
+                    {e.cover_image_url ? (
+                      <img
+                        src={e.cover_image_url}
+                        alt={e.title}
+                        loading="lazy"
+                        className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-secondary" />
+                    )}
+                    <div className="absolute top-2 right-2 flex gap-1.5">
+                      {isRegistered && <Badge>Iscritto</Badge>}
+                      {isPast && <Badge variant="outline" className="bg-background/80 backdrop-blur">Concluso</Badge>}
+                    </div>
                   </div>
-                  <CardTitle className="text-lg">{e.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col gap-3 text-sm text-muted-foreground">
-                  {e.description && <p className="flex-1">{e.description}</p>}
-                  {e.starts_at && (
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      <span>
+                  <CardContent className="flex-1 flex flex-col gap-3 p-4">
+                    {e.starts_at && (
+                      <p className="text-xs font-bold tracking-wide text-primary uppercase">
                         {new Date(e.starts_at).toLocaleDateString("it-IT", {
+                          weekday: "short",
                           day: "2-digit",
-                          month: "long",
-                          year: "numeric",
+                          month: "short",
                         })}
-                      </span>
-                    </div>
-                  )}
-                  {e.location && (
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4" />
-                      <span>{e.location}</span>
-                    </div>
-                  )}
-                  {!isPast && (
-                    <div className="pt-2">
-                      {isRegistered ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={busyId === e.id}
-                          onClick={() => unregister(e.id)}
-                        >
-                          {busyId === e.id ? "..." : "Annulla iscrizione"}
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          disabled={busyId === e.id}
-                          onClick={() => register(e.id)}
-                        >
-                          {busyId === e.id ? "..." : "Iscriviti"}
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                        {" / "}
+                        {new Date(e.starts_at).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    )}
+                    <h3 className="font-bold text-lg leading-tight uppercase line-clamp-2">{e.title}</h3>
+                    {e.location && (
+                      <div className="flex items-start gap-1.5 text-sm text-muted-foreground">
+                        <MapPin className="h-4 w-4 shrink-0 mt-0.5" />
+                        <span className="line-clamp-1">{e.location}</span>
+                      </div>
+                    )}
+                    {!isPast && (
+                      <div className="pt-2 mt-auto">
+                        {isRegistered ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            disabled={busyId === e.id}
+                            onClick={(ev) => { ev.preventDefault(); ev.stopPropagation(); unregister(e.id); }}
+                          >
+                            {busyId === e.id ? "..." : "Annulla iscrizione"}
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            className="w-full"
+                            disabled={busyId === e.id}
+                            onClick={(ev) => { ev.preventDefault(); ev.stopPropagation(); register(e.id); }}
+                          >
+                            {busyId === e.id ? "..." : "Iscriviti"}
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </Link>
             );
           })}
         </div>
