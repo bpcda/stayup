@@ -1,16 +1,12 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
 import stayupLogo from "@/assets/stayup-logo.png";
 
 const Index = () => {
   const { t } = useTranslation();
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 relative overflow-hidden">
-      <div className="absolute top-4 right-4 z-20">
-        <LanguageSwitcher />
-      </div>
+    <div className="relative min-h-[calc(100vh-8rem)] flex flex-col items-center justify-center px-6 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent pointer-events-none" />
 
       <div className="relative z-10 flex flex-col items-center gap-8 text-center max-w-md">
@@ -24,18 +20,6 @@ const Index = () => {
           <Link to="/grill-contest">{t("index.cta")}</Link>
         </Button>
       </div>
-
-      <footer className="absolute bottom-4 left-0 right-0 z-10 text-center text-xs text-muted-foreground/70 px-4">
-        Sito sviluppato da Bruno Pio Cosentini di Aieta —{" "}
-        <a
-          href="https://instagram.com/bpcda_"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-foreground transition-colors"
-        >
-          @bpcda_
-        </a>
-      </footer>
     </div>
   );
 };
