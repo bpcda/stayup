@@ -6,7 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const VALID_DAYS = ["25 Aprile", "26 Aprile"];
+// Day labels are validated dynamically against existing slots in the DB,
+// so admins can schedule shuttles for ANY date via the dashboard calendar.
 const VALID_TYPES = ["andata", "ritorno", "andata_ritorno"];
 
 const PAYPAL_LINK = Deno.env.get("PAYPAL_LINK") || "https://paypal.me/stayup";
