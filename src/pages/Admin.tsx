@@ -131,12 +131,12 @@ const Admin = () => {
   // Slot edit dialog
   const [editSlotDialog, setEditSlotDialog] = useState(false);
   const [editSlotType, setEditSlotType] = useState<"andata" | "ritorno">("andata");
-  const [editSlotData, setEditSlotData] = useState<{ id: string; giorno: string; fermata: string; orario: string; capienza: number; nascosto: boolean }>({ id: "", giorno: "", fermata: "", orario: "", capienza: 50, nascosto: false });
+  const [editSlotData, setEditSlotData] = useState<{ id: string; data: Date | undefined; giorno: string; fermata: string; orario: string; capienza: number; nascosto: boolean }>({ id: "", data: undefined, giorno: "", fermata: "", orario: "", capienza: 50, nascosto: false });
 
   // Add slot dialog
   const [addSlotDialog, setAddSlotDialog] = useState(false);
   const [addSlotType, setAddSlotType] = useState<"andata" | "ritorno">("andata");
-  const [newSlotData, setNewSlotData] = useState({ giorno: "25 Aprile", fermata: "Università Cattolica", orario: "", capienza: 50 });
+  const [newSlotData, setNewSlotData] = useState<{ data: Date | undefined; fermata: string; orario: string; capienza: number }>({ data: undefined, fermata: "Università Cattolica", orario: "", capienza: 50 });
 
   // Auto-fetch on mount (AdminGuard ensures we are admin & authed)
   useEffect(() => {
