@@ -348,7 +348,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
           <div className="space-y-2">
             <Label>{t("form.departureDay")} *</Label>
             <div className="grid grid-cols-2 gap-3">
-              {DAYS.map((d) => (
+              {availableDays.map((d) => (
                 <button
                   key={d}
                   type="button"
@@ -420,7 +420,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
         <div className="space-y-2">
           <Label>{t("form.returnDay")} *</Label>
           <div className="grid grid-cols-2 gap-3">
-            {DAYS.map((d) => (
+            {availableDays.map((d) => (
               <button
                 key={d}
                 type="button"
