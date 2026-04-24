@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import Footer from "@/components/Footer";
 
 const TermsConditions = () => {
   const { t } = useTranslation();
@@ -55,7 +54,7 @@ const TermsConditions = () => {
           </section>
         </div>
       </div>
-      <Footer />
+
     </div>
   );
 };
