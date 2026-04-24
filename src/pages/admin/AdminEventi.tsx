@@ -102,8 +102,12 @@ const AdminEventi = () => {
       toast({ title: "Titolo obbligatorio", variant: "destructive" });
       return;
     }
-    const payload = {
+    const slugify = (s: string) =>
+      s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "evento";
+    const payload: Record<string, unknown> = {
       title: editing.title!.trim(),
+      slug: slugify(editing.title!.trim()) + "-" + Math.random().toString(36).slice(2, 7),
       description: editing.description?.toString().trim() || null,
       location: editing.location?.toString().trim() || null,
       starts_at: fromLocalInput((editing.starts_at as string) || ""),
@@ -113,7 +117,8 @@ const AdminEventi = () => {
     };
     let error;
     if (editing.id) {
-      ({ error } = await supabase.from("events").update(payload).eq("id", editing.id));
+      const { slug: _omit, ...updatePayload } = payload as { slug?: string };
+      ({ error } = await supabase.from("events").update(updatePayload).eq("id", editing.id));
     } else {
       ({ error } = await supabase.from("events").insert(payload));
     }
