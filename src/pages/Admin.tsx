@@ -1044,6 +1044,16 @@ const Admin = () => {
                 <Label>Capienza</Label>
                 <Input type="number" value={editSlotData.capienza} onChange={(e) => setEditSlotData((p) => ({ ...p, capienza: parseInt(e.target.value) || 0 }))} />
               </div>
+              <div className="flex items-center space-x-2 pt-2">
+                <Checkbox
+                  id="nascosto-slot"
+                  checked={editSlotData.nascosto}
+                  onCheckedChange={(v) => setEditSlotData((p) => ({ ...p, nascosto: v === true }))}
+                />
+                <Label htmlFor="nascosto-slot" className="cursor-pointer">
+                  Nascondi questo slot dal form pubblico
+                </Label>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditSlotDialog(false)}>Annulla</Button>
