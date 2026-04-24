@@ -15,6 +15,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
 import stayupLogo from "@/assets/stayup-logo.png";
 import { useAuth } from "@/hooks/useAuth";
