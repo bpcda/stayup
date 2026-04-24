@@ -34,7 +34,8 @@ const timeToMinutes = (t: string): number => {
   return h < 6 ? (h + 24) * 60 + m : h * 60 + m;
 };
 
-const DAYS = ["25 Aprile", "26 Aprile"];
+// Legacy fallback only — actual list is fetched dynamically below
+const DAYS_FALLBACK = ["25 Aprile", "26 Aprile"];
 const STOPS = ["Università Cattolica", "Cheope"];
 
 const FALLBACK_SCHEDULES: Record<string, string[]> = {
@@ -65,6 +66,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
   const [returnSlots, setReturnSlots] = useState<ReturnSlot[]>([]);
   const [bookingCounts, setBookingCounts] = useState<Record<string, number>>({});
   const [returnCounts, setReturnCounts] = useState<Record<string, number>>({});
+  const [availableDays, setAvailableDays] = useState<string[]>(DAYS_FALLBACK);
   const [loading, setLoading] = useState(false);
   const [loadingSchedules, setLoadingSchedules] = useState(false);
   const [loadingReturnSlots, setLoadingReturnSlots] = useState(false);
@@ -174,7 +176,37 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
     fetchReturnSlots();
   }, [giorno, needsRitorno]);
 
-  // Reset dependent fields when tipo changes
+  // Fetch the list of distinct days that have at least one visible slot.
+  // Sorted by `data` (timestamptz) when available, otherwise by giorno text.
+  useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setAvailableDays(DAYS_FALLBACK);
+      return;
+    }
+    const fetchDays = async () => {
+      const [aRes, rRes] = await Promise.all([
+        supabase.from("shuttle_slots").select("giorno, data, nascosto"),
+        supabase.from("shuttle_return_slots").select("giorno, data, nascosto"),
+      ]);
+      const map = new Map<string, number>();
+      const collect = (rows: any[] | null) => {
+        (rows || []).forEach((r) => {
+          if (r.nascosto) return;
+          if (!r.giorno) return;
+          const ts = r.data ? new Date(r.data).getTime() : Number.POSITIVE_INFINITY;
+          const prev = map.get(r.giorno);
+          if (prev === undefined || ts < prev) map.set(r.giorno, ts);
+        });
+      };
+      collect(aRes.data);
+      collect(rRes.data);
+      const arr = Array.from(map.entries()).sort((a, b) => a[1] - b[1]).map(([l]) => l);
+      setAvailableDays(arr.length ? arr : DAYS_FALLBACK);
+    };
+    fetchDays().catch(() => setAvailableDays(DAYS_FALLBACK));
+  }, []);
+
+
   useEffect(() => {
     setGiorno("");
     setFermata("");
@@ -316,7 +348,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
           <div className="space-y-2">
             <Label>{t("form.departureDay")} *</Label>
             <div className="grid grid-cols-2 gap-3">
-              {DAYS.map((d) => (
+              {availableDays.map((d) => (
                 <button
                   key={d}
                   type="button"
@@ -388,7 +420,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
         <div className="space-y-2">
           <Label>{t("form.returnDay")} *</Label>
           <div className="grid grid-cols-2 gap-3">
-            {DAYS.map((d) => (
+            {availableDays.map((d) => (
               <button
                 key={d}
                 type="button"

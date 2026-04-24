@@ -6,7 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const VALID_DAYS = ["25 Aprile", "26 Aprile"];
+// Day labels are validated dynamically against existing slots in the DB,
+// so admins can schedule shuttles for ANY date via the dashboard calendar.
 const VALID_TYPES = ["andata", "ritorno", "andata_ritorno"];
 
 const PAYPAL_LINK = Deno.env.get("PAYPAL_LINK") || "https://paypal.me/stayup";
@@ -46,9 +47,12 @@ serve(async (req) => {
     const needsAndata = tipo_viaggio === "andata" || tipo_viaggio === "andata_ritorno";
     const needsRitorno = tipo_viaggio === "ritorno" || tipo_viaggio === "andata_ritorno";
 
-    if (!giorno || !VALID_DAYS.includes(giorno)) {
+    if (!giorno || typeof giorno !== "string" || giorno.trim().length === 0) {
       return jsonError("Giorno non valido", 400);
     }
+    // Note: the giorno label is validated implicitly later — when we look up
+    // shuttle_slots / shuttle_return_slots for that day. If no slots exist
+    // we return a clear error to the user.
 
     // --- Validate andata using shuttle_slots from DB ---
     let finalOrario = orario;
