@@ -9,7 +9,9 @@ import AdminGuard from "@/components/AdminGuard";
 import AppLayout from "@/components/layout/AppLayout";
 import Index from "./pages/Index";
 import GrillContest from "./pages/GrillContest";
-import Admin from "./pages/Admin";
+import AdminHome from "./pages/admin/AdminHome";
+import AdminShuttle from "./pages/admin/AdminShuttle";
+import AdminEventi from "./pages/admin/AdminEventi";
 import Auth from "./pages/Auth";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
@@ -31,14 +33,9 @@ const AppRoutes = () => (
       <Route path="/profilo" element={<Profilo />} />
       <Route path="/grill-contest" element={<GrillContest />} />
       <Route path="/auth" element={<Auth />} />
-      <Route
-        path="/admin"
-        element={
-          <AdminGuard>
-            <Admin />
-          </AdminGuard>
-        }
-      />
+      <Route path="/admin" element={<AdminGuard><AdminHome /></AdminGuard>} />
+      <Route path="/admin/shuttle" element={<AdminGuard><AdminShuttle /></AdminGuard>} />
+      <Route path="/admin/eventi" element={<AdminGuard><AdminEventi /></AdminGuard>} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/termini" element={<TermsConditions />} />
       <Route path="*" element={<NotFound />} />
