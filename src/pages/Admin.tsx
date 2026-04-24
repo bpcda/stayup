@@ -19,6 +19,33 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
 import stayupLogo from "@/assets/stayup-logo.png";
 import { useAuth } from "@/hooks/useAuth";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+// Italian month names (lowercase, no locale dependency)
+const MESI_IT = [
+  "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
+  "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre",
+];
+
+// Format: "25 Aprile" or "25 Aprile 2027" if year != current
+const formatGiornoLabel = (d: Date): string => {
+  const day = d.getDate();
+  const month = MESI_IT[d.getMonth()];
+  const year = d.getFullYear();
+  const now = new Date().getFullYear();
+  return year === now ? `${day} ${month}` : `${day} ${month} ${year}`;
+};
+
+// Build a Date in local Europe/Rome from date + "HH:MM"
+const combineDateTime = (date: Date, time: string): Date => {
+  const [h, m] = time.split(":").map(Number);
+  const d = new Date(date);
+  d.setHours(h || 0, m || 0, 0, 0);
+  return d;
+};
 
 interface Booking {
   id: string;
