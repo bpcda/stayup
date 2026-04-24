@@ -2,12 +2,21 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { Session, User } from "@supabase/supabase-js";
 import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 
+interface SignUpData {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  city?: string;
+}
+
 interface AuthContextValue {
   session: Session | null;
   user: User | null;
   isAdmin: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, data?: SignUpData) => Promise<{ error: string | null }>;
+  signInWithGoogle: () => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -77,6 +86,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error: error?.message ?? null };
   };
 
+  const signUp = async (email: string, password: string, data?: SignUpData) => {
+    if (!isSupabaseConfigured) {
+      return { error: "Auth non configurato" };
+    }
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+        data: {
+          first_name: data?.firstName ?? "",
+          last_name: data?.lastName ?? "",
+          phone: data?.phone ?? "",
+          city: data?.city ?? "",
+        },
+      },
+    });
+    return { error: error?.message ?? null };
+  };
+
+  const signInWithGoogle = async () => {
+    if (!isSupabaseConfigured) {
+      return { error: "Auth non configurato" };
+    }
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/` },
+    });
+    return { error: error?.message ?? null };
+  };
+
   const signOut = async () => {
     if (isSupabaseConfigured) {
       await supabase.auth.signOut();
@@ -87,7 +127,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, isAdmin, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, user, isAdmin, loading, signIn, signUp, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );
