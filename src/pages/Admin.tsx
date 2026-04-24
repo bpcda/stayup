@@ -420,7 +420,7 @@ const Admin = () => {
 
   const saveEditSlot = async () => {
     const table = editSlotType === "andata" ? "shuttle_slots" : "shuttle_return_slots";
-    const updatePayload: any = { giorno: editSlotData.giorno, orario: editSlotData.orario, capienza: editSlotData.capienza };
+    const updatePayload: any = { giorno: editSlotData.giorno, orario: editSlotData.orario, capienza: editSlotData.capienza, nascosto: editSlotData.nascosto };
     if (editSlotType === "andata") updatePayload.fermata = editSlotData.fermata;
 
     if (isSupabaseConfigured) {
