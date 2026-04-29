@@ -116,6 +116,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
           (slotsRes.data || [])
             .filter((s: ShuttleSlot & { nascosto?: boolean }) => !s.nascosto)
             .filter((s: ShuttleSlot) => s.capienza > (counts[s.orario] || 0))
+            .sort((a: ShuttleSlot, b: ShuttleSlot) => timeToMinutes(a.orario) - timeToMinutes(b.orario))
         );
         setBookingCounts(counts);
       }
@@ -167,6 +168,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
           (slotsRes.data || [])
             .filter((s: ReturnSlot & { nascosto?: boolean }) => !s.nascosto)
             .filter((s: ReturnSlot) => s.capienza > (counts[s.orario] || 0))
+            .sort((a: ReturnSlot, b: ReturnSlot) => timeToMinutes(a.orario) - timeToMinutes(b.orario))
         );
         setReturnCounts(counts);
       }
