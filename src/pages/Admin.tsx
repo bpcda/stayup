@@ -129,6 +129,8 @@ const Admin = () => {
   const [newFermata, setNewFermata] = useState("");
   const [newOrario, setNewOrario] = useState("");
   const [newOrarioRitorno, setNewOrarioRitorno] = useState("");
+  const [removeAndata, setRemoveAndata] = useState(false);
+  const [removeRitorno, setRemoveRitorno] = useState(false);
 
   // Slot edit dialog
   const [editSlotDialog, setEditSlotDialog] = useState(false);
