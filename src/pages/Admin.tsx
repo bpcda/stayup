@@ -386,13 +386,24 @@ const Admin = () => {
     setNewFermata(booking.fermata || "");
     setNewOrario(booking.orario || "");
     setNewOrarioRitorno(booking.orario_ritorno || "");
+    setRemoveAndata(false);
+    setRemoveRitorno(false);
     setMoveDialogOpen(true);
   };
 
   const handleMove = async () => {
     if (!selectedBooking) return;
-    const hasAndata = selectedBooking.tipo_viaggio === "andata" || selectedBooking.tipo_viaggio === "andata_ritorno";
-    const hasRitorno = selectedBooking.tipo_viaggio === "ritorno" || selectedBooking.tipo_viaggio === "andata_ritorno";
+    const wasAndata = selectedBooking.tipo_viaggio === "andata" || selectedBooking.tipo_viaggio === "andata_ritorno";
+    const wasRitorno = selectedBooking.tipo_viaggio === "ritorno" || selectedBooking.tipo_viaggio === "andata_ritorno";
+
+    // Effective legs after potential removal
+    const hasAndata = wasAndata && !removeAndata;
+    const hasRitorno = wasRitorno && !removeRitorno;
+
+    if (!hasAndata && !hasRitorno) {
+      toast({ title: "Errore", description: "Non puoi rimuovere sia andata che ritorno. Elimina la prenotazione invece.", variant: "destructive" });
+      return;
+    }
     if (hasAndata && (!newFermata || !newOrario)) return;
     if (hasRitorno && !newOrarioRitorno) return;
 
@@ -407,8 +418,22 @@ const Admin = () => {
     }
 
     const updateData: Record<string, string | null> = {};
-    if (hasAndata) { updateData.fermata = newFermata; updateData.orario = newOrario; }
-    if (hasRitorno) { updateData.orario_ritorno = newOrarioRitorno; }
+    if (hasAndata) {
+      updateData.fermata = newFermata;
+      updateData.orario = newOrario;
+    } else if (wasAndata && removeAndata) {
+      updateData.fermata = null;
+      updateData.orario = null;
+    }
+    if (hasRitorno) {
+      updateData.orario_ritorno = newOrarioRitorno;
+    } else if (wasRitorno && removeRitorno) {
+      updateData.orario_ritorno = null;
+    }
+    // Update tipo_viaggio if a leg was removed
+    if (removeAndata || removeRitorno) {
+      updateData.tipo_viaggio = hasAndata ? "andata" : "ritorno";
+    }
 
     if (isSupabaseConfigured) {
       const { error } = await supabase.from("bookings").update(updateData).eq("id", selectedBooking.id);
@@ -423,20 +448,22 @@ const Admin = () => {
             email: selectedBooking.email,
             telefono: selectedBooking.telefono,
             giorno: selectedBooking.giorno || "/",
-            fermata: hasAndata ? newFermata : (selectedBooking.fermata || "/"),
-            orario_andata: hasAndata ? newOrario : (selectedBooking.orario || "/"),
-            orario_ritorno: hasRitorno ? newOrarioRitorno : (selectedBooking.orario_ritorno || "/"),
+            fermata: hasAndata ? newFermata : "/",
+            orario_andata: hasAndata ? newOrario : "/",
+            orario_ritorno: hasRitorno ? newOrarioRitorno : "/",
             spostamento: true,
             confirmed: selectedBooking.pagato,
+            removed_andata: wasAndata && removeAndata,
+            removed_ritorno: wasRitorno && removeRitorno,
             testMode,
           },
         })
         .catch((err) => console.warn("Move notification email failed:", err));
     }
 
-    setBookings((prev) => prev.map((b) => (b.id === selectedBooking.id ? { ...b, ...updateData } : b)));
+    setBookings((prev) => prev.map((b) => (b.id === selectedBooking.id ? { ...b, ...updateData } as Booking : b)));
     setMoveDialogOpen(false);
-    toast({ title: "Spostato", description: `${selectedBooking.nome} spostato con successo.` });
+    toast({ title: "Spostato", description: `${selectedBooking.nome} aggiornato con successo.` });
   };
 
   const sendConfirmEmail = async (booking: Booking) => {
