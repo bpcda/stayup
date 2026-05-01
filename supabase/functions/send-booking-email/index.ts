@@ -19,10 +19,10 @@ serve(async (req) => {
       throw new Error("RESEND_API_KEY is not configured");
     }
 
-    const { nome, email, telefono, giorno, fermata, orario_andata, orario_ritorno, confirmed, spostamento, testMode } = await req.json();
+    const { nome, email, telefono, giorno, fermata, orario_andata, orario_ritorno, confirmed, spostamento, removed_andata, removed_ritorno, testMode } = await req.json();
 
     if (testMode === true) {
-      console.log("[TEST MODE] Email NOT sent. Payload:", { nome, email, confirmed, spostamento });
+      console.log("[TEST MODE] Email NOT sent. Payload:", { nome, email, confirmed, spostamento, removed_andata, removed_ritorno });
       return new Response(JSON.stringify({ success: true, testMode: true, skipped: true }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -38,6 +38,9 @@ serve(async (req) => {
 
     const isConfirmed = confirmed === true;
     const isSpostamento = spostamento === true;
+    const isRemovedAndata = removed_andata === true;
+    const isRemovedRitorno = removed_ritorno === true;
+    const isRemoval = isRemovedAndata || isRemovedRitorno;
 
     const htmlContent = `
       <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #f5f5f5; border-radius: 12px; overflow: hidden;">
@@ -45,9 +48,21 @@ serve(async (req) => {
           <img src="https://drebkzidqxekaepjpsmc.supabase.co/storage/v1/object/public/misc/stayup.png" alt="StayUp" width="120" style="display: inline-block; max-width: 120px; height: auto;" />
         </div>
         <div style="padding: 32px 24px;">
-          <h2 style="color: #f59e0b; margin: 0 0 20px; font-size: 20px;">${isSpostamento ? "Orario modificato ⚠️" : isConfirmed ? "Prenotazione confermata ✅" : "Completa il pagamento"}</h2>
+          <h2 style="color: #f59e0b; margin: 0 0 20px; font-size: 20px;">${isRemoval ? "Disponibilità navetta ridotta ⚠️" : isSpostamento ? "Orario modificato ⚠️" : isConfirmed ? "Prenotazione confermata ✅" : "Completa il pagamento"}</h2>
+          ${isRemoval ? `
+          <div style="background: #7f1d1d; border-left: 4px solid #ef4444; padding: 16px; border-radius: 8px; margin: 0 0 20px;">
+            <p style="color: #fecaca; margin: 0 0 8px; font-weight: 700; font-size: 15px;">
+              Ciao ${nome}, a causa dell'elevato numero di iscritti non riusciamo a garantirti ${isRemovedAndata && isRemovedRitorno ? "la corsa" : isRemovedAndata ? "l'andata" : "il ritorno"}.
+            </p>
+            <p style="color: #fecaca; margin: 0; font-size: 14px; line-height: 1.5;">
+              ${isRemovedAndata && !isRemovedRitorno ? "Avrai a disposizione <strong>solo il ritorno</strong>." : ""}
+              ${isRemovedRitorno && !isRemovedAndata ? "Avrai a disposizione <strong>solo l'andata</strong>." : ""}
+              Ci scusiamo per il disagio — verrai contattato per il rimborso parziale.
+            </p>
+          </div>
+          ` : ""}
           <p style="color: #a3a3a3; line-height: 1.6; margin: 0 0 24px;">
-            Ciao <strong style="color: #f5f5f5;">${nome}</strong>, ${isSpostamento ? "la tua prenotazione navetta è stata modificata. Ecco i nuovi dettagli:" : "ecco il riepilogo della tua prenotazione navetta:"}
+            ${isRemoval ? "Ecco i dettagli aggiornati della tua prenotazione:" : `Ciao <strong style="color: #f5f5f5;">${nome}</strong>, ${isSpostamento ? "la tua prenotazione navetta è stata modificata. Ecco i nuovi dettagli:" : "ecco il riepilogo della tua prenotazione navetta:"}`}
           </p>
           <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
             <tr><td style="padding: 8px 0; color: #a3a3a3;">Giorno</td><td style="padding: 8px 0; text-align: right; font-weight: 600;">${giorno || "/"}</td></tr>
@@ -105,7 +120,7 @@ serve(async (req) => {
       body: JSON.stringify({
         from: "StayUp <noreply@stayupallnight.it>",
         to: [email],
-        subject: isSpostamento ? "Orario modificato - StayUp" : isConfirmed ? "Pagamento confermato - StayUp" : "Completa il pagamento - StayUp",
+        subject: isRemoval ? "Disponibilità navetta ridotta - StayUp" : isSpostamento ? "Orario modificato - StayUp" : isConfirmed ? "Pagamento confermato - StayUp" : "Completa il pagamento - StayUp",
         html: htmlContent,
       }),
     });
