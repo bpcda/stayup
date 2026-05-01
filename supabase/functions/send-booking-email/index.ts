@@ -19,10 +19,10 @@ serve(async (req) => {
       throw new Error("RESEND_API_KEY is not configured");
     }
 
-    const { nome, email, telefono, giorno, fermata, orario_andata, orario_ritorno, confirmed, spostamento, testMode } = await req.json();
+    const { nome, email, telefono, giorno, fermata, orario_andata, orario_ritorno, confirmed, spostamento, removed_andata, removed_ritorno, testMode } = await req.json();
 
     if (testMode === true) {
-      console.log("[TEST MODE] Email NOT sent. Payload:", { nome, email, confirmed, spostamento });
+      console.log("[TEST MODE] Email NOT sent. Payload:", { nome, email, confirmed, spostamento, removed_andata, removed_ritorno });
       return new Response(JSON.stringify({ success: true, testMode: true, skipped: true }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -38,6 +38,9 @@ serve(async (req) => {
 
     const isConfirmed = confirmed === true;
     const isSpostamento = spostamento === true;
+    const isRemovedAndata = removed_andata === true;
+    const isRemovedRitorno = removed_ritorno === true;
+    const isRemoval = isRemovedAndata || isRemovedRitorno;
 
     const htmlContent = `
       <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #f5f5f5; border-radius: 12px; overflow: hidden;">
