@@ -1096,52 +1096,87 @@ const Admin = () => {
             <div className="space-y-4 py-4">
               {(selectedBooking?.tipo_viaggio === "andata" || selectedBooking?.tipo_viaggio === "andata_ritorno") && (
                 <>
-                  <p className="text-sm font-medium text-muted-foreground">Andata</p>
-                  <div className="space-y-2">
-                    <Label>Fermata</Label>
-                    <Select value={newFermata} onValueChange={(v) => { setNewFermata(v); setNewOrario(""); }}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {STOPS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-muted-foreground">Andata</p>
+                    {selectedBooking?.tipo_viaggio === "andata_ritorno" && (
+                      <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={removeAndata}
+                          onChange={(e) => setRemoveAndata(e.target.checked)}
+                        />
+                        Andata non disponibile
+                      </label>
+                    )}
                   </div>
-                  <div className="space-y-2">
-                    <Label>Orario Andata</Label>
-                    <Select value={newOrario} onValueChange={setNewOrario}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {slotStats
-                          .filter((s) => s.giorno === selectedBooking?.giorno && s.fermata === newFermata)
-                          .map((s) => (
-                            <SelectItem key={s.orario} value={s.orario} disabled={s.rimanenti <= 0}>
-                              {s.orario} ({s.rimanenti} posti) {s.rimanenti <= 0 ? "— PIENO" : ""}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {!removeAndata && (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Fermata</Label>
+                        <Select value={newFermata} onValueChange={(v) => { setNewFermata(v); setNewOrario(""); }}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {STOPS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Orario Andata</Label>
+                        <Select value={newOrario} onValueChange={setNewOrario}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {slotStats
+                              .filter((s) => s.giorno === selectedBooking?.giorno && s.fermata === newFermata)
+                              .map((s) => (
+                                <SelectItem key={s.orario} value={s.orario} disabled={s.rimanenti <= 0}>
+                                  {s.orario} ({s.rimanenti} posti) {s.rimanenti <= 0 ? "— PIENO" : ""}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  )}
                 </>
               )}
               {(selectedBooking?.tipo_viaggio === "ritorno" || selectedBooking?.tipo_viaggio === "andata_ritorno") && (
                 <>
-                  <p className="text-sm font-medium text-muted-foreground">Ritorno</p>
-                  <div className="space-y-2">
-                    <Label>Orario Ritorno</Label>
-                    <Select value={newOrarioRitorno} onValueChange={setNewOrarioRitorno}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {returnSlotStats
-                          .filter((s) => s.giorno === selectedBooking?.giorno)
-                          .map((s) => (
-                            <SelectItem key={s.orario} value={s.orario} disabled={s.rimanenti <= 0}>
-                              {s.orario} ({s.rimanenti} posti) {s.rimanenti <= 0 ? "— PIENO" : ""}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-muted-foreground">Ritorno</p>
+                    {selectedBooking?.tipo_viaggio === "andata_ritorno" && (
+                      <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={removeRitorno}
+                          onChange={(e) => setRemoveRitorno(e.target.checked)}
+                        />
+                        Ritorno non disponibile
+                      </label>
+                    )}
                   </div>
+                  {!removeRitorno && (
+                    <div className="space-y-2">
+                      <Label>Orario Ritorno</Label>
+                      <Select value={newOrarioRitorno} onValueChange={setNewOrarioRitorno}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {returnSlotStats
+                            .filter((s) => s.giorno === selectedBooking?.giorno)
+                            .map((s) => (
+                              <SelectItem key={s.orario} value={s.orario} disabled={s.rimanenti <= 0}>
+                                {s.orario} ({s.rimanenti} posti) {s.rimanenti <= 0 ? "— PIENO" : ""}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </>
+              )}
+              {(removeAndata || removeRitorno) && (
+                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                  ⚠️ La persona riceverà una mail che la informa che avrà solo {removeAndata ? "il ritorno" : "l'andata"}.
+                </div>
               )}
             </div>
             <DialogFooter>
