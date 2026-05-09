@@ -41,6 +41,7 @@ const AppRoutes = () => (
       <Route path="/admin/shuttle" element={<AdminGuard><AdminShuttle /></AdminGuard>} />
       <Route path="/admin/eventi" element={<AdminGuard><AdminEventi /></AdminGuard>} />
       <Route path="/admin/eventi/:id/iscritti" element={<AdminGuard><AdminEventoIscritti /></AdminGuard>} />
+      <Route path="/admin/eventi/:eventId/shuttle" element={<AdminGuard><AdminShuttle /></AdminGuard>} />
       <Route path="/admin/impostazioni" element={<AdminGuard><AdminImpostazioni /></AdminGuard>} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/termini" element={<TermsConditions />} />

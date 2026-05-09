@@ -24,26 +24,16 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-// Define custom preferences type
-interface UserPrefs extends Models.Preferences {
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-  city?: string;
-}
-
 // Helper to map Appwrite user to Supabase User interface to prevent breaking existing components
 const mapAppwriteUserToSupabaseUser = (appwriteUser: Models.User<Models.Preferences>): User => {
-  const prefs = appwriteUser.prefs as UserPrefs;
-  
   return {
     id: appwriteUser.$id,
     app_metadata: {},
     user_metadata: {
-      first_name: prefs?.firstName || appwriteUser.name?.split(' ')[0] || '',
-      last_name: prefs?.lastName || appwriteUser.name?.split(' ').slice(1).join(' ') || '',
-      phone: prefs?.phone || '',
-      city: prefs?.city || '',
+      first_name: appwriteUser.prefs?.firstName || appwriteUser.name?.split(' ')[0] || '',
+      last_name: appwriteUser.prefs?.lastName || appwriteUser.name?.split(' ').slice(1).join(' ') || '',
+      phone: appwriteUser.prefs?.phone || '',
+      city: appwriteUser.prefs?.city || '',
     },
     aud: 'authenticated',
     created_at: appwriteUser.$createdAt,
@@ -101,15 +91,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     try {
-      const appwriteSession = await account.getSession('current');
+      const appwriteSession = await account.getSession({ sessionId: 'current' });
       const appwriteUser = await account.get();
-      
+
       const mappedUser = mapAppwriteUserToSupabaseUser(appwriteUser);
       const mappedSession = mapAppwriteSessionToSupabaseSession(appwriteSession, mappedUser);
-      
+
       setSession(mappedSession);
       setUser(mappedUser);
-      
+
       // We don't await checkAdmin here to avoid blocking UI unnecessarily
       checkAdmin(mappedUser.id);
     } catch (error) {
@@ -131,7 +121,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { error: "Auth non configurato" };
     }
     try {
-      await account.createEmailPasswordSession(email, password);
+      await account.createEmailPasswordSession({ email, password });
       await loadSession();
       return { error: null };
     } catch (error) {
@@ -146,12 +136,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     try {
       const name = `${data?.firstName || ''} ${data?.lastName || ''}`.trim();
-      const newAccount = await account.create(ID.unique(), email, password, name);
-      
+      const newAccount = await account.create({
+        userId: ID.unique(),
+        email: email,
+        password: password,
+        name: name
+      });
+
       // Attempt to set preferences if provided
       if (data) {
         // We need an active session to update preferences
-        await account.createEmailPasswordSession(email, password);
+        await account.createEmailPasswordSession({ email, password });
         await account.updatePrefs({
           firstName: data.firstName || '',
           lastName: data.lastName || '',
@@ -163,9 +158,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // The user mentioned SMTP is set up for Verification, so they might want to require email verification.
         // Let's create a verification if we want, but let's just log out for now to force login.
         // If we want to send verification email: await account.createVerification(`${window.location.origin}/verify`);
-        await account.deleteSession('current');
+        await account.deleteSession({ sessionId: 'current' });
       }
-      
+
       return { error: null };
     } catch (error) {
       const e = error as AppwriteException;
@@ -179,11 +174,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     try {
       // Appwrite OAuth2 implementation
-      account.createOAuth2Session(
-        'google' as any,
-        `${window.location.origin}/`,
-        `${window.location.origin}/auth`
-      );
+      account.createOAuth2Session({
+        provider: 'google' as any,
+        success: `${window.location.origin}/`,
+        failure: `${window.location.origin}/auth`
+      });
       // It will redirect, so we just return null for now.
       return { error: null };
     } catch (error) {
@@ -195,7 +190,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     if (isAppwriteConfigured) {
       try {
-        await account.deleteSession('current');
+        await account.deleteSession({ sessionId: 'current' });
       } catch (e) {
         console.warn("Error during signout", e);
       }

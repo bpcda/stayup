@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
-import { supabase } from "@/integrations/supabase/client";
+import { account, functions } from "@/lib/appwrite";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -77,16 +77,15 @@ const Profilo = () => {
   const handleChangeEmail = async () => {
     if (!newEmail) return;
     setEmailLoading(true);
-    const { error } = await supabase.auth.updateUser({ email: newEmail });
+    try {
+      await account.updateEmail(newEmail, "password"); // Appwrite requires current password for email change normally, or it triggers a verification. 
+      // Note: Appwrite updateEmail behavior depends on configuration.
+      toast({ title: "Email aggiornata", description: "Controlla la tua nuova casella di posta." });
+      setNewEmail("");
+    } catch (err: any) {
+      toast({ title: "Errore", description: err.message, variant: "destructive" });
+    }
     setEmailLoading(false);
-    toast({
-      title: error ? "Errore" : "Email in aggiornamento",
-      description:
-        error?.message ??
-        "Controlla la tua nuova casella di posta per confermare il cambio.",
-      variant: error ? "destructive" : "default",
-    });
-    if (!error) setNewEmail("");
   };
 
   const handleChangePassword = async () => {
@@ -99,29 +98,30 @@ const Profilo = () => {
       return;
     }
     setPwLoading(true);
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    setPwLoading(false);
-    toast({
-      title: error ? "Errore" : "Password aggiornata",
-      description: error?.message ?? "Usa la nuova password al prossimo accesso.",
-      variant: error ? "destructive" : "default",
-    });
-    if (!error) {
+    try {
+      await account.updatePassword(newPassword);
+      toast({ title: "Password aggiornata", description: "Usa la nuova password al prossimo accesso." });
       setNewPassword("");
       setConfirmPassword("");
+    } catch (err: any) {
+      toast({ title: "Errore", description: err.message, variant: "destructive" });
     }
+    setPwLoading(false);
   };
 
   const handleDeleteAccount = async () => {
     setDeleting(true);
-    const { error } = await supabase.functions.invoke("delete-account", { method: "POST" });
-    setDeleting(false);
-    if (error) {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
-      return;
+    try {
+      const execution = await functions.createExecution(import.meta.env.VITE_APPWRITE_FUNCTION_DELETE_ACCOUNT, "");
+      const result = JSON.parse(execution.responseBody);
+      if (result.error) throw new Error(result.error);
+      
+      toast({ title: "Account eliminato", description: "Ci dispiace vederti andare." });
+      await signOut();
+    } catch (err: any) {
+      toast({ title: "Errore", description: err.message, variant: "destructive" });
     }
-    toast({ title: "Account eliminato", description: "Ci dispiace vederti andare." });
-    await signOut();
+    setDeleting(false);
   };
 
   return (

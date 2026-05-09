@@ -1,379 +1,62 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { Plus, Pencil, Trash2, Users, Calendar, MapPin, Eye, EyeOff } from "lucide-react";
-import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
-
-type EventRow = {
-  id: string;
-  slug?: string | null;
-  title: string;
-  description: string | null;
-  location: string | null;
-  starts_at: string | null;
-  ends_at: string | null;
-  is_active: boolean;
-  is_public: boolean;
-  cover_image_url: string | null;
-  created_at?: string;
-};
-
-
-const empty = (): Partial<EventRow> => ({
-  title: "",
-  description: "",
-  location: "",
-  starts_at: "",
-  ends_at: "",
-  is_active: true,
-  is_public: true,
-  cover_image_url: "",
-});
-
-// "2026-04-25T18:30" <-> ISO
-const toLocalInput = (iso: string | null) => (iso ? new Date(iso).toISOString().slice(0, 16) : "");
-const fromLocalInput = (v: string) => (v ? new Date(v).toISOString() : null);
+import { useAdminEvents } from "@/hooks/useAdminEvents";
+import { EventsTable } from "@/components/admin/events/EventsTable";
+import { EventModals } from "@/components/admin/events/EventModals";
 
 const AdminEventi = () => {
-  const { toast } = useToast();
-  const [events, setEvents] = useState<EventRow[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const [editOpen, setEditOpen] = useState(false);
-  const [editing, setEditing] = useState<Partial<EventRow> | null>(null);
-
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [uploadingCover, setUploadingCover] = useState(false);
-
-  const handleCoverUpload = async (file: File) => {
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast({ title: "File non valido", description: "Carica un'immagine.", variant: "destructive" });
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ title: "File troppo grande", description: "Massimo 5 MB.", variant: "destructive" });
-      return;
-    }
-    setUploadingCover(true);
-    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `${crypto.randomUUID()}.${ext}`;
-    const { error: upErr } = await supabase.storage
-      .from("event-covers")
-      .upload(path, file, { contentType: file.type, upsert: false });
-    if (upErr) {
-      setUploadingCover(false);
-      toast({ title: "Upload fallito", description: upErr.message, variant: "destructive" });
-      return;
-    }
-    const { data: pub } = supabase.storage.from("event-covers").getPublicUrl(path);
-    setEditing((prev) => prev ? { ...prev, cover_image_url: pub.publicUrl } : prev);
-    setUploadingCover(false);
-    toast({ title: "Immagine caricata" });
-  };
-
-
-  const load = async () => {
-    if (!isSupabaseConfigured) { setLoading(false); return; }
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("events")
-      .select("id, slug, title, description, location, starts_at, ends_at, is_active, is_public, cover_image_url, created_at")
-      .order("starts_at", { ascending: false, nullsFirst: false });
-    if (error) toast({ title: "Errore", description: error.message, variant: "destructive" });
-    else setEvents((data as EventRow[]) ?? []);
-    setLoading(false);
-  };
-
-  useEffect(() => { load(); }, []);
-
-  const counts = useMemo(() => {
-    const now = Date.now();
-    return {
-      total: events.length,
-      upcoming: events.filter(e => e.starts_at && new Date(e.starts_at).getTime() >= now).length,
-      active: events.filter(e => e.is_active).length,
-    };
-  }, [events]);
-
-  const openCreate = () => { setEditing(empty()); setEditOpen(true); };
-  const openEdit = (e: EventRow) => { setEditing({ ...e, starts_at: toLocalInput(e.starts_at), ends_at: toLocalInput(e.ends_at) }); setEditOpen(true); };
-
-  const save = async () => {
-    if (!editing) return;
-    if (!editing.title?.trim()) {
-      toast({ title: "Titolo obbligatorio", variant: "destructive" });
-      return;
-    }
-    const slugify = (s: string) =>
-      s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "evento";
-    const payload: Record<string, unknown> = {
-      title: editing.title!.trim(),
-      slug: slugify(editing.title!.trim()) + "-" + Math.random().toString(36).slice(2, 7),
-      description: editing.description?.toString().trim() || null,
-      location: editing.location?.toString().trim() || null,
-      starts_at: fromLocalInput((editing.starts_at as string) || ""),
-      ends_at: fromLocalInput((editing.ends_at as string) || ""),
-      is_active: !!editing.is_active,
-      is_public: !!editing.is_public,
-      cover_image_url: editing.cover_image_url?.toString().trim() || null,
-    };
-    let error;
-    if (editing.id) {
-      const { slug: _omit, ...updatePayload } = payload as { slug?: string };
-      ({ error } = await supabase.from("events").update(updatePayload).eq("id", editing.id));
-    } else {
-      ({ error } = await supabase.from("events").insert(payload));
-    }
-    if (error) {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
-      return;
-    }
-    toast({ title: editing.id ? "Evento aggiornato" : "Evento creato" });
-    setEditOpen(false);
-    setEditing(null);
-    load();
-  };
-
-  const remove = async () => {
-    if (!deleteId) return;
-    const { error } = await supabase.from("events").delete().eq("id", deleteId);
-    if (error) {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Evento eliminato" });
-      setEvents(prev => prev.filter(e => e.id !== deleteId));
-    }
-    setDeleteId(null);
-  };
-
-  const toggleField = async (e: EventRow, field: "is_active" | "is_public") => {
-    const next = !e[field];
-    setEvents(prev => prev.map(x => x.id === e.id ? { ...x, [field]: next } : x));
-    const { error } = await supabase.from("events").update({ [field]: next }).eq("id", e.id);
-    if (error) {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
-      setEvents(prev => prev.map(x => x.id === e.id ? { ...x, [field]: !next } : x));
-    }
-  };
+  const admin = useAdminEvents();
 
   return (
     <div className="container max-w-6xl mx-auto px-4 py-10">
       <AdminPageHeader
         title="Eventi"
         description="Crea, modifica e gestisci gli iscritti agli eventi."
-        actions={
-          <Button onClick={openCreate}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nuovo evento
-          </Button>
-        }
+        actions={<Button onClick={admin.openCreate}><Plus className="h-4 w-4 mr-2" />Nuovo evento</Button>}
       />
 
       <div className="grid gap-3 sm:grid-cols-3 mb-6">
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Totale</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{counts.total}</CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Prossimi</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{counts.upcoming}</CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Attivi</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{counts.active}</CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Totale</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{admin.counts.total}</CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Prossimi</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{admin.counts.upcoming}</CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Attivi</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{admin.counts.active}</CardContent></Card>
       </div>
 
-      {loading ? (
+      {admin.loading ? (
         <p className="text-center text-muted-foreground py-12">Caricamento...</p>
-      ) : events.length === 0 ? (
+      ) : admin.events.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground mb-4">Nessun evento ancora creato.</p>
-            <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Crea il primo evento</Button>
+            <Button onClick={admin.openCreate}><Plus className="h-4 w-4 mr-2" />Crea il primo evento</Button>
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardContent className="p-0 overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Titolo</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Luogo</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {events.map((e) => {
-                  const isPast = e.starts_at ? new Date(e.starts_at).getTime() < Date.now() : false;
-                  return (
-                    <TableRow key={e.id}>
-                      <TableCell className="font-medium">{e.title}</TableCell>
-                      <TableCell>
-                        {e.starts_at ? (
-                          <div className="flex items-center gap-1.5 text-sm">
-                            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                            {new Date(e.starts_at).toLocaleString("it-IT", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                          </div>
-                        ) : <span className="text-muted-foreground text-sm">—</span>}
-                      </TableCell>
-                      <TableCell>
-                        {e.location ? (
-                          <div className="flex items-center gap-1.5 text-sm">
-                            <MapPin className="h-3.5 w-3.5 text-muted-foreground" />{e.location}
-                          </div>
-                        ) : <span className="text-muted-foreground text-sm">—</span>}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {e.is_active ? <Badge variant="default">Attivo</Badge> : <Badge variant="secondary">Bozza</Badge>}
-                          {e.is_public ? <Badge variant="outline">Pubblico</Badge> : <Badge variant="outline">Privato</Badge>}
-                          {isPast && <Badge variant="outline">Concluso</Badge>}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button size="icon" variant="ghost" title={e.is_active ? "Disattiva" : "Attiva"} onClick={() => toggleField(e, "is_active")}>
-                            {e.is_active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                          </Button>
-                          <Button size="icon" variant="ghost" title="Iscritti" asChild>
-                            <Link to={`/admin/eventi/${e.id}/iscritti`}>
-                              <Users className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                          <Button size="icon" variant="ghost" title="Modifica" onClick={() => openEdit(e)}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button size="icon" variant="ghost" title="Elimina" onClick={() => setDeleteId(e.id)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            <EventsTable 
+              events={admin.events} 
+              toggleField={admin.toggleField} 
+              openEdit={admin.openEdit} 
+              setDeleteId={admin.setDeleteId} 
+            />
           </CardContent>
         </Card>
       )}
 
-      {/* Create / Edit dialog */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editing?.id ? "Modifica evento" : "Nuovo evento"}</DialogTitle>
-            <DialogDescription>Compila i dettagli dell'evento.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="title">Titolo *</Label>
-              <Input id="title" value={editing?.title ?? ""} onChange={(e) => setEditing({ ...editing!, title: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrizione</Label>
-              <Textarea id="description" rows={4} value={editing?.description ?? ""} onChange={(e) => setEditing({ ...editing!, description: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="location">Luogo</Label>
-              <Input id="location" value={editing?.location ?? ""} onChange={(e) => setEditing({ ...editing!, location: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cover_image_file">Immagine di copertina</Label>
-              <div className="flex items-center gap-3">
-                <Input
-                  id="cover_image_file"
-                  type="file"
-                  accept="image/*"
-                  disabled={uploadingCover}
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) handleCoverUpload(f);
-                    e.target.value = "";
-                  }}
-                />
-                {editing?.cover_image_url && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setEditing({ ...editing!, cover_image_url: "" })}
-                  >
-                    Rimuovi
-                  </Button>
-                )}
-              </div>
-              {uploadingCover && <p className="text-xs text-muted-foreground">Caricamento in corso…</p>}
-              {editing?.cover_image_url && (
-                <img
-                  src={editing.cover_image_url as string}
-                  alt="Anteprima copertina"
-                  className="mt-2 w-full max-h-48 object-cover rounded-md border border-border"
-                />
-              )}
-              <p className="text-xs text-muted-foreground">
-                Formato consigliato 16:9 o 3:4, max 5 MB. L'immagine viene salvata nello storage e linkata automaticamente.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="starts_at">Inizio</Label>
-                <Input id="starts_at" type="datetime-local" value={(editing?.starts_at as string) ?? ""} onChange={(e) => setEditing({ ...editing!, starts_at: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ends_at">Fine</Label>
-                <Input id="ends_at" type="datetime-local" value={(editing?.ends_at as string) ?? ""} onChange={(e) => setEditing({ ...editing!, ends_at: e.target.value })} />
-              </div>
-            </div>
-            <div className="flex items-center justify-between rounded-md border p-3">
-              <div>
-                <p className="font-medium text-sm">Attivo</p>
-                <p className="text-xs text-muted-foreground">Se disattivato non è visibile lato sito.</p>
-              </div>
-              <Switch checked={!!editing?.is_active} onCheckedChange={(v) => setEditing({ ...editing!, is_active: v })} />
-            </div>
-            <div className="flex items-center justify-between rounded-md border p-3">
-              <div>
-                <p className="font-medium text-sm">Pubblico</p>
-                <p className="text-xs text-muted-foreground">Visibile a tutti, anche non iscritti.</p>
-              </div>
-              <Switch checked={!!editing?.is_public} onCheckedChange={(v) => setEditing({ ...editing!, is_public: v })} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditOpen(false)}>Annulla</Button>
-            <Button onClick={save}>Salva</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete confirm */}
-      <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Eliminare l'evento?</AlertDialogTitle>
-            <AlertDialogDescription>L'azione è irreversibile. Verranno rimosse anche tutte le iscrizioni collegate.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annulla</AlertDialogCancel>
-            <AlertDialogAction onClick={remove} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Elimina</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <EventModals 
+        editOpen={admin.editOpen}
+        setEditOpen={admin.setEditOpen}
+        editing={admin.editing}
+        setEditing={admin.setEditing}
+        saveEvent={admin.saveEvent}
+        uploadingCover={admin.uploadingCover}
+        handleCoverUpload={admin.handleCoverUpload}
+        deleteId={admin.deleteId}
+        setDeleteId={admin.setDeleteId}
+        removeEvent={admin.removeEvent}
+      />
     </div>
   );
 };
