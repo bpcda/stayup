@@ -28,7 +28,7 @@ StayUpAllNight si propone come uno strumento moderno per chi vuole vivere la not
 * Frontend: HTML, CSS, TypeScript
 * Framework/Librerie: Vite & React (TypeScript)
 * Backend: Supabase, Resend, Google Cloud
-* Hosting: Vercel
+
 ---
 
 ## 📦 Installazione

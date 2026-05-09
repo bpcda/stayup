@@ -1,7 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/react";
+
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
@@ -59,8 +58,6 @@ const App = () => (
           <AppRoutes />
         </AuthProvider>
       </BrowserRouter>
-      <Analytics />
-      <SpeedInsights />
     </TooltipProvider>
   </QueryClientProvider>
 );
