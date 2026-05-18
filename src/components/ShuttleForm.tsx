@@ -483,6 +483,13 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
             <p className="text-muted-foreground text-sm">{t("form.loadingTimes")}</p>
           ) : returnSlots.length === 0 ? (
             <p className="text-muted-foreground text-sm">{t("form.noReturnTimes")}</p>
+          ) : returnSlots.length === 1 ? (
+            <div className="px-4 py-3 rounded-lg border border-primary bg-primary/10 text-primary text-sm font-medium">
+              {returnSlots[0].orario}
+              <span className="block text-xs font-normal text-muted-foreground mt-1">
+                {t("form.returnAuto", { defaultValue: "Orario di ritorno unico disponibile, assegnato automaticamente." })}
+              </span>
+            </div>
           ) : (
             <div className="grid grid-cols-3 gap-2">
               {returnSlots.map((rs) => {
