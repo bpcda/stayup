@@ -1384,7 +1384,6 @@ const Admin = () => {
                           onChange={(e) => setNewSlotData((p) => ({ ...p, fermata2: e.target.value }))}
                           placeholder="Es. Cheope"
                         />
-                        />
                       </div>
                       <div className="space-y-1 col-span-2 sm:col-span-1">
                         <Label className="text-xs">Minuti dopo la prima fermata</Label>
