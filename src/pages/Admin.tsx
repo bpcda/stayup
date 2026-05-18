@@ -47,6 +47,24 @@ const combineDateTime = (date: Date, time: string): Date => {
   return d;
 };
 
+// Normalize a stop name: trim, collapse internal whitespace, Title Case each word.
+// Keeps short connectives ("di", "da", "del", "della", "di", "e", "of") lowercase
+// when not at the start. So "università cattolica" → "Università Cattolica",
+// "via roma 12" → "Via Roma 12", "  cheope " → "Cheope".
+const SMALL_WORDS = new Set(["di", "da", "del", "della", "dello", "dei", "degli", "delle", "e", "ed", "a", "al", "alla", "allo", "agli", "alle", "in", "su", "of", "the"]);
+const toTitleCase = (raw: string): string => {
+  return raw
+    .trim()
+    .replace(/\s+/g, " ")
+    .split(" ")
+    .map((w, i) => {
+      const lower = w.toLowerCase();
+      if (i > 0 && SMALL_WORDS.has(lower)) return lower;
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join(" ");
+};
+
 interface Booking {
   id: string;
   nome: string;
@@ -562,7 +580,7 @@ const Admin = () => {
       nascosto: editSlotData.nascosto,
       data: fullDate.toISOString(),
     };
-    if (editSlotType === "andata") updatePayload.fermata = editSlotData.fermata;
+    if (editSlotType === "andata") updatePayload.fermata = toTitleCase(editSlotData.fermata);
 
     if (isSupabaseConfigured) {
       const { error } = await supabase.from(table).update(updatePayload).eq("id", editSlotData.id);
@@ -650,7 +668,7 @@ const Admin = () => {
     }
 
     // ANDATA: una fermata, oppure due fermate sulla stessa navetta (capienza condivisa via trip_group_id)
-    const fermata1 = newSlotData.fermata.trim();
+    const fermata1 = toTitleCase(newSlotData.fermata);
     if (!fermata1) {
       toast({ title: "Errore", description: "Inserisci una fermata.", variant: "destructive" });
       return;
@@ -665,7 +683,7 @@ const Admin = () => {
     let summary = `Navetta ${giornoLabel}: ${fermata1} ${orario1}`;
 
     if (newSlotData.addSecondStop) {
-      const fermata2 = newSlotData.fermata2.trim();
+      const fermata2 = toTitleCase(newSlotData.fermata2);
       if (!fermata2) {
         toast({ title: "Errore", description: "Inserisci la seconda fermata.", variant: "destructive" });
         return;
@@ -1252,12 +1270,15 @@ const Admin = () => {
               {editSlotType === "andata" && (
                 <div className="space-y-2">
                   <Label>Fermata</Label>
-                  <Select value={editSlotData.fermata} onValueChange={(v) => setEditSlotData((p) => ({ ...p, fermata: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {STOPS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    list="stops-list"
+                    value={editSlotData.fermata}
+                    onChange={(e) => setEditSlotData((p) => ({ ...p, fermata: e.target.value }))}
+                    placeholder="Es. Università Cattolica"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Verrà normalizzata con l'iniziale maiuscola di ogni parola.
+                  </p>
                 </div>
               )}
               <div className="space-y-2">
@@ -1318,10 +1339,14 @@ const Admin = () => {
                 <div className="space-y-2">
                   <Label>Fermata</Label>
                   <Input
+                    list="stops-list"
                     value={newSlotData.fermata}
                     onChange={(e) => setNewSlotData((p) => ({ ...p, fermata: e.target.value }))}
                     placeholder="Es. Università Cattolica"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Scegli da una esistente o scrivine una nuova — verrà capitalizzata in automatico.
+                  </p>
                 </div>
               )}
               <div className="space-y-2">
@@ -1354,6 +1379,7 @@ const Admin = () => {
                       <div className="space-y-1 col-span-2 sm:col-span-1">
                         <Label className="text-xs">Seconda fermata</Label>
                         <Input
+                          list="stops-list"
                           value={newSlotData.fermata2}
                           onChange={(e) => setNewSlotData((p) => ({ ...p, fermata2: e.target.value }))}
                           placeholder="Es. Cheope"
@@ -1379,6 +1405,11 @@ const Admin = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Shared autocomplete list of existing stops (used by all fermata inputs) */}
+        <datalist id="stops-list">
+          {STOPS.map((s) => <option key={s} value={s} />)}
+        </datalist>
 
         {/* Delete Booking Confirmation Dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
