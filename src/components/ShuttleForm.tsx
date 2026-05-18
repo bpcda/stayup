@@ -34,9 +34,9 @@ const timeToMinutes = (t: string): number => {
   return h < 6 ? (h + 24) * 60 + m : h * 60 + m;
 };
 
-// Legacy fallback only — actual list is fetched dynamically below
+// Legacy fallback only — actual lists are fetched dynamically below
 const DAYS_FALLBACK = ["25 Aprile", "26 Aprile"];
-const STOPS = ["Università Cattolica", "Cheope"];
+const STOPS_FALLBACK = ["Università Cattolica", "Cheope"];
 
 const FALLBACK_SCHEDULES: Record<string, string[]> = {
   "Università Cattolica": ["12:30", "14:00", "15:30", "17:00", "18:30", "21:00"],
@@ -67,6 +67,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
   const [bookingCounts, setBookingCounts] = useState<Record<string, number>>({});
   const [returnCounts, setReturnCounts] = useState<Record<string, number>>({});
   const [availableDays, setAvailableDays] = useState<string[]>(DAYS_FALLBACK);
+  const [availableStops, setAvailableStops] = useState<string[]>(STOPS_FALLBACK);
   const [loading, setLoading] = useState(false);
   const [loadingSchedules, setLoadingSchedules] = useState(false);
   const [loadingReturnSlots, setLoadingReturnSlots] = useState(false);
@@ -207,6 +208,31 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
     };
     fetchDays().catch(() => setAvailableDays(DAYS_FALLBACK));
   }, []);
+
+  // Fetch the available stops, scoped to the selected day when present.
+  useEffect(() => {
+    if (!needsAndata) return;
+    if (!isSupabaseConfigured) {
+      setAvailableStops(STOPS_FALLBACK);
+      return;
+    }
+    const fetchStops = async () => {
+      let q = supabase.from("shuttle_slots").select("fermata, giorno, nascosto");
+      if (giorno) q = q.eq("giorno", giorno);
+      const { data, error } = await q;
+      if (error || !data) {
+        setAvailableStops(STOPS_FALLBACK);
+        return;
+      }
+      const set = new Set<string>();
+      data.forEach((r: any) => {
+        if (!r.nascosto && r.fermata) set.add(r.fermata);
+      });
+      const arr = Array.from(set).sort();
+      setAvailableStops(arr.length ? arr : STOPS_FALLBACK);
+    };
+    fetchStops().catch(() => setAvailableStops(STOPS_FALLBACK));
+  }, [giorno, needsAndata]);
 
 
   useEffect(() => {
@@ -369,8 +395,8 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
 
           <div className="space-y-2">
             <Label>{t("form.stop")} *</Label>
-            <div className="grid grid-cols-2 gap-3">
-              {STOPS.map((s) => (
+            <div className={`grid gap-3 ${availableStops.length > 2 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2"}`}>
+              {availableStops.map((s) => (
                 <button
                   key={s}
                   type="button"

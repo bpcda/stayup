@@ -7,7 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import AdminGuard from "@/components/AdminGuard";
 import Index from "./pages/Index";
-import GrillContest from "./pages/GrillContest";
+import TaoExperience from "./pages/TaoExperience";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -24,7 +24,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/grill-contest" element={<GrillContest />} />
+            <Route path="/tao-experience" element={<TaoExperience />} />
             <Route path="/auth" element={<Auth />} />
             <Route
               path="/admin"

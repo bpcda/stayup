@@ -21,7 +21,7 @@ const Index = () => {
         </p>
 
         <Button variant="hero" size="lg" asChild>
-          <Link to="/grill-contest">{t("index.cta")}</Link>
+          <Link to="/tao-experience">{t("index.cta")}</Link>
         </Button>
       </div>
 
