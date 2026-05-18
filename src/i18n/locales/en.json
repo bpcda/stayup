@@ -32,7 +32,15 @@
   },
   "index": {
     "wip": "Work in Progress",
-    "cta": "Grill Contest Rivergaro 2026"
+    "cta": "Tao Experience — Afterclass × StayUp"
+  },
+  "tao": {
+    "title": "Tao Experience — Afterclass × StayUp",
+    "description": "A night by Afterclass × StayUp at Tao Club: music, energy and our dedicated shuttle to get there and back safely.",
+    "ticketTitle": "Buy the event ticket",
+    "ticketDescription": "Event tickets are sold on Xceed. Once you've got yours, come back here to book the shuttle.",
+    "ticketCta": "Go to Xceed",
+    "shuttleTitle": "Book the shuttle"
   },
   "grill": {
     "title": "Grill Contest Rivergaro",

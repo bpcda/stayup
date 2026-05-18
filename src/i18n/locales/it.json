@@ -32,7 +32,15 @@
   },
   "index": {
     "wip": "Work in Progress",
-    "cta": "Grill Contest Rivergaro 2026"
+    "cta": "Tao Experience — Afterclass × StayUp"
+  },
+  "tao": {
+    "title": "Tao Experience — Afterclass × StayUp",
+    "description": "Una notte firmata Afterclass × StayUp al Tao Club: musica, energia e la nostra navetta dedicata per arrivarci e tornare in sicurezza.",
+    "ticketTitle": "Acquista il biglietto evento",
+    "ticketDescription": "Il biglietto per l'evento si acquista su Xceed. Una volta preso, torna qui per prenotare la navetta.",
+    "ticketCta": "Vai a Xceed",
+    "shuttleTitle": "Prenota la navetta"
   },
   "grill": {
     "title": "Grill Contest Rivergaro",
