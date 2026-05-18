@@ -580,7 +580,7 @@ const Admin = () => {
       nascosto: editSlotData.nascosto,
       data: fullDate.toISOString(),
     };
-    if (editSlotType === "andata") updatePayload.fermata = editSlotData.fermata;
+    if (editSlotType === "andata") updatePayload.fermata = toTitleCase(editSlotData.fermata);
 
     if (isSupabaseConfigured) {
       const { error } = await supabase.from(table).update(updatePayload).eq("id", editSlotData.id);
@@ -1270,12 +1270,15 @@ const Admin = () => {
               {editSlotType === "andata" && (
                 <div className="space-y-2">
                   <Label>Fermata</Label>
-                  <Select value={editSlotData.fermata} onValueChange={(v) => setEditSlotData((p) => ({ ...p, fermata: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {STOPS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    list="stops-list"
+                    value={editSlotData.fermata}
+                    onChange={(e) => setEditSlotData((p) => ({ ...p, fermata: e.target.value }))}
+                    placeholder="Es. Università Cattolica"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Verrà normalizzata con l'iniziale maiuscola di ogni parola.
+                  </p>
                 </div>
               )}
               <div className="space-y-2">
