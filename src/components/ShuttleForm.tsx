@@ -276,7 +276,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
       return;
     }
 
-    if (needsAndata && needsRitorno && orario && orarioRitorno && timeToMinutes(orarioRitorno) <= timeToMinutes(orario)) {
+    if (needsAndata && needsRitorno && !autoReturn && orario && orarioRitorno && timeToMinutes(orarioRitorno) <= timeToMinutes(orario)) {
       toast({ title: t("common.confirm"), description: t("form.errors.returnBeforeDeparture"), variant: "destructive" });
       return;
     }
