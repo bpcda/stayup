@@ -1305,18 +1305,63 @@ const Admin = () => {
                 </Popover>
               </div>
               {addSlotType === "andata" && (
-                <div className="rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-                  La navetta è unica: parte dall'<strong>Università Cattolica</strong> e 15 minuti dopo passa dal <strong>Cheope</strong>. Verranno create automaticamente entrambe le fermate con capienza condivisa.
+                <div className="space-y-2">
+                  <Label>Fermata</Label>
+                  <Input
+                    value={newSlotData.fermata}
+                    onChange={(e) => setNewSlotData((p) => ({ ...p, fermata: e.target.value }))}
+                    placeholder="Es. Università Cattolica"
+                  />
                 </div>
               )}
               <div className="space-y-2">
-                <Label>{addSlotType === "andata" ? "Orario partenza Università (HH:MM)" : "Orario (HH:MM)"}</Label>
+                <Label>{addSlotType === "andata" ? "Orario di partenza (HH:MM)" : "Orario (HH:MM)"}</Label>
                 <Input value={newSlotData.orario} onChange={(e) => setNewSlotData((p) => ({ ...p, orario: e.target.value }))} placeholder="14:00" />
               </div>
               <div className="space-y-2">
                 <Label>Capienza</Label>
                 <Input type="number" value={newSlotData.capienza} onChange={(e) => setNewSlotData((p) => ({ ...p, capienza: parseInt(e.target.value) || 0 }))} />
               </div>
+              {addSlotType === "andata" && (
+                <div className="space-y-3 rounded-md border border-border bg-muted/30 p-3">
+                  <div className="flex items-start gap-2">
+                    <Checkbox
+                      id="addSecondStop"
+                      checked={newSlotData.addSecondStop}
+                      onCheckedChange={(v) => setNewSlotData((p) => ({ ...p, addSecondStop: !!v }))}
+                    />
+                    <div className="space-y-1">
+                      <Label htmlFor="addSecondStop" className="cursor-pointer">
+                        La stessa navetta passa anche da un'altra fermata
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Verrà creato un secondo slot collegato (capienza condivisa).
+                      </p>
+                    </div>
+                  </div>
+                  {newSlotData.addSecondStop && (
+                    <div className="grid grid-cols-2 gap-3 pt-1">
+                      <div className="space-y-1 col-span-2 sm:col-span-1">
+                        <Label className="text-xs">Seconda fermata</Label>
+                        <Input
+                          value={newSlotData.fermata2}
+                          onChange={(e) => setNewSlotData((p) => ({ ...p, fermata2: e.target.value }))}
+                          placeholder="Es. Cheope"
+                        />
+                      </div>
+                      <div className="space-y-1 col-span-2 sm:col-span-1">
+                        <Label className="text-xs">Minuti dopo la prima fermata</Label>
+                        <Input
+                          type="number"
+                          min={1}
+                          value={newSlotData.offsetMin}
+                          onChange={(e) => setNewSlotData((p) => ({ ...p, offsetMin: parseInt(e.target.value) || 0 }))}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setAddSlotDialog(false)}>Annulla</Button>
