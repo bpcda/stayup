@@ -80,7 +80,8 @@ interface ReturnSlot {
   nascosto?: boolean;
 }
 
-const STOPS = ["Università Cattolica", "Cheope"];
+// Fallback list (used only before slots load or in demo mode).
+const STOPS_FALLBACK = ["Università Cattolica", "Cheope"];
 // Legacy fallback only; the actual list shown in filters is derived dynamically
 // from `slots` + `returnSlots` + `bookings` so admins see every date in use.
 const GIORNI_LEGACY = ["25 Aprile", "26 Aprile"];
@@ -214,6 +215,15 @@ const Admin = () => {
     const arr = Array.from(map.entries()).sort((a, b) => a[1] - b[1]).map(([l]) => l);
     return arr.length ? arr : GIORNI_LEGACY;
   }, [slots, returnSlots, bookings]);
+
+  // Dynamic list of fermate (from andata slots + bookings). Falls back to STOPS_FALLBACK if empty.
+  const STOPS = useMemo(() => {
+    const set = new Set<string>();
+    slots.forEach((s) => { if (s.fermata) set.add(s.fermata); });
+    bookings.forEach((b) => { if (b.fermata) set.add(b.fermata); });
+    const arr = Array.from(set).sort();
+    return arr.length ? arr : STOPS_FALLBACK;
+  }, [slots, bookings]);
 
 
   const filteredBookings = useMemo(() => {
