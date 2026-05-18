@@ -1339,10 +1339,14 @@ const Admin = () => {
                 <div className="space-y-2">
                   <Label>Fermata</Label>
                   <Input
+                    list="stops-list"
                     value={newSlotData.fermata}
                     onChange={(e) => setNewSlotData((p) => ({ ...p, fermata: e.target.value }))}
                     placeholder="Es. Università Cattolica"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Scegli da una esistente o scrivine una nuova — verrà capitalizzata in automatico.
+                  </p>
                 </div>
               )}
               <div className="space-y-2">
@@ -1375,9 +1379,11 @@ const Admin = () => {
                       <div className="space-y-1 col-span-2 sm:col-span-1">
                         <Label className="text-xs">Seconda fermata</Label>
                         <Input
+                          list="stops-list"
                           value={newSlotData.fermata2}
                           onChange={(e) => setNewSlotData((p) => ({ ...p, fermata2: e.target.value }))}
                           placeholder="Es. Cheope"
+                        />
                         />
                       </div>
                       <div className="space-y-1 col-span-2 sm:col-span-1">
