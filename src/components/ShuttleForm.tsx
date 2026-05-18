@@ -242,12 +242,21 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
     setOrarioRitorno("");
   }, [tipoViaggio]);
 
-  // Reset return time if it becomes invalid after changing departure time
+  // Auto-select return when only one slot is available (no real choice)
+  const autoReturn = needsRitorno && returnSlots.length === 1;
   useEffect(() => {
+    if (autoReturn) {
+      setOrarioRitorno(returnSlots[0].orario);
+    }
+  }, [autoReturn, returnSlots]);
+
+  // Reset return time if it becomes invalid after changing departure time (skip if auto)
+  useEffect(() => {
+    if (autoReturn) return;
     if (orario && orarioRitorno && timeToMinutes(orarioRitorno) <= timeToMinutes(orario)) {
       setOrarioRitorno("");
     }
-  }, [orario]);
+  }, [orario, autoReturn]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
