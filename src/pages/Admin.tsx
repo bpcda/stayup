@@ -140,7 +140,15 @@ const Admin = () => {
   // Add slot dialog
   const [addSlotDialog, setAddSlotDialog] = useState(false);
   const [addSlotType, setAddSlotType] = useState<"andata" | "ritorno">("andata");
-  const [newSlotData, setNewSlotData] = useState<{ data: Date | undefined; fermata: string; orario: string; capienza: number }>({ data: undefined, fermata: "Università Cattolica", orario: "", capienza: 50 });
+  const [newSlotData, setNewSlotData] = useState<{
+    data: Date | undefined;
+    fermata: string;
+    orario: string;
+    capienza: number;
+    addSecondStop: boolean;
+    fermata2: string;
+    offsetMin: number;
+  }>({ data: undefined, fermata: "Università Cattolica", orario: "", capienza: 50, addSecondStop: false, fermata2: "", offsetMin: 15 });
 
   // Auto-fetch on mount (AdminGuard ensures we are admin & authed)
   useEffect(() => {
@@ -582,7 +590,7 @@ const Admin = () => {
 
   const openAddSlot = (type: "andata" | "ritorno") => {
     setAddSlotType(type);
-    setNewSlotData({ data: undefined, fermata: "Università Cattolica", orario: "", capienza: 50 });
+    setNewSlotData({ data: undefined, fermata: "Università Cattolica", orario: "", capienza: 50, addSecondStop: false, fermata2: "", offsetMin: 15 });
     setAddSlotDialog(true);
   };
 
@@ -631,21 +639,38 @@ const Admin = () => {
       return;
     }
 
-    // ANDATA: la navetta è UNA sola — parte dall'Università, +15 min al Cheope
-    const uniOrario = newSlotData.orario.trim();
-    const totalMin = h * 60 + m + 15;
-    const ch = Math.floor(totalMin / 60) % 24;
-    const cm = totalMin % 60;
-    const cheopeOrario = `${String(ch).padStart(2, "0")}:${String(cm).padStart(2, "0")}`;
-    const uniDate = combineDateTime(newSlotData.data, uniOrario);
-    const cheopeDate = combineDateTime(newSlotData.data, cheopeOrario);
+    // ANDATA: una fermata, oppure due fermate sulla stessa navetta (capienza condivisa via trip_group_id)
+    const fermata1 = newSlotData.fermata.trim();
+    if (!fermata1) {
+      toast({ title: "Errore", description: "Inserisci una fermata.", variant: "destructive" });
+      return;
+    }
+    const orario1 = newSlotData.orario.trim();
+    const date1 = combineDateTime(newSlotData.data, orario1);
+
+    const rows: any[] = [];
+    const tripGroupId = crypto.randomUUID();
+    rows.push({ giorno: giornoLabel, fermata: fermata1, orario: orario1, capienza: newSlotData.capienza, trip_group_id: tripGroupId, data: date1.toISOString() });
+
+    let summary = `Navetta ${giornoLabel}: ${fermata1} ${orario1}`;
+
+    if (newSlotData.addSecondStop) {
+      const fermata2 = newSlotData.fermata2.trim();
+      if (!fermata2) {
+        toast({ title: "Errore", description: "Inserisci la seconda fermata.", variant: "destructive" });
+        return;
+      }
+      const offset = Number.isFinite(newSlotData.offsetMin) ? newSlotData.offsetMin : 0;
+      const total2 = h * 60 + m + offset;
+      const h2 = ((Math.floor(total2 / 60) % 24) + 24) % 24;
+      const m2 = ((total2 % 60) + 60) % 60;
+      const orario2 = `${String(h2).padStart(2, "0")}:${String(m2).padStart(2, "0")}`;
+      const date2 = combineDateTime(newSlotData.data, orario2);
+      rows.push({ giorno: giornoLabel, fermata: fermata2, orario: orario2, capienza: newSlotData.capienza, trip_group_id: tripGroupId, data: date2.toISOString() });
+      summary += ` → ${fermata2} ${orario2}`;
+    }
 
     if (isSupabaseConfigured) {
-      const tripGroupId = crypto.randomUUID();
-      const rows = [
-        { giorno: giornoLabel, fermata: "Università Cattolica", orario: uniOrario, capienza: newSlotData.capienza, trip_group_id: tripGroupId, data: uniDate.toISOString() },
-        { giorno: giornoLabel, fermata: "Cheope", orario: cheopeOrario, capienza: newSlotData.capienza, trip_group_id: tripGroupId, data: cheopeDate.toISOString() },
-      ];
       const { data, error } = await supabase.from("shuttle_slots").insert(rows).select();
       if (error) {
         toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -654,7 +679,7 @@ const Admin = () => {
       setSlots((prev) => [...prev, ...(data || [])]);
     }
     setAddSlotDialog(false);
-    toast({ title: "Aggiunto", description: `Navetta ${giornoLabel}: Università ${uniOrario} → Cheope ${cheopeOrario}` });
+    toast({ title: "Aggiunto", description: summary });
   };
 
   return (
