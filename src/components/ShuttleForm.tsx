@@ -242,12 +242,21 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
     setOrarioRitorno("");
   }, [tipoViaggio]);
 
-  // Reset return time if it becomes invalid after changing departure time
+  // Auto-select return when only one slot is available (no real choice)
+  const autoReturn = needsRitorno && returnSlots.length === 1;
   useEffect(() => {
+    if (autoReturn) {
+      setOrarioRitorno(returnSlots[0].orario);
+    }
+  }, [autoReturn, returnSlots]);
+
+  // Reset return time if it becomes invalid after changing departure time (skip if auto)
+  useEffect(() => {
+    if (autoReturn) return;
     if (orario && orarioRitorno && timeToMinutes(orarioRitorno) <= timeToMinutes(orario)) {
       setOrarioRitorno("");
     }
-  }, [orario]);
+  }, [orario, autoReturn]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -267,7 +276,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
       return;
     }
 
-    if (needsAndata && needsRitorno && orario && orarioRitorno && timeToMinutes(orarioRitorno) <= timeToMinutes(orario)) {
+    if (needsAndata && needsRitorno && !autoReturn && orario && orarioRitorno && timeToMinutes(orarioRitorno) <= timeToMinutes(orario)) {
       toast({ title: t("common.confirm"), description: t("form.errors.returnBeforeDeparture"), variant: "destructive" });
       return;
     }
@@ -474,6 +483,13 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
             <p className="text-muted-foreground text-sm">{t("form.loadingTimes")}</p>
           ) : returnSlots.length === 0 ? (
             <p className="text-muted-foreground text-sm">{t("form.noReturnTimes")}</p>
+          ) : returnSlots.length === 1 ? (
+            <div className="px-4 py-3 rounded-lg border border-primary bg-primary/10 text-primary text-sm font-medium">
+              {returnSlots[0].orario}
+              <span className="block text-xs font-normal text-muted-foreground mt-1">
+                {t("form.returnAuto", { defaultValue: "Orario di ritorno unico disponibile, assegnato automaticamente." })}
+              </span>
+            </div>
           ) : (
             <div className="grid grid-cols-3 gap-2">
               {returnSlots.map((rs) => {
