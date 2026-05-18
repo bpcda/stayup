@@ -209,6 +209,31 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
     fetchDays().catch(() => setAvailableDays(DAYS_FALLBACK));
   }, []);
 
+  // Fetch the available stops, scoped to the selected day when present.
+  useEffect(() => {
+    if (!needsAndata) return;
+    if (!isSupabaseConfigured) {
+      setAvailableStops(STOPS_FALLBACK);
+      return;
+    }
+    const fetchStops = async () => {
+      let q = supabase.from("shuttle_slots").select("fermata, giorno, nascosto");
+      if (giorno) q = q.eq("giorno", giorno);
+      const { data, error } = await q;
+      if (error || !data) {
+        setAvailableStops(STOPS_FALLBACK);
+        return;
+      }
+      const set = new Set<string>();
+      data.forEach((r: any) => {
+        if (!r.nascosto && r.fermata) set.add(r.fermata);
+      });
+      const arr = Array.from(set).sort();
+      setAvailableStops(arr.length ? arr : STOPS_FALLBACK);
+    };
+    fetchStops().catch(() => setAvailableStops(STOPS_FALLBACK));
+  }, [giorno, needsAndata]);
+
 
   useEffect(() => {
     setGiorno("");
