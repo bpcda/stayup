@@ -370,8 +370,8 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
 
           <div className="space-y-2">
             <Label>{t("form.stop")} *</Label>
-            <div className="grid grid-cols-2 gap-3">
-              {STOPS.map((s) => (
+            <div className={`grid gap-3 ${availableStops.length > 2 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2"}`}>
+              {availableStops.map((s) => (
                 <button
                   key={s}
                   type="button"
