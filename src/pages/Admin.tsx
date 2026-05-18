@@ -1406,6 +1406,11 @@ const Admin = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Shared autocomplete list of existing stops (used by all fermata inputs) */}
+        <datalist id="stops-list">
+          {STOPS.map((s) => <option key={s} value={s} />)}
+        </datalist>
+
         {/* Delete Booking Confirmation Dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <DialogContent>
