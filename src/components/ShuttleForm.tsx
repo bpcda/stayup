@@ -34,9 +34,9 @@ const timeToMinutes = (t: string): number => {
   return h < 6 ? (h + 24) * 60 + m : h * 60 + m;
 };
 
-// Legacy fallback only — actual list is fetched dynamically below
+// Legacy fallback only — actual lists are fetched dynamically below
 const DAYS_FALLBACK = ["25 Aprile", "26 Aprile"];
-const STOPS = ["Università Cattolica", "Cheope"];
+const STOPS_FALLBACK = ["Università Cattolica", "Cheope"];
 
 const FALLBACK_SCHEDULES: Record<string, string[]> = {
   "Università Cattolica": ["12:30", "14:00", "15:30", "17:00", "18:30", "21:00"],
@@ -67,6 +67,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
   const [bookingCounts, setBookingCounts] = useState<Record<string, number>>({});
   const [returnCounts, setReturnCounts] = useState<Record<string, number>>({});
   const [availableDays, setAvailableDays] = useState<string[]>(DAYS_FALLBACK);
+  const [availableStops, setAvailableStops] = useState<string[]>(STOPS_FALLBACK);
   const [loading, setLoading] = useState(false);
   const [loadingSchedules, setLoadingSchedules] = useState(false);
   const [loadingReturnSlots, setLoadingReturnSlots] = useState(false);
