@@ -66,8 +66,17 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
   const [returnSlots, setReturnSlots] = useState<ReturnSlot[]>([]);
   const [bookingCounts, setBookingCounts] = useState<Record<string, number>>({});
   const [returnCounts, setReturnCounts] = useState<Record<string, number>>({});
-  const [availableDays, setAvailableDays] = useState<string[]>(DAYS_FALLBACK);
+  const [andataDays, setAndataDays] = useState<string[]>(DAYS_FALLBACK);
+  const [ritornoDays, setRitornoDays] = useState<string[]>(DAYS_FALLBACK);
   const [availableStops, setAvailableStops] = useState<string[]>(STOPS_FALLBACK);
+  const availableDays =
+    tipoViaggio === "andata"
+      ? andataDays
+      : tipoViaggio === "ritorno"
+      ? ritornoDays
+      : tipoViaggio === "andata_ritorno"
+      ? andataDays.filter((d) => ritornoDays.includes(d))
+      : [];
   const [loading, setLoading] = useState(false);
   const [loadingSchedules, setLoadingSchedules] = useState(false);
   const [loadingReturnSlots, setLoadingReturnSlots] = useState(false);
@@ -179,11 +188,12 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
     fetchReturnSlots();
   }, [giorno, needsRitorno]);
 
-  // Fetch the list of distinct days that have at least one visible slot.
-  // Sorted by `data` (timestamptz) when available, otherwise by giorno text.
+  // Fetch the list of distinct days separately for andata and ritorno,
+  // so the day selector only shows what actually exists for the chosen trip type.
   useEffect(() => {
     if (!isSupabaseConfigured) {
-      setAvailableDays(DAYS_FALLBACK);
+      setAndataDays(DAYS_FALLBACK);
+      setRitornoDays(DAYS_FALLBACK);
       return;
     }
     const fetchDays = async () => {
@@ -191,8 +201,8 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
         supabase.from("shuttle_slots").select("giorno, data, nascosto"),
         supabase.from("shuttle_return_slots").select("giorno, data, nascosto"),
       ]);
-      const map = new Map<string, number>();
-      const collect = (rows: any[] | null) => {
+      const build = (rows: any[] | null) => {
+        const map = new Map<string, number>();
         (rows || []).forEach((r) => {
           if (r.nascosto) return;
           if (!r.giorno) return;
@@ -200,13 +210,17 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
           const prev = map.get(r.giorno);
           if (prev === undefined || ts < prev) map.set(r.giorno, ts);
         });
+        return Array.from(map.entries()).sort((a, b) => a[1] - b[1]).map(([l]) => l);
       };
-      collect(aRes.data);
-      collect(rRes.data);
-      const arr = Array.from(map.entries()).sort((a, b) => a[1] - b[1]).map(([l]) => l);
-      setAvailableDays(arr.length ? arr : DAYS_FALLBACK);
+      const a = build(aRes.data);
+      const r = build(rRes.data);
+      setAndataDays(a.length ? a : DAYS_FALLBACK);
+      setRitornoDays(r.length ? r : DAYS_FALLBACK);
     };
-    fetchDays().catch(() => setAvailableDays(DAYS_FALLBACK));
+    fetchDays().catch(() => {
+      setAndataDays(DAYS_FALLBACK);
+      setRitornoDays(DAYS_FALLBACK);
+    });
   }, []);
 
   // Fetch the available stops, scoped to the selected day when present.
