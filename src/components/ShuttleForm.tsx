@@ -75,7 +75,7 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
       : tipoViaggio === "ritorno"
       ? ritornoDays
       : tipoViaggio === "andata_ritorno"
-      ? andataDays.filter((d) => ritornoDays.includes(d))
+      ? Array.from(new Set([...andataDays, ...ritornoDays]))
       : [];
   const [loading, setLoading] = useState(false);
   const [loadingSchedules, setLoadingSchedules] = useState(false);
