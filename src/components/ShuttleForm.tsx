@@ -66,8 +66,17 @@ const ShuttleForm = ({ onSuccess }: ShuttleFormProps) => {
   const [returnSlots, setReturnSlots] = useState<ReturnSlot[]>([]);
   const [bookingCounts, setBookingCounts] = useState<Record<string, number>>({});
   const [returnCounts, setReturnCounts] = useState<Record<string, number>>({});
-  const [availableDays, setAvailableDays] = useState<string[]>(DAYS_FALLBACK);
+  const [andataDays, setAndataDays] = useState<string[]>(DAYS_FALLBACK);
+  const [ritornoDays, setRitornoDays] = useState<string[]>(DAYS_FALLBACK);
   const [availableStops, setAvailableStops] = useState<string[]>(STOPS_FALLBACK);
+  const availableDays =
+    tipoViaggio === "andata"
+      ? andataDays
+      : tipoViaggio === "ritorno"
+      ? ritornoDays
+      : tipoViaggio === "andata_ritorno"
+      ? andataDays.filter((d) => ritornoDays.includes(d))
+      : [];
   const [loading, setLoading] = useState(false);
   const [loadingSchedules, setLoadingSchedules] = useState(false);
   const [loadingReturnSlots, setLoadingReturnSlots] = useState(false);
