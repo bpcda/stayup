@@ -63,10 +63,29 @@ export const useEventDetail = () => {
         body: { event_id: event.id },
       });
       if (error) {
-        // L'edge function ritorna status non-200 con { error, message }
-        const ctx = (error as { context?: { error?: string; message?: string } }).context;
-        const code = ctx?.error ?? "";
-        const msg = ctx?.message ?? error.message ?? "Errore durante la prenotazione";
+        const ctx = (error as { context?: Response | { error?: string; message?: string } }).context;
+        let code = "";
+        let msg = error.message ?? "Errore durante la prenotazione";
+        // supabase-js v2 mette la Response originale in error.context: leggiamone il body
+        if (ctx && typeof (ctx as Response).json === "function") {
+          try {
+            const payload = await (ctx as Response).clone().json();
+            code = payload?.error ?? "";
+            msg = payload?.message ?? msg;
+            console.error("[create-event-booking] error payload:", payload, "status:", (ctx as Response).status);
+          } catch {
+            try {
+              const text = await (ctx as Response).clone().text();
+              msg = text || msg;
+              console.error("[create-event-booking] error text:", text, "status:", (ctx as Response).status);
+            } catch { /* noop */ }
+          }
+        } else if (ctx && typeof ctx === "object") {
+          code = (ctx as { error?: string }).error ?? "";
+          msg = (ctx as { message?: string }).message ?? msg;
+          console.error("[create-event-booking] error ctx:", ctx);
+        }
+        console.error("[create-event-booking] invoke error:", error);
         if (code === "sold_out") {
           toast({ title: "Posti esauriti", description: msg, variant: "destructive" });
         } else {
