@@ -4,9 +4,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
+import { PRIVACY_POLICY_VERSION } from "@/lib/consent";
 import stayupLogo from "@/assets/stayup-logo.png";
 
 const GoogleIcon = () => (
@@ -32,6 +34,8 @@ const Auth = () => {
   const [sPassword, setSPassword] = useState("");
   const [sPhone, setSPhone] = useState("");
   const [sCity, setSCity] = useState("");
+  const [sPrivacy, setSPrivacy] = useState(false);
+  const [sMarketing, setSMarketing] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -64,12 +68,19 @@ const Auth = () => {
       toast({ title: "Password troppo corta", description: "Minimo 6 caratteri.", variant: "destructive" });
       return;
     }
+    if (!sPrivacy) {
+      toast({ title: "Privacy obbligatoria", description: "Accetta la Privacy Policy per registrarti.", variant: "destructive" });
+      return;
+    }
     setSubmitting(true);
     const { error } = await signUp(sEmail.trim().toLowerCase(), sPassword, {
       firstName: sFirstName.trim(),
       lastName: sLastName.trim(),
       phone: sPhone.trim(),
       city: sCity.trim(),
+      privacyAccepted: true,
+      privacyVersion: PRIVACY_POLICY_VERSION,
+      marketingConsent: sMarketing,
     });
     setSubmitting(false);
     if (error) {
