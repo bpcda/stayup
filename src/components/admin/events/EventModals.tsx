@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Bus, Trash2, X } from "lucide-react";
+import { Bus, Trash2, X, Users } from "lucide-react";
 import { EventRow, EventCategoryRow, SponsorRow, EventStatus } from "@/interfaces/events";
 import { slugify } from "@/hooks/useAdminEvents";
 
@@ -20,6 +20,7 @@ interface EventModalsProps {
   saveEvent: () => void;
   uploadingCover: boolean;
   handleCoverUpload: (file: File) => void;
+  removeCoverImage: () => void;
   uploadingGallery: boolean;
   handleGalleryUpload: (files: FileList | File[]) => void;
   removeGalleryImage: (url: string) => void;
@@ -29,19 +30,27 @@ interface EventModalsProps {
   deleteId: string | null;
   setDeleteId: (id: string | null) => void;
   removeEvent: () => void;
+  editingBookedCount: number;
 }
 
 const STATUS_OPTIONS: { value: EventStatus; label: string }[] = [
-  { value: "draft", label: "Bozza" },
+  { value: "draft",     label: "Bozza" },
   { value: "published", label: "Pubblicato" },
   { value: "cancelled", label: "Annullato" },
-  { value: "ended", label: "Concluso" },
+  { value: "ended",     label: "Concluso" },
+  { value: "archived",  label: "Archiviato" },
 ];
 
 export const EventModals = (props: EventModalsProps) => {
   const e = props.editing;
   const set = (patch: Partial<EventRow>) => props.setEditing(e ? { ...e, ...patch } : e);
   const selectedSponsorIds = e?.sponsor_ids ?? [];
+
+  const cap = e?.capacity ?? null;
+  const booked = props.editingBookedCount;
+  const remaining = cap != null ? Math.max(0, cap - booked) : null;
+  const soldOut = cap != null && booked >= cap;
+  const isCancelling = e?.status === "cancelled";
 
   return (
     <>
@@ -53,10 +62,11 @@ export const EventModals = (props: EventModalsProps) => {
           </DialogHeader>
 
           <Tabs defaultValue="info" className="mt-2">
-            <TabsList className="grid grid-cols-4 w-full">
+            <TabsList className="grid grid-cols-5 w-full">
               <TabsTrigger value="info">Informazioni</TabsTrigger>
               <TabsTrigger value="media">Media</TabsTrigger>
               <TabsTrigger value="sponsor">Sponsor</TabsTrigger>
+              <TabsTrigger value="seo">SEO</TabsTrigger>
               <TabsTrigger value="opzioni">Opzioni</TabsTrigger>
             </TabsList>
 
@@ -75,6 +85,9 @@ export const EventModals = (props: EventModalsProps) => {
                     placeholder={e?.title ? slugify(e.title) : "auto-generato"}
                     onChange={(ev) => set({ slug: ev.target.value })}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Vuoto = generato automaticamente. Univoco per sito.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="category">Categoria</Label>
@@ -99,6 +112,11 @@ export const EventModals = (props: EventModalsProps) => {
                       {STATUS_OPTIONS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                  {isCancelling && e?.id && (
+                    <p className="text-xs text-destructive">
+                      L'evento sarà nascosto agli utenti. Le prenotazioni esistenti restano in DB.
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="capacity">Capienza</Label>
@@ -109,6 +127,16 @@ export const EventModals = (props: EventModalsProps) => {
                     value={e?.capacity ?? ""}
                     onChange={(ev) => set({ capacity: ev.target.value === "" ? null : Number(ev.target.value) })}
                   />
+                  {e?.id && (
+                    <div className="flex items-center gap-2 text-xs">
+                      <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className={soldOut ? "text-destructive font-medium" : "text-muted-foreground"}>
+                        {cap == null
+                          ? `${booked} iscritti (capienza illimitata)`
+                          : `${booked}/${cap} iscritti · ${remaining} posti liberi${soldOut ? " · SOLD OUT" : ""}`}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -142,6 +170,9 @@ export const EventModals = (props: EventModalsProps) => {
                 <div className="space-y-2">
                   <Label htmlFor="ends_at">Fine</Label>
                   <Input id="ends_at" type="datetime-local" value={(e?.ends_at as string) ?? ""} onChange={(ev) => set({ ends_at: ev.target.value })} />
+                  {e?.ends_at && e?.starts_at && e.ends_at < e.starts_at && (
+                    <p className="text-xs text-destructive">La data di fine deve essere successiva all'inizio.</p>
+                  )}
                 </div>
               </div>
 
@@ -174,7 +205,7 @@ export const EventModals = (props: EventModalsProps) => {
                     }}
                   />
                   {e?.cover_image_url && (
-                    <Button type="button" variant="outline" size="sm" onClick={() => set({ cover_image_url: "" })}>
+                    <Button type="button" variant="outline" size="sm" onClick={props.removeCoverImage}>
                       Rimuovi
                     </Button>
                   )}
@@ -249,6 +280,81 @@ export const EventModals = (props: EventModalsProps) => {
                   })}
                 </div>
               )}
+            </TabsContent>
+
+            {/* SEO */}
+            <TabsContent value="seo" className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label htmlFor="seo_title">Meta title</Label>
+                <Input
+                  id="seo_title"
+                  maxLength={70}
+                  value={e?.seo_title ?? ""}
+                  placeholder={e?.title ?? "Titolo per motori di ricerca"}
+                  onChange={(ev) => set({ seo_title: ev.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Consigliato 50-60 caratteri. Vuoto = usa il titolo evento.{" "}
+                  <span className={(e?.seo_title?.length ?? 0) > 60 ? "text-destructive" : ""}>
+                    {e?.seo_title?.length ?? 0}/70
+                  </span>
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="seo_description">Meta description</Label>
+                <Textarea
+                  id="seo_description"
+                  rows={3}
+                  maxLength={200}
+                  value={e?.seo_description ?? ""}
+                  placeholder={e?.short_description ?? "Descrizione breve per Google/social"}
+                  onChange={(ev) => set({ seo_description: ev.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Consigliato 120-160 caratteri. Vuoto = usa la descrizione breve.{" "}
+                  <span className={(e?.seo_description?.length ?? 0) > 160 ? "text-destructive" : ""}>
+                    {e?.seo_description?.length ?? 0}/200
+                  </span>
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="og_image_url">OG Image (URL)</Label>
+                <Input
+                  id="og_image_url"
+                  type="url"
+                  value={e?.og_image_url ?? ""}
+                  placeholder={e?.cover_image_url ?? "https://…/social-preview.jpg"}
+                  onChange={(ev) => set({ og_image_url: ev.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Immagine 1200×630 px per anteprime social. Vuoto = usa la copertina dell'evento.
+                </p>
+                {e?.og_image_url && (
+                  <img
+                    src={e.og_image_url}
+                    alt="Anteprima OG"
+                    className="mt-2 w-full max-h-48 object-cover rounded-md border border-border"
+                  />
+                )}
+              </div>
+
+              {/* Mini preview SERP */}
+              <div className="rounded-md border border-border p-3 bg-muted/30">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">
+                  Anteprima Google
+                </p>
+                <p className="text-base text-primary truncate">
+                  {e?.seo_title?.trim() || e?.title || "Titolo evento"}
+                </p>
+                <p className="text-xs text-emerald-600 truncate">
+                  stayup.it/eventi/{e?.slug || slugify(e?.title ?? "evento")}
+                </p>
+                <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                  {e?.seo_description?.trim() || e?.short_description || "Descrizione dell'evento…"}
+                </p>
+              </div>
             </TabsContent>
 
             {/* OPZIONI */}
