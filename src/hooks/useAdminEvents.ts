@@ -185,9 +185,13 @@ export const useAdminEvents = () => {
     if (!isSupabaseConfigured) return;
     setUploadingCover(true);
     try {
+      const { data: u } = await supabase.auth.getUser();
+      const userId = u.user?.id;
+      if (!userId) throw new Error("Sessione scaduta, effettua di nuovo l'accesso.");
+      const folder = buildEventFolder(editing?.id ?? null, userId, "cover");
       // Se sostituiamo una copertina esistente, cancelliamo la vecchia.
       const previousUrl = editing?.cover_image_url ?? null;
-      const url = await uploadToStorage(file, "covers");
+      const url = await uploadToStorage(file, folder);
       setEditing((prev) => prev ? { ...prev, cover_image_url: url } : prev);
       if (previousUrl) await removeFromStorage(previousUrl);
       toast({ title: "Copertina caricata" });
@@ -208,11 +212,15 @@ export const useAdminEvents = () => {
     const list = Array.from(files);
     setUploadingGallery(true);
     try {
+      const { data: u } = await supabase.auth.getUser();
+      const userId = u.user?.id;
+      if (!userId) throw new Error("Sessione scaduta, effettua di nuovo l'accesso.");
+      const folder = buildEventFolder(editing?.id ?? null, userId, "gallery");
       const urls: string[] = [];
       for (const f of list) {
         const err = validateImage(f);
         if (err) { toast({ title: f.name, description: err, variant: "destructive" }); continue; }
-        urls.push(await uploadToStorage(f, "gallery"));
+        urls.push(await uploadToStorage(f, folder));
       }
       if (urls.length) {
         setEditing((prev) => prev ? { ...prev, gallery_urls: [...(prev.gallery_urls ?? []), ...urls] } : prev);
