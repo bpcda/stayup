@@ -12,13 +12,11 @@ import { ShuttleAndataManager } from "@/components/admin/shuttle/ShuttleAndataMa
 import { ShuttleRitornoManager } from "@/components/admin/shuttle/ShuttleRitornoManager";
 import { ShuttleModals } from "@/components/admin/shuttle/ShuttleModals";
 import { Booking } from "@/interfaces/shuttle";
-import { databases, isAppwriteConfigured } from "@/lib/appwrite";
-import { ID } from "appwrite";
+import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-const DB_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID || '';
-const SLOTS_ID = import.meta.env.VITE_APPWRITE_COLLECTION_SHUTTLE_SLOTS || '';
-const RETURN_SLOTS_ID = import.meta.env.VITE_APPWRITE_COLLECTION_RETURN_SLOTS || '';
+const SLOTS_TABLE = "shuttle_slots";
+const RETURN_SLOTS_TABLE = "shuttle_return_slots";
 
 const AdminShuttle = () => {
   const { eventId } = useParams<{ eventId: string }>();
