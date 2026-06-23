@@ -31,6 +31,7 @@ import EventoDettaglio from "./pages/EventoDettaglio";
 import Profilo from "./pages/Profilo";
 import NotFound from "./pages/NotFound";
 import UserGuard from "@/components/UserGuard";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
