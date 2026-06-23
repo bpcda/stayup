@@ -17,7 +17,7 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-export type AppRole = "admin" | "moderator" | "user";
+export type AppRole = "admin" | "organizer" | "user";
 
 export type TripType = "andata" | "ritorno" | "andata_ritorno";
 

@@ -53,12 +53,12 @@ const AppRoutes = () => (
       <Route path="/admin" element={<Admin><AdminOverview /></Admin>} />
       <Route path="/admin/eventi" element={<Admin><AdminEventi /></Admin>} />
       <Route path="/admin/eventi/:id/iscritti" element={<Admin><AdminEventoIscritti /></Admin>} />
-      <Route path="/admin/eventi/:eventId/shuttle" element={<Admin><AdminShuttle /></Admin>} />
+      <Route path="/admin/eventi/:eventId/shuttle" element={<Admin adminOnly><AdminShuttle /></Admin>} />
       <Route path="/admin/prenotazioni" element={<Admin><AdminPrenotazioni /></Admin>} />
       <Route path="/admin/checkin" element={<Admin><AdminCheckin /></Admin>} />
       <Route path="/admin/utenti" element={<Admin adminOnly><AdminUtenti /></Admin>} />
       <Route path="/admin/email-logs" element={<Admin adminOnly><AdminEmailLogs /></Admin>} />
-      <Route path="/admin/shuttle" element={<Admin><AdminShuttle /></Admin>} />
+      <Route path="/admin/shuttle" element={<Admin adminOnly><AdminShuttle /></Admin>} />
       <Route path="/admin/impostazioni" element={<Admin adminOnly><AdminImpostazioni /></Admin>} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/termini" element={<TermsConditions />} />
