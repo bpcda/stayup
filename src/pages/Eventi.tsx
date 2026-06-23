@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 // ----------------------------------------------------------------------------
-// Tipi locali — la pagina parla solo con Supabase (schema v2). Niente Appwrite,
+// Tipi locali — la pagina parla solo con Supabase (schema v2),
 // niente mock data. Forma allineata alla migration `20260623_stayup_v2_schema`.
 // ----------------------------------------------------------------------------
 type EventCategoryRef = { slug: string; name: string } | null;

@@ -12,13 +12,11 @@ import { ShuttleAndataManager } from "@/components/admin/shuttle/ShuttleAndataMa
 import { ShuttleRitornoManager } from "@/components/admin/shuttle/ShuttleRitornoManager";
 import { ShuttleModals } from "@/components/admin/shuttle/ShuttleModals";
 import { Booking } from "@/interfaces/shuttle";
-import { databases, isAppwriteConfigured } from "@/lib/appwrite";
-import { ID } from "appwrite";
+import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-const DB_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID || '';
-const SLOTS_ID = import.meta.env.VITE_APPWRITE_COLLECTION_SHUTTLE_SLOTS || '';
-const RETURN_SLOTS_ID = import.meta.env.VITE_APPWRITE_COLLECTION_RETURN_SLOTS || '';
+const SLOTS_TABLE = "shuttle_slots";
+const RETURN_SLOTS_TABLE = "shuttle_return_slots";
 
 const AdminShuttle = () => {
   const { eventId } = useParams<{ eventId: string }>();
@@ -134,32 +132,39 @@ const AdminShuttle = () => {
     setEditSlotType(type); setEditSlotData({ ...slot }); setEditSlotDialog(true);
   };
   const saveEditSlot = async () => {
-    const collectionId = editSlotType === "andata" ? SLOTS_ID : RETURN_SLOTS_ID;
-    const updatePayload: any = { giorno: editSlotData.giorno, orario: editSlotData.orario, capienza: editSlotData.capienza, nascosto: editSlotData.nascosto };
+    const table = editSlotType === "andata" ? SLOTS_TABLE : RETURN_SLOTS_TABLE;
+    const updatePayload: Record<string, unknown> = {
+      giorno: editSlotData.giorno,
+      orario: editSlotData.orario,
+      capienza: editSlotData.capienza,
+      nascosto: editSlotData.nascosto,
+    };
     if (editSlotType === "andata") updatePayload.fermata = editSlotData.fermata;
     if (eventId) updatePayload.event_id = eventId;
 
-    if (isAppwriteConfigured && DB_ID) {
+    if (isSupabaseConfigured) {
       try {
-        await databases.updateDocument(DB_ID, collectionId, editSlotData.id, updatePayload);
-      } catch (error) { 
-        toast({ title: "Errore", description: "Salvataggio fallito.", variant: "destructive" }); return; 
+        const { error } = await supabase.from(table).update(updatePayload).eq("id", editSlotData.id);
+        if (error) throw error;
+      } catch {
+        toast({ title: "Errore", description: "Salvataggio fallito.", variant: "destructive" }); return;
       }
     }
 
-    if (editSlotType === "andata") data.setSlots((p) => p.map((s) => s.id === editSlotData.id ? { ...s, ...updatePayload } : s));
-    else data.setReturnSlots((p) => p.map((s) => s.id === editSlotData.id ? { ...s, ...updatePayload } : s));
+    if (editSlotType === "andata") data.setSlots((p) => p.map((s) => s.id === editSlotData.id ? { ...s, ...updatePayload } as typeof s : s));
+    else data.setReturnSlots((p) => p.map((s) => s.id === editSlotData.id ? { ...s, ...updatePayload } as typeof s : s));
     setEditSlotDialog(false); toast({ title: "Salvato", description: "Slot aggiornato." });
   };
 
 
   const deleteSlot = async (type: "andata" | "ritorno", id: string) => {
-    const collectionId = type === "andata" ? SLOTS_ID : RETURN_SLOTS_ID;
-    if (isAppwriteConfigured && DB_ID) {
+    const table = type === "andata" ? SLOTS_TABLE : RETURN_SLOTS_TABLE;
+    if (isSupabaseConfigured) {
       try {
-        await databases.deleteDocument(DB_ID, collectionId, id);
-      } catch (error) { 
-        toast({ title: "Errore", description: "Eliminazione fallita.", variant: "destructive" }); return; 
+        const { error } = await supabase.from(table).delete().eq("id", id);
+        if (error) throw error;
+      } catch {
+        toast({ title: "Errore", description: "Eliminazione fallita.", variant: "destructive" }); return;
       }
     }
     if (type === "andata") data.setSlots((p) => p.filter((s) => s.id !== id));
@@ -176,13 +181,17 @@ const AdminShuttle = () => {
     if (!newSlotData.orario) { toast({ title: "Errore", description: "Inserisci un orario.", variant: "destructive" }); return; }
 
     if (addSlotType === "ritorno") {
-      const payload: any = { giorno: newSlotData.giorno, orario: newSlotData.orario, capienza: newSlotData.capienza, nascosto: false };
+      const payload: Record<string, unknown> = { giorno: newSlotData.giorno, orario: newSlotData.orario, capienza: newSlotData.capienza, nascosto: false };
       if (eventId) payload.event_id = eventId;
-      if (isAppwriteConfigured && DB_ID) {
+      if (isSupabaseConfigured) {
         try {
-          const resData = await databases.createDocument(DB_ID, RETURN_SLOTS_ID, ID.unique(), payload);
-          data.setReturnSlots((p) => [...p, { ...resData, id: resData.$id } as any]);
-        } catch (error: any) { toast({ title: "Errore", description: error.message, variant: "destructive" }); return; }
+          const { data: inserted, error } = await supabase.from(RETURN_SLOTS_TABLE).insert(payload).select().single();
+          if (error) throw error;
+          if (inserted) data.setReturnSlots((p) => [...p, inserted as typeof p[number]]);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          toast({ title: "Errore", description: message, variant: "destructive" }); return;
+        }
       }
       setAddSlotDialog(false); toast({ title: "Aggiunto", description: "Nuovo slot ritorno creato." });
       return;
@@ -196,19 +205,20 @@ const AdminShuttle = () => {
     const totalMin = h * 60 + m + 15;
     const cheopeOrario = `${String(Math.floor(totalMin / 60) % 24).padStart(2, "0")}:${String(totalMin % 60).padStart(2, "0")}`;
 
-    if (isAppwriteConfigured && DB_ID) {
+    if (isSupabaseConfigured) {
       try {
-        const tripGroupId = ID.unique();
-        const row1: any = { giorno: newSlotData.giorno, fermata: "Università Cattolica", orario: uniOrario, capienza: newSlotData.capienza, trip_group_id: tripGroupId, nascosto: false };
-        const row2: any = { giorno: newSlotData.giorno, fermata: "Cheope", orario: cheopeOrario, capienza: newSlotData.capienza, trip_group_id: tripGroupId, nascosto: false };
-        
+        const tripGroupId = crypto.randomUUID();
+        const row1: Record<string, unknown> = { giorno: newSlotData.giorno, fermata: "Università Cattolica", orario: uniOrario, capienza: newSlotData.capienza, trip_group_id: tripGroupId, nascosto: false };
+        const row2: Record<string, unknown> = { giorno: newSlotData.giorno, fermata: "Cheope", orario: cheopeOrario, capienza: newSlotData.capienza, trip_group_id: tripGroupId, nascosto: false };
         if (eventId) { row1.event_id = eventId; row2.event_id = eventId; }
-        
-        const resData1 = await databases.createDocument(DB_ID, SLOTS_ID, ID.unique(), row1);
-        const resData2 = await databases.createDocument(DB_ID, SLOTS_ID, ID.unique(), row2);
-        
-        data.setSlots((p) => [...p, { ...resData1, id: resData1.$id } as any, { ...resData2, id: resData2.$id } as any]);
-      } catch (error: any) { toast({ title: "Errore", description: error.message, variant: "destructive" }); return; }
+
+        const { data: inserted, error } = await supabase.from(SLOTS_TABLE).insert([row1, row2]).select();
+        if (error) throw error;
+        if (inserted) data.setSlots((p) => [...p, ...(inserted as typeof p)]);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        toast({ title: "Errore", description: message, variant: "destructive" }); return;
+      }
     }
     setAddSlotDialog(false); toast({ title: "Aggiunto", description: `Navetta creata: Università ${uniOrario} → Cheope ${cheopeOrario}` });
   };

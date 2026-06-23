@@ -101,7 +101,7 @@ serve(async (req) => {
 
       // Conta prenotazioni PAGATE per trip_group_id (capacità condivisa)
       const { data: paidBookings } = await supabase
-        .from("bookings")
+        .from("shuttle_bookings")
         .select("orario, fermata")
         .eq("giorno", giorno)
         .eq("pagato", true);
@@ -176,7 +176,7 @@ serve(async (req) => {
 
       // Count only PAID return bookings
       const { data: paidReturnBookings } = await supabase
-        .from("bookings")
+        .from("shuttle_bookings")
         .select("orario_ritorno")
         .eq("giorno", giorno)
         .eq("pagato", true)
@@ -223,7 +223,7 @@ serve(async (req) => {
       pagato: false,
     };
 
-    const { error: insertError } = await supabase.from("bookings").insert(bookingData);
+    const { error: insertError } = await supabase.from("shuttle_bookings").insert(bookingData);
     if (insertError) {
       console.error("Insert error:", insertError);
       return jsonError("Errore durante il salvataggio della prenotazione", 500);

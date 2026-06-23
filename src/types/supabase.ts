@@ -6,7 +6,7 @@
  *   supabase gen types typescript --project-id <ref> --schema public > src/types/supabase.ts
  *
  * Until then, keep these definitions aligned with `migrations/*.sql` and
- * `scripts/setup-appwrite.js` (see MIGRATION_PLAN.md §5).
+ * the v2 schema migrations under `migrations/`.
  */
 
 export type Json =

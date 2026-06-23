@@ -2,7 +2,7 @@
  * Supabase browser client (foundation).
  *
  * Lives alongside the existing `src/integrations/supabase/client.ts` and the
- * Appwrite client. Nothing in the UI imports from here yet — this is the new
+ * Browser client. Nothing in the UI imports from here yet — this is the new
  * entrypoint that the migration will switch over to, file-by-file.
  *
  * Do NOT use this client from Edge Functions: it ships the anon key and is

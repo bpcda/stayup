@@ -1,6 +1,6 @@
 /**
  * Supabase auth service — thin wrappers around `supabase.auth.*` matching the
- * surface area currently used by `src/hooks/useAuth.tsx` (Appwrite Account).
+ * surface area used by `src/hooks/useAuth.tsx`.
  *
  * Not wired anywhere yet. The migration of `useAuth` will switch its imports
  * to this file (see MIGRATION_PLAN.md §4 + Fase 3, step 13).

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
-import { account, functions } from "@/lib/appwrite";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -78,12 +78,13 @@ const Profilo = () => {
     if (!newEmail) return;
     setEmailLoading(true);
     try {
-      await account.updateEmail(newEmail, "password"); // Appwrite requires current password for email change normally, or it triggers a verification. 
-      // Note: Appwrite updateEmail behavior depends on configuration.
-      toast({ title: "Email aggiornata", description: "Controlla la tua nuova casella di posta." });
+      const { error } = await supabase.auth.updateUser({ email: newEmail });
+      if (error) throw error;
+      toast({ title: "Email aggiornata", description: "Controlla la tua nuova casella di posta per confermare." });
       setNewEmail("");
-    } catch (err: any) {
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast({ title: "Errore", description: message, variant: "destructive" });
     }
     setEmailLoading(false);
   };
@@ -99,12 +100,14 @@ const Profilo = () => {
     }
     setPwLoading(true);
     try {
-      await account.updatePassword(newPassword);
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
       toast({ title: "Password aggiornata", description: "Usa la nuova password al prossimo accesso." });
       setNewPassword("");
       setConfirmPassword("");
-    } catch (err: any) {
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast({ title: "Errore", description: message, variant: "destructive" });
     }
     setPwLoading(false);
   };
@@ -112,14 +115,16 @@ const Profilo = () => {
   const handleDeleteAccount = async () => {
     setDeleting(true);
     try {
-      const execution = await functions.createExecution(import.meta.env.VITE_APPWRITE_FUNCTION_DELETE_ACCOUNT, "");
-      const result = JSON.parse(execution.responseBody);
-      if (result.error) throw new Error(result.error);
-      
+      const { data, error } = await supabase.functions.invoke("delete-account", { body: {} });
+      if (error) throw error;
+      const result = data as { error?: string } | null;
+      if (result?.error) throw new Error(result.error);
+
       toast({ title: "Account eliminato", description: "Ci dispiace vederti andare." });
       await signOut();
-    } catch (err: any) {
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast({ title: "Errore", description: message, variant: "destructive" });
     }
     setDeleting(false);
   };

@@ -1,14 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
-import { databases, functions, isAppwriteConfigured } from "@/lib/appwrite";
-import { Query } from "appwrite";
+import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 import { Booking, ShuttleSlot, ReturnSlot } from "@/interfaces/shuttle";
 import { toast } from "@/hooks/use-toast";
 import { computeStats, computeSlotGroupMembers, computeSlotStats, computeReturnSlotStats } from "@/lib/shuttleStats";
-
-const DB_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID || '';
-const BOOKINGS_ID = import.meta.env.VITE_APPWRITE_COLLECTION_BOOKINGS || '';
-const SLOTS_ID = import.meta.env.VITE_APPWRITE_COLLECTION_SHUTTLE_SLOTS || '';
-const RETURN_SLOTS_ID = import.meta.env.VITE_APPWRITE_COLLECTION_RETURN_SLOTS || '';
 
 export const useAdminShuttleData = (testMode: boolean, eventId?: string) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -16,26 +10,31 @@ export const useAdminShuttleData = (testMode: boolean, eventId?: string) => {
   const [returnSlots, setReturnSlots] = useState<ReturnSlot[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const mapDoc = (doc: any) => ({ ...doc, id: doc.$id, created_at: doc.$createdAt });
-
   const fetchData = async () => {
     setLoading(true);
-    if (!isAppwriteConfigured || !DB_ID) {
+    if (!isSupabaseConfigured) {
       setBookings([]); setSlots([]); setReturnSlots([]); setLoading(false); return;
     }
     try {
-      const queries = eventId ? [Query.equal("event_id", eventId)] : [];
-      const [bRes, sRes, rRes] = await Promise.all([
-        databases.listDocuments(DB_ID, BOOKINGS_ID, [...queries, Query.orderDesc("$createdAt")]),
-        databases.listDocuments(DB_ID, SLOTS_ID, [...queries, Query.orderAsc("orario")]),
-        databases.listDocuments(DB_ID, RETURN_SLOTS_ID, [...queries, Query.orderAsc("orario")]),
-      ]);
-      setBookings(bRes.documents.map(mapDoc) as any);
-      setSlots(sRes.documents.map(mapDoc) as any);
-      setReturnSlots(rRes.documents.map(mapDoc) as any);
+      let bQ = supabase.from("shuttle_bookings").select("*").order("created_at", { ascending: false });
+      let sQ = supabase.from("shuttle_slots").select("*").order("orario", { ascending: true });
+      let rQ = supabase.from("shuttle_return_slots").select("*").order("orario", { ascending: true });
+      if (eventId) {
+        bQ = bQ.eq("event_id", eventId);
+        sQ = sQ.eq("event_id", eventId);
+        rQ = rQ.eq("event_id", eventId);
+      }
+      const [bRes, sRes, rRes] = await Promise.all([bQ, sQ, rQ]);
+      if (bRes.error) throw bRes.error;
+      if (sRes.error) throw sRes.error;
+      if (rRes.error) throw rRes.error;
+
+      setBookings((bRes.data ?? []) as unknown as Booking[]);
+      setSlots((sRes.data ?? []) as unknown as ShuttleSlot[]);
+      setReturnSlots((rRes.data ?? []) as unknown as ReturnSlot[]);
     } catch (err) {
       console.error(err);
-      toast({ title: "Errore", description: "Impossibile caricare i dati da Appwrite.", variant: "destructive" });
+      toast({ title: "Errore", description: "Impossibile caricare i dati.", variant: "destructive" });
     }
     setLoading(false);
   };
@@ -49,16 +48,40 @@ export const useAdminShuttleData = (testMode: boolean, eventId?: string) => {
 
   const togglePagato = async (booking: Booking) => {
     const newPagato = !booking.pagato;
-    if (isAppwriteConfigured && DB_ID) {
+    if (isSupabaseConfigured) {
       try {
-        await databases.updateDocument(DB_ID, BOOKINGS_ID, booking.id, {
-          pagato: newPagato, stato: newPagato ? "confirmed" : "pending"
-        });
-        if (newPagato) {
-          // Placeholder for Appwrite Function Execution
-          // functions.createExecution('send-booking-email', JSON.stringify({ ... }))
+        const { error } = await supabase
+          .from("shuttle_bookings")
+          .update({ pagato: newPagato, stato: newPagato ? "confirmed" : "pending" })
+          .eq("id", booking.id);
+        if (error) throw error;
+
+        if (newPagato && !testMode) {
+          // Invio email di conferma via Resend (Edge Function send-email)
+          try {
+            await supabase.functions.invoke("send-email", {
+              body: {
+                template: "booking-confirmation",
+                to: booking.email,
+                locale: "it",
+                data: {
+                  nome: booking.nome,
+                  giorno: booking.giorno,
+                  fermata: booking.fermata,
+                  orario: booking.orario,
+                  orario_ritorno: booking.orario_ritorno,
+                  tipo_viaggio: booking.tipo_viaggio,
+                  referenceCode: booking.id,
+                },
+                related: { booking_id: booking.id, event_id: booking.event_id ?? undefined },
+              },
+            });
+          } catch (mailErr) {
+            console.warn("send-email invoke failed:", mailErr);
+          }
         }
       } catch (err) {
+        console.error(err);
         toast({ title: "Errore", description: "Aggiornamento fallito.", variant: "destructive" });
         return;
       }
@@ -68,10 +91,12 @@ export const useAdminShuttleData = (testMode: boolean, eventId?: string) => {
   };
 
   const deleteBooking = async (id: string) => {
-    if (isAppwriteConfigured && DB_ID) {
+    if (isSupabaseConfigured) {
       try {
-        await databases.deleteDocument(DB_ID, BOOKINGS_ID, id);
+        const { error } = await supabase.from("shuttle_bookings").delete().eq("id", id);
+        if (error) throw error;
       } catch (err) {
+        console.error(err);
         toast({ title: "Errore", description: "Eliminazione fallita.", variant: "destructive" });
         return false;
       }
@@ -83,7 +108,7 @@ export const useAdminShuttleData = (testMode: boolean, eventId?: string) => {
   const moveBooking = async (selectedBooking: Booking, newFermata: string, newOrario: string, newOrarioRitorno: string) => {
     const hasAndata = selectedBooking.tipo_viaggio === "andata" || selectedBooking.tipo_viaggio === "andata_ritorno";
     const hasRitorno = selectedBooking.tipo_viaggio === "ritorno" || selectedBooking.tipo_viaggio === "andata_ritorno";
-    
+
     if (hasAndata && (!newFermata || !newOrario)) return false;
     if (hasRitorno && !newOrarioRitorno) return false;
 
@@ -95,32 +120,51 @@ export const useAdminShuttleData = (testMode: boolean, eventId?: string) => {
       }
     }
 
-    const updateData: Record<string, any> = {};
+    const updateData: Record<string, unknown> = {};
     if (hasAndata) { updateData.fermata = newFermata; updateData.orario = newOrario; }
     if (hasRitorno) { updateData.orario_ritorno = newOrarioRitorno; }
 
-    if (isAppwriteConfigured && DB_ID) {
+    if (isSupabaseConfigured) {
       try {
-        await databases.updateDocument(DB_ID, BOOKINGS_ID, selectedBooking.id, updateData);
+        const { error } = await supabase.from("shuttle_bookings").update(updateData).eq("id", selectedBooking.id);
+        if (error) throw error;
       } catch (err) {
+        console.error(err);
         toast({ title: "Errore", description: "Spostamento fallito.", variant: "destructive" });
         return false;
       }
     }
-    setBookings((prev) => prev.map((b) => (b.id === selectedBooking.id ? { ...b, ...updateData } : b)));
+    setBookings((prev) => prev.map((b) => (b.id === selectedBooking.id ? { ...b, ...updateData } as Booking : b)));
     return true;
   };
 
   const sendConfirmEmail = async (booking: Booking) => {
-    if (!isAppwriteConfigured || !DB_ID) {
+    if (!isSupabaseConfigured) {
       toast({ title: "Demo", description: `Email simulata a ${booking.email}` });
       return;
     }
     try {
-      // Placeholder for Appwrite Function Execution
-      // await functions.createExecution('send-booking-email', JSON.stringify({ ... }));
-      toast({ title: "Inviata", description: `Email inviata a ${booking.email} (Mock Appwrite Function)` });
-    } catch {
+      const { error } = await supabase.functions.invoke("send-email", {
+        body: {
+          template: "booking-confirmation",
+          to: booking.email,
+          locale: "it",
+          data: {
+            nome: booking.nome,
+            giorno: booking.giorno,
+            fermata: booking.fermata,
+            orario: booking.orario,
+            orario_ritorno: booking.orario_ritorno,
+            tipo_viaggio: booking.tipo_viaggio,
+            referenceCode: booking.id,
+          },
+          related: { booking_id: booking.id, event_id: booking.event_id ?? undefined },
+        },
+      });
+      if (error) throw error;
+      toast({ title: "Inviata", description: `Email inviata a ${booking.email}` });
+    } catch (err) {
+      console.error(err);
       toast({ title: "Errore", description: "Invio email fallito.", variant: "destructive" });
     }
   };
@@ -129,6 +173,6 @@ export const useAdminShuttleData = (testMode: boolean, eventId?: string) => {
     bookings, slots, returnSlots, loading, fetchData,
     stats, slotGroupMembers, slotStats, returnSlotStats,
     togglePagato, deleteBooking, moveBooking, sendConfirmEmail,
-    setSlots, setReturnSlots
+    setSlots, setReturnSlots,
   };
 };
