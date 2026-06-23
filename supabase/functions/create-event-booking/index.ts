@@ -159,14 +159,19 @@ Deno.serve(async (req) => {
   try {
     await supabaseAdmin.from("email_logs").insert({
       to_email: userEmail,
+      from_email: FROM,
+      subject: event?.title
+        ? `Prenotazione confermata: ${event.title}`
+        : "Prenotazione confermata",
       template: "event_booking_confirmation",
       status: emailStatus,
-      provider: "resend",
-      message_id: messageId,
-      error: emailError,
+      provider_id: messageId,
+      error_message: emailError,
+      related_user_id: userData.user.id,
       related_event_id: eventId,
       related_booking_id: booking.id,
       payload: { reference_code: booking.reference_code },
+      sent_at: emailStatus === "sent" ? new Date().toISOString() : null,
     });
   } catch (e) {
     console.warn("[create-event-booking] email_logs insert failed:", e);
