@@ -169,7 +169,7 @@ Deno.serve(async (req) => {
   try {
     await supabaseAdmin.from("email_logs").insert({
       to_email: userEmail,
-      from_email: FROM,
+      from_email: FROM ?? null,
       subject: event?.title
         ? `Prenotazione confermata: ${event.title}`
         : "Prenotazione confermata",
