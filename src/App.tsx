@@ -32,6 +32,12 @@ import UserGuard from "@/components/UserGuard";
 
 const queryClient = new QueryClient();
 
+const Admin = ({ children, adminOnly }: { children: React.ReactNode; adminOnly?: boolean }) => (
+  <AdminGuard requireRole={adminOnly ? "admin" : "organizer"}>
+    <AdminLayout>{children}</AdminLayout>
+  </AdminGuard>
+);
+
 const AppRoutes = () => (
   <AppLayout>
     <Routes>
@@ -44,12 +50,16 @@ const AppRoutes = () => (
       <Route path="/grill-contest" element={<GrillContest />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/admin" element={<AdminGuard><AdminHome /></AdminGuard>} />
-      <Route path="/admin/shuttle" element={<AdminGuard><AdminShuttle /></AdminGuard>} />
-      <Route path="/admin/eventi" element={<AdminGuard><AdminEventi /></AdminGuard>} />
-      <Route path="/admin/eventi/:id/iscritti" element={<AdminGuard><AdminEventoIscritti /></AdminGuard>} />
-      <Route path="/admin/eventi/:eventId/shuttle" element={<AdminGuard><AdminShuttle /></AdminGuard>} />
-      <Route path="/admin/impostazioni" element={<AdminGuard><AdminImpostazioni /></AdminGuard>} />
+      <Route path="/admin" element={<Admin><AdminOverview /></Admin>} />
+      <Route path="/admin/eventi" element={<Admin><AdminEventi /></Admin>} />
+      <Route path="/admin/eventi/:id/iscritti" element={<Admin><AdminEventoIscritti /></Admin>} />
+      <Route path="/admin/eventi/:eventId/shuttle" element={<Admin><AdminShuttle /></Admin>} />
+      <Route path="/admin/prenotazioni" element={<Admin><AdminPrenotazioni /></Admin>} />
+      <Route path="/admin/checkin" element={<Admin><AdminCheckin /></Admin>} />
+      <Route path="/admin/utenti" element={<Admin adminOnly><AdminUtenti /></Admin>} />
+      <Route path="/admin/email-logs" element={<Admin adminOnly><AdminEmailLogs /></Admin>} />
+      <Route path="/admin/shuttle" element={<Admin><AdminShuttle /></Admin>} />
+      <Route path="/admin/impostazioni" element={<Admin adminOnly><AdminImpostazioni /></Admin>} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/termini" element={<TermsConditions />} />
       <Route path="*" element={<NotFound />} />
