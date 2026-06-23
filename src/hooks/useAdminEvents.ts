@@ -63,8 +63,38 @@ const removeFromStorage = async (publicUrl: string | null | undefined) => {
   await supabase.storage.from(BUCKET).remove([path]).catch(() => undefined);
 };
 
+// Whitelist estensioni e MIME accettati per le immagini evento.
+const ALLOWED_MIME = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+  "image/gif",
+]);
+const MIME_TO_EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/avif": "avif",
+  "image/gif": "gif",
+};
+
+/**
+ * Costruisce la cartella di destinazione su Storage rispettando le policy:
+ *   - evento già esistente  → `{event_id}/{kind}`
+ *   - evento ancora draft   → `drafts/{user_id}/{kind}`
+ * Le RLS policy del bucket consentono scrittura solo su questi prefissi.
+ */
+const buildEventFolder = (
+  eventId: string | null | undefined,
+  userId: string,
+  kind: "cover" | "gallery",
+) => (eventId ? `${eventId}/${kind}` : `drafts/${userId}/${kind}`);
+
 const uploadToStorage = async (file: File, folder: string) => {
-  const ext = file.name.split(".").pop() || "jpg";
+  // Estensione derivata dal MIME (più affidabile del nome file utente) +
+  // suffisso random anti-collisione. Niente caratteri provenienti dall'input.
+  const ext = MIME_TO_EXT[file.type] ?? "bin";
   const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
     cacheControl: "3600",
@@ -76,7 +106,8 @@ const uploadToStorage = async (file: File, folder: string) => {
 };
 
 const validateImage = (file: File) => {
-  if (!file.type.startsWith("image/")) return "Carica un'immagine.";
+  if (!ALLOWED_MIME.has(file.type))
+    return "Formato non supportato (jpg, png, webp, avif, gif).";
   if (file.size > 5 * 1024 * 1024) return "Massimo 5 MB per immagine.";
   return null;
 };
