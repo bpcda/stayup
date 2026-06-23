@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
@@ -25,8 +26,9 @@ import MyEvents from "@/components/profilo/MyEvents";
 
 const Profilo = () => {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { profile, loading: profileLoading, update } = useProfile();
+  const { profile, loading: profileLoading, update, setMarketingConsent } = useProfile();
   const { toast } = useToast();
+  const [savingConsent, setSavingConsent] = useState(false);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
