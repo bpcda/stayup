@@ -109,7 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { error: "Devi accettare la Privacy Policy per registrarti." };
     }
     const fullName = `${data?.firstName ?? ""} ${data?.lastName ?? ""}`.trim();
-    const redirectTo = `${window.location.origin}/`;
+    const redirectTo = `${getSiteUrl()}/`;
     const marketing = Boolean(data?.marketingConsent);
 
     const { data: signUpResult, error } = await supabase.auth.signUp({
@@ -193,7 +193,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const requestPasswordReset = async (email: string) => {
     if (!isSupabaseConfigured) return { error: "Auth non configurato" };
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${getSiteUrl()}/reset-password`,
     });
     return { error: error?.message ?? null };
   };
