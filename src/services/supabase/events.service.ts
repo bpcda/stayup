@@ -1,6 +1,6 @@
 /**
  * Events CRUD against `public.events`. Mirrors the operations currently
- * performed against Appwrite in `src/hooks/useAdminEvents.ts` and
+ * performed in `src/hooks/useAdminEvents.ts` and
  * `src/hooks/useEventDetail.ts`. Not yet wired into the UI.
  */
 import { getSupabaseBrowser } from "@/lib/supabase/client";

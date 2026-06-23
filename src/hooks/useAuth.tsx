@@ -1,7 +1,7 @@
 /**
  * Auth context — Supabase Auth (esterno).
  *
- * Migrato da Appwrite a Supabase Auth mantenendo invariata la firma del
+ * Implementazione Supabase Auth mantenendo invariata la firma del
  * context (`AuthContextValue`): tutta la UI (`Auth.tsx`, `AdminGuard`,
  * `Profilo`, ecc.) continua a consumare gli stessi metodi.
  *

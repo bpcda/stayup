@@ -1,5 +1,5 @@
 /**
- * Shuttle slots + bookings service. Equivalent of the Appwrite calls in
+ * Shuttle slots + bookings service. Replaces the previous legacy calls in
  * `src/hooks/useShuttleForm.ts` and `src/hooks/useAdminShuttleData.ts`.
  */
 import { getSupabaseBrowser } from "@/lib/supabase/client";
@@ -109,7 +109,7 @@ export async function deleteBooking(id: string) {
 
 /**
  * Triggers the `create-booking` Edge Function (server-side capacity check +
- * booking insert). Payload shape mirrors the current Appwrite function.
+ * booking insert). Payload shape mirrors the create-booking Edge Function.
  */
 export async function invokeCreateBooking(payload: Record<string, unknown>) {
   const supabase = getSupabaseBrowser();
