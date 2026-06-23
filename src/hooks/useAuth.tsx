@@ -156,24 +156,49 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signInWithGoogle = async (next?: string) => {
-    if (!isSupabaseConfigured) return { error: "Auth non configurato" };
+    console.log("[oauth] signInWithGoogle called", { next });
+    if (!isSupabaseConfigured) {
+      console.warn("[oauth] Supabase NOT configured");
+      return { error: "Auth non configurato" };
+    }
     const base = getSiteUrl();
     const nextParam =
       next && next.startsWith("/") ? `?next=${encodeURIComponent(next)}` : "";
     const redirectTo = `${base}/auth/callback${nextParam}`;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo,
-        queryParams: {
-          // Forza il consent screen al primo accesso così Google restituisce
-          // sempre given_name/family_name nei claim.
-          access_type: "offline",
-          prompt: "select_account",
-        },
-      },
+    console.log("[oauth] computed redirectTo", {
+      base,
+      redirectTo,
+      origin: window.location.origin,
+      href: window.location.href,
     });
-    return { error: error?.message ?? null };
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          skipBrowserRedirect: true,
+          queryParams: {
+            access_type: "offline",
+            prompt: "select_account",
+          },
+        },
+      });
+      console.log("[oauth] signInWithOAuth result", { data, error });
+      if (error) {
+        console.error("[oauth] supabase error", error);
+        return { error: error.message };
+      }
+      if (!data?.url) {
+        console.error("[oauth] no URL returned from Supabase");
+        return { error: "Nessun URL restituito da Supabase" };
+      }
+      console.log("[oauth] redirecting browser to", data.url);
+      window.location.href = data.url;
+      return { error: null };
+    } catch (e: any) {
+      console.error("[oauth] exception", e);
+      return { error: e?.message ?? "Errore sconosciuto" };
+    }
   };
 
   const signOut = async () => {
