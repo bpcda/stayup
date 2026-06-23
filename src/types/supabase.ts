@@ -57,12 +57,12 @@ export type TripType = "andata" | "ritorno" | "andata_ritorno";
 type Timestamp = string;
 type UUID = string;
 
-interface BaseTable<Row, RequiredInsert extends keyof Row = never> {
+type BaseTable<Row> = {
   Row: Row;
-  Insert: Partial<Row> & Pick<Row, RequiredInsert>;
+  Insert: Partial<Row>;
   Update: Partial<Row>;
   Relationships: [];
-}
+};
 
 // ---------- Rows ----------
 
