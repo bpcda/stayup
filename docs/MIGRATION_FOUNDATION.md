@@ -37,26 +37,31 @@ src/emails/
 
 ## Environment variables
 
-### Browser (Vite — committed in `.env.example`)
+The backend is an **external Supabase Cloud project** plus **Resend** called
+directly. No Lovable-managed backend, no connector gateway. Secrets live in
+Vercel → Project → Settings → Environment Variables.
+
+### Browser (Vite — public, shipped in the bundle)
 
 | Name | Required | Notes |
 |---|---|---|
-| `VITE_SUPABASE_URL` | yes | `https://<ref>.supabase.co` |
-| `VITE_SUPABASE_ANON_KEY` | yes | Public anon key — safe in the browser bundle. |
-| `VITE_SUPABASE_PROJECT_ID` | optional | Used to build Edge Function URLs manually if needed. |
+| `VITE_SUPABASE_URL` | yes | `https://<ref>.supabase.co` of your external Supabase project. |
+| `VITE_SUPABASE_ANON_KEY` | yes | Public anon key. Protect data with RLS. |
+| `VITE_SUPABASE_PROJECT_ID` | optional | Convenience for building Edge Function URLs. |
+| `VITE_SITE_URL` | yes | Absolute site URL used in email links and OAuth redirects. |
 
-### Server / Edge Functions (managed as Lovable Cloud secrets)
+### Server / Edge Functions (secrets — NEVER prefix with `VITE_`)
 
 | Name | Required for | Notes |
 |---|---|---|
-| `SUPABASE_URL` | every Edge Function | Injected automatically by Lovable Cloud. |
-| `SUPABASE_ANON_KEY` | Edge Functions that proxy user-context calls | Injected automatically. |
-| `SUPABASE_SERVICE_ROLE_KEY` | `delete-account`, `create-booking` capacity write, admin tasks | Bypasses RLS — server only. |
-| `LOVABLE_API_KEY` | Resend gateway calls | Provided by Lovable; rotate with `rotate_lovable_api_key`. |
-| `RESEND_API_KEY` | Resend gateway calls | Injected when the Resend connector is linked. |
+| `SUPABASE_URL` | Edge Functions | Same value as `VITE_SUPABASE_URL`. |
+| `SUPABASE_SERVICE_ROLE_KEY` | admin Edge Functions / scripts | Bypasses RLS. Server only. |
+| `RESEND_API_KEY` | any email send | Your Resend account key. Server only. |
+| `RESEND_FROM_EMAIL` | any email send | Default sender, e.g. `StayUp <notify@domain.tld>`. |
+| `SITE_URL` | optional | Server-side mirror of `VITE_SITE_URL`. |
 
 The legacy `VITE_APPWRITE_*` and `APPWRITE_API_KEY` block is left untouched in
-`.env.example` so the current Appwrite-backed code keeps working.
+`.env.example` so the current Appwrite-backed code keeps working until cutover.
 
 ## How to use (forthcoming, not wired yet)
 
@@ -64,33 +69,30 @@ The legacy `VITE_APPWRITE_*` and `APPWRITE_API_KEY` block is left untouched in
 import { authService, shuttleService } from "@/services/supabase";
 
 const { data, error } = await authService.signInWithPassword({ email, password });
-
 const { data: slots } = await shuttleService.listAndataSlots(eventId);
 ```
 
 ```ts
-// Inside a Supabase Edge Function:
+// Inside a Supabase Edge Function (Deno):
 import { sendEmail } from "../../../src/lib/resend/client.ts"; // or copy into _shared/
 import { bookingConfirmationEmail } from "../../../src/emails/templates/booking-confirmation.ts";
 
-const { subject, html, text } = bookingConfirmationEmail({ nome, eventTitle, tipoViaggio, ... });
-await sendEmail({ from: "StayUp <notify@stayuppiacenza.it>", to: email, subject, html, text });
+const tpl = bookingConfirmationEmail({ nome, eventTitle, tipoViaggio, ... });
+await sendEmail({ to: email, ...tpl }); // `from` falls back to RESEND_FROM_EMAIL
 ```
 
-(For Edge Functions it's usually cleaner to copy the template+layout files into
-`supabase/functions/_shared/` so Deno resolves them without reaching into
+(For Edge Functions it's usually cleaner to copy the template + layout files
+into `supabase/functions/_shared/` so Deno resolves them without reaching into
 `src/`. That move is scheduled for the cutover, not now.)
 
 ## Next steps
 
-1. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in the project env.
-2. Run `supabase gen types typescript` and replace `src/types/supabase.ts` with
-   the generated file (current file is a minimal hand-curated stub).
-3. Link the Resend connector so `RESEND_API_KEY` becomes available to Edge
-   Functions (or switch to Lovable Emails — see MIGRATION_PLAN.md §Rischi).
+1. Set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and `VITE_SITE_URL` in
+   Vercel (Production / Preview / Development).
+2. Set `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, and `RESEND_FROM_EMAIL`
+   as secrets in Vercel and as Edge Function secrets in Supabase.
+3. Run `supabase gen types typescript` and replace `src/types/supabase.ts`.
 4. Audit `migrations/*.sql` against `scripts/setup-appwrite.js` for column/grant
    parity (MIGRATION_PLAN.md, Fase 0 step 2).
 5. Add `user_roles` table + `has_role()` function if missing.
-6. Begin Fase 3 of the migration: rewrite `useAuth` to consume
-   `services/supabase/auth.service.ts`. Keep Appwrite hook in place behind a
-   feature flag until parity is verified.
+6. Begin Fase 3: rewrite `useAuth` to consume `services/supabase/auth.service.ts`.

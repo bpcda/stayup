@@ -1,17 +1,24 @@
 /**
- * Resend client — server-side only.
+ * Resend client — SERVER SIDE ONLY.
  *
- * Resend is invoked through the Lovable connector gateway (see
- * docs/standard_connectors). The browser must never see `RESEND_API_KEY` or
- * `LOVABLE_API_KEY`, so this module is intended for use inside Supabase
- * Edge Functions. Vite excludes `supabase/functions/**` from the client
- * bundle, so the same source can also be re-exported from there if useful.
+ * Calls the Resend REST API directly (https://api.resend.com) using your own
+ * Resend account key. This module must never be imported from browser code:
+ * Vite would inline `RESEND_API_KEY` into the client bundle and expose it.
+ *
+ * Intended call sites:
+ *   - Supabase Edge Functions (Deno) — secrets injected via `Deno.env`.
+ *   - Node scripts / serverless API routes — secrets injected via `process.env`.
+ *
+ * Required environment variables (configure in Vercel, NOT in the repo):
+ *   - RESEND_API_KEY      Resend account API key (secret).
+ *   - RESEND_FROM_EMAIL   Default sender, e.g. `StayUp <notify@domain.tld>`.
  */
 
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
+const RESEND_API_URL = "https://api.resend.com/emails";
 
 export interface SendEmailInput {
-  from: string;
+  /** Overrides RESEND_FROM_EMAIL when provided. */
+  from?: string;
   to: string | string[];
   subject: string;
   html?: string;
@@ -29,10 +36,9 @@ export interface SendEmailResult {
 }
 
 function readEnv(name: string): string | undefined {
-  const env = (globalThis as { process?: { env?: Record<string, string> } })
+  const proc = (globalThis as { process?: { env?: Record<string, string> } })
     .process?.env;
-  if (env && env[name]) return env[name];
-  // Deno fallback
+  if (proc && proc[name]) return proc[name];
   const denoEnv = (globalThis as {
     Deno?: { env?: { get(k: string): string | undefined } };
   }).Deno?.env;
@@ -40,33 +46,38 @@ function readEnv(name: string): string | undefined {
 }
 
 /**
- * Sends an email through the Resend connector gateway.
+ * Send an email through the Resend REST API.
  *
- * Requires both `LOVABLE_API_KEY` and `RESEND_API_KEY` to be present in the
- * server environment (Edge Function secrets).
+ * Throws if `RESEND_API_KEY` is missing, or if `from` is not provided either
+ * via the input or the `RESEND_FROM_EMAIL` env var.
  */
 export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
-  const lovableKey = readEnv("LOVABLE_API_KEY");
-  const resendKey = readEnv("RESEND_API_KEY");
-  if (!lovableKey) throw new Error("LOVABLE_API_KEY is not configured");
-  if (!resendKey) throw new Error("RESEND_API_KEY is not configured");
+  const apiKey = readEnv("RESEND_API_KEY");
+  if (!apiKey) throw new Error("RESEND_API_KEY is not configured");
 
-  const res = await fetch(`${GATEWAY_URL}/emails`, {
+  const from = input.from ?? readEnv("RESEND_FROM_EMAIL");
+  if (!from) {
+    throw new Error(
+      "Missing sender: pass `from` or set RESEND_FROM_EMAIL in the server environment",
+    );
+  }
+
+  const res = await fetch(RESEND_API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${lovableKey}`,
-      "X-Connection-Api-Key": resendKey,
+      Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify(input),
+    body: JSON.stringify({ ...input, from }),
   });
 
   const json = (await res.json().catch(() => ({}))) as SendEmailResult & {
     message?: string;
+    name?: string;
   };
   if (!res.ok) {
     throw new Error(
-      `Resend gateway error ${res.status}: ${json?.message ?? JSON.stringify(json)}`,
+      `Resend API error ${res.status}: ${json?.message ?? json?.name ?? JSON.stringify(json)}`,
     );
   }
   return json;
