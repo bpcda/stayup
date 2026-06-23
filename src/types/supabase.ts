@@ -76,6 +76,10 @@ type UserRoleRow = {
 type ProfileRow = {
   id: UUID;
   email: string | null;
+  // Name fields — first_name/last_name are authoritative for editing,
+  // full_name is auto-synced by a DB trigger and used for read-only display.
+  first_name: string | null;
+  last_name: string | null;
   full_name: string | null;
   phone: string | null;
   avatar_url: string | null;
