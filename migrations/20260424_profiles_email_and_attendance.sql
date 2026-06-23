@@ -30,17 +30,6 @@ begin
 end;
 $$;
 
--- 2) Aggiungi attended a event_participations (per check-in / statistiche)
-alter table public.event_participations
-  add column if not exists attended boolean not null default false;
-
-alter table public.event_participations
-  add column if not exists attended_at timestamptz;
-
--- Solo admin può aggiornare attended/attended_at
-drop policy if exists "Admins update participations" on public.event_participations;
-create policy "Admins update participations"
-  on public.event_participations for update
-  to authenticated
-  using (public.has_role(auth.uid(), 'admin'))
-  with check (public.has_role(auth.uid(), 'admin'));
+-- 2) [RIMOSSO 2026-06-23] La logica di presenza è stata spostata su public.checkins (modello v2).
+--    Le colonne event_participations.attended / attended_at non esistono più e non vanno ricreate.
+--    Vedi migrations/20260623_stayup_v2_schema.sql e 20260623_stayup_v2_shuttle.sql.
