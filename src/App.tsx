@@ -14,6 +14,7 @@ import AdminEventi from "./pages/admin/AdminEventi";
 import AdminEventoIscritti from "./pages/admin/AdminEventoIscritti";
 import AdminImpostazioni from "./pages/admin/AdminImpostazioni";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import ChiSiamo from "./pages/ChiSiamo";
@@ -22,6 +23,7 @@ import Eventi from "./pages/Eventi";
 import EventoDettaglio from "./pages/EventoDettaglio";
 import Profilo from "./pages/Profilo";
 import NotFound from "./pages/NotFound";
+import UserGuard from "@/components/UserGuard";
 
 const queryClient = new QueryClient();
 
@@ -33,9 +35,10 @@ const AppRoutes = () => (
       <Route path="/contatti" element={<Contatti />} />
       <Route path="/eventi" element={<Eventi />} />
       <Route path="/eventi/:slug" element={<EventoDettaglio />} />
-      <Route path="/profilo" element={<Profilo />} />
+      <Route path="/profilo" element={<UserGuard><Profilo /></UserGuard>} />
       <Route path="/grill-contest" element={<GrillContest />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/admin" element={<AdminGuard><AdminHome /></AdminGuard>} />
       <Route path="/admin/shuttle" element={<AdminGuard><AdminShuttle /></AdminGuard>} />
       <Route path="/admin/eventi" element={<AdminGuard><AdminEventi /></AdminGuard>} />
