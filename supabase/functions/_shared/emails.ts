@@ -280,7 +280,100 @@ export type TemplateName =
   | "registration-confirmation"
   | "booking-confirmation"
   | "event-reminder"
-  | "booking-qr-code";
+  | "booking-qr-code"
+  | "waitlist-joined"
+  | "waitlist-offer";
+
+interface WaitlistJoinedData {
+  nome?: string;
+  eventTitle: string;
+  position: number;
+  eventUrl?: string;
+  locale?: Locale;
+}
+
+interface WaitlistOfferData {
+  nome?: string;
+  eventTitle: string;
+  acceptUrl: string;
+  expiresAt: string; // ISO
+  locale?: Locale;
+}
+
+function waitlistJoinedEmail(data: WaitlistJoinedData) {
+  const locale: Locale = data.locale ?? "it";
+  const S = locale === "en"
+    ? {
+        subject: `You're on the waitlist — ${data.eventTitle}`,
+        preheader: "We'll email you if a spot opens up.",
+        hi: (n?: string) => `Hi ${n ? escapeHtml(n) : "there"},`,
+        intro: `The event <strong>${escapeHtml(data.eventTitle)}</strong> is sold out, but you're now on the waitlist.`,
+        pos: (n: number) => `Your current position: <strong>#${n}</strong>.`,
+        explain: "If a spot opens up we'll email you an offer link valid for 24 hours.",
+        cta: "View event",
+        bye: "Thanks for staying with us!",
+      }
+    : {
+        subject: `Sei in lista d'attesa — ${data.eventTitle}`,
+        preheader: "Ti avviseremo via email se si libera un posto.",
+        hi: (n?: string) => `Ciao ${n ? escapeHtml(n) : ""}`.trim() + ",",
+        intro: `L'evento <strong>${escapeHtml(data.eventTitle)}</strong> è al completo, ma sei stato/a aggiunto/a alla lista d'attesa.`,
+        pos: (n: number) => `La tua posizione attuale: <strong>#${n}</strong>.`,
+        explain: "Se si libera un posto ti invieremo un link di offerta valido per 24 ore.",
+        cta: "Vai all'evento",
+        bye: "A presto!",
+      };
+  const ctaBtn = data.eventUrl
+    ? `<p style="margin:24px 0"><a href="${escapeHtml(data.eventUrl)}" style="display:inline-block;background:${BRAND.accent};color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600">${S.cta}</a></p>`
+    : "";
+  const body = `<h1 style="margin:0 0 16px;font-size:22px">${S.hi(data.nome)}</h1>
+    <p style="margin:0 0 12px;font-size:15px;line-height:1.5">${S.intro}</p>
+    <p style="margin:0 0 12px;font-size:15px;line-height:1.5">${S.pos(data.position)}</p>
+    <p style="margin:0 0 12px;font-size:14px;color:${BRAND.muted};line-height:1.5">${S.explain}</p>
+    ${ctaBtn}
+    <p style="margin:24px 0 0;font-size:14px;color:#555">${S.bye}</p>`;
+  return {
+    subject: S.subject,
+    html: renderLayout(body, { preheader: S.preheader, title: S.subject, locale }),
+    text: `${S.hi(data.nome)}\n\n${S.intro}\n${S.pos(data.position).replace(/<[^>]+>/g, "")}\n\n${S.explain}\n${data.eventUrl ?? ""}\n\n${S.bye}`,
+  };
+}
+
+function waitlistOfferEmail(data: WaitlistOfferData) {
+  const locale: Locale = data.locale ?? "it";
+  const expires = new Date(data.expiresAt).toLocaleString(locale === "en" ? "en-GB" : "it-IT", {
+    day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+  });
+  const S = locale === "en"
+    ? {
+        subject: `A spot opened up — ${data.eventTitle}`,
+        preheader: "Confirm your spot within 24 hours.",
+        hi: (n?: string) => `Hi ${n ? escapeHtml(n) : "there"},`,
+        intro: `A spot just opened up for <strong>${escapeHtml(data.eventTitle)}</strong>. We've reserved it for you.`,
+        cta: "Confirm my spot",
+        deadline: `This offer expires on <strong>${expires}</strong>. After that we'll pass it to the next person in line.`,
+        bye: "See you there!",
+      }
+    : {
+        subject: `Si è liberato un posto — ${data.eventTitle}`,
+        preheader: "Conferma il tuo posto entro 24 ore.",
+        hi: (n?: string) => `Ciao ${n ? escapeHtml(n) : ""}`.trim() + ",",
+        intro: `Si è liberato un posto per <strong>${escapeHtml(data.eventTitle)}</strong>. Lo abbiamo riservato per te.`,
+        cta: "Conferma il posto",
+        deadline: `L'offerta scade il <strong>${expires}</strong>. Dopo passeremo al prossimo in coda.`,
+        bye: "Ci vediamo!",
+      };
+  const body = `<h1 style="margin:0 0 16px;font-size:22px">${S.hi(data.nome)}</h1>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5">${S.intro}</p>
+    <p style="margin:24px 0"><a href="${escapeHtml(data.acceptUrl)}" style="display:inline-block;background:${BRAND.accent};color:#fff;text-decoration:none;padding:14px 24px;border-radius:8px;font-weight:700">${S.cta}</a></p>
+    <p style="margin:0 0 12px;font-size:14px;color:${BRAND.muted};line-height:1.5">${S.deadline}</p>
+    <p style="margin:24px 0 0;font-size:14px;color:#555">${S.bye}</p>`;
+  return {
+    subject: S.subject,
+    html: renderLayout(body, { preheader: S.preheader, title: S.subject, locale }),
+    text: `${S.hi(data.nome)}\n\n${S.intro.replace(/<[^>]+>/g, "")}\n\n${data.acceptUrl}\n\n${S.deadline.replace(/<[^>]+>/g, "")}\n\n${S.bye}`,
+  };
+}
 
 export function renderTemplate(
   name: TemplateName,
@@ -295,6 +388,10 @@ export function renderTemplate(
       return eventReminderEmail(data as EventReminderData);
     case "booking-qr-code":
       return bookingQrCodeEmail(data as BookingQrCodeData);
+    case "waitlist-joined":
+      return waitlistJoinedEmail(data as unknown as WaitlistJoinedData);
+    case "waitlist-offer":
+      return waitlistOfferEmail(data as unknown as WaitlistOfferData);
     default: {
       const _exhaustive: never = name;
       throw new Error(`Unknown template: ${_exhaustive}`);
