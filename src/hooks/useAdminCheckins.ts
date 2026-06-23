@@ -66,39 +66,79 @@ export const useAdminCheckins = (eventId: string | null) => {
 
   useEffect(() => { fetchList(); }, [fetchList]);
 
-  const checkIn = async (query: string): Promise<boolean> => {
-    if (!isSupabaseConfigured || !eventId || !user) return false;
-    const term = query.trim();
-    if (!term) return false;
-    let bookingQ = supabase
+  const lookupBooking = async (term: string) => {
+    if (!eventId) return null;
+    // QR token: stringa esadecimale di 48 char dalla RPC
+    const looksLikeToken = /^[a-f0-9]{32,}$/i.test(term);
+    let q = supabase
       .from("bookings")
-      .select("id, user_id, event_id, status, reference_code")
-      .eq("event_id", eventId)
-      .limit(5);
-    if (term.includes("@")) {
+      .select("id, user_id, event_id, status, reference_code, qr_token")
+      .limit(1);
+    if (looksLikeToken) {
+      q = q.eq("qr_token", term);
+    } else if (term.includes("@")) {
       const { data: profs } = await supabase.from("profiles").select("id").ilike("email", term).limit(1);
       const pid = (profs as { id: string }[] | null)?.[0]?.id;
-      if (!pid) { toast({ title: "Utente non trovato", variant: "destructive" }); return false; }
-      bookingQ = bookingQ.eq("user_id", pid);
+      if (!pid) return { error: "Utente non trovato" } as const;
+      q = q.eq("user_id", pid).eq("event_id", eventId);
     } else {
-      bookingQ = bookingQ.eq("reference_code", term);
+      q = q.eq("reference_code", term).eq("event_id", eventId);
     }
-    const { data: bookings, error: bErr } = await bookingQ;
-    if (bErr) { toast({ title: "Errore", description: bErr.message, variant: "destructive" }); return false; }
-    const booking = (bookings as { id: string; user_id: string; event_id: string; status: string }[] | null)?.[0];
-    if (!booking) { toast({ title: "Prenotazione non trovata", variant: "destructive" }); return false; }
-    if (booking.status === "cancelled") { toast({ title: "Prenotazione cancellata", variant: "destructive" }); return false; }
+    const { data, error: bErr } = await q;
+    if (bErr) return { error: bErr.message } as const;
+    const booking = (data as { id: string; user_id: string; event_id: string; status: string; reference_code: string | null; qr_token: string | null }[] | null)?.[0];
+    if (!booking) return { error: "Prenotazione non trovata" } as const;
+    if (booking.event_id !== eventId) return { error: "QR per un altro evento" } as const;
+    if (booking.status === "cancelled" || booking.status === "refunded") {
+      return { error: "Prenotazione annullata" } as const;
+    }
+    return { booking } as const;
+  };
+
+  const performCheckin = async (
+    booking: { id: string; user_id: string; event_id: string; reference_code: string | null },
+    method: "manual" | "qr",
+  ) => {
+    if (!user) return { error: "Sessione non valida" } as const;
+
+    // Pre-check: blocco doppio check-in con messaggio chiaro
+    const { data: existing } = await supabase
+      .from("checkins")
+      .select("id, checked_in_at")
+      .eq("booking_id", booking.id)
+      .limit(1);
+    if ((existing as { id: string }[] | null)?.length) {
+      return { error: "Già registrato" } as const;
+    }
 
     const { error: insErr } = await supabase.from("checkins").insert({
       booking_id: booking.id,
       event_id: booking.event_id,
       user_id: booking.user_id,
       checked_in_by: user.id,
-      method: "manual",
+      method,
     });
     if (insErr) {
-      if (insErr.message.includes("duplicate")) toast({ title: "Già registrato", variant: "destructive" });
-      else toast({ title: "Errore", description: insErr.message, variant: "destructive" });
+      if (insErr.message.toLowerCase().includes("duplicate")) {
+        return { error: "Già registrato" } as const;
+      }
+      return { error: insErr.message } as const;
+    }
+    return { ok: true as const, reference_code: booking.reference_code };
+  };
+
+  const checkIn = async (query: string): Promise<boolean> => {
+    if (!isSupabaseConfigured || !eventId || !user) return false;
+    const term = query.trim();
+    if (!term) return false;
+    const lookup = await lookupBooking(term);
+    if ("error" in lookup) {
+      toast({ title: lookup.error, variant: "destructive" });
+      return false;
+    }
+    const result = await performCheckin(lookup.booking, "manual");
+    if ("error" in result) {
+      toast({ title: result.error, variant: "destructive" });
       return false;
     }
     toast({ title: "Check-in registrato" });
@@ -106,5 +146,27 @@ export const useAdminCheckins = (eventId: string | null) => {
     return true;
   };
 
-  return { events, todayList, loading, error, checkIn, refresh: fetchList };
+  const checkInByToken = async (token: string): Promise<
+    | { ok: true; name: string | null; reference_code: string | null }
+    | { ok: false; error: string }
+  > => {
+    if (!isSupabaseConfigured || !eventId || !user) return { ok: false, error: "Non pronto" };
+    const lookup = await lookupBooking(token.trim());
+    if ("error" in lookup) return { ok: false, error: lookup.error };
+    const res = await performCheckin(lookup.booking, "qr");
+    if ("error" in res) return { ok: false, error: res.error };
+
+    // Recupera nome per feedback visivo
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", lookup.booking.user_id)
+      .maybeSingle();
+    fetchList();
+    const p = prof as { full_name: string | null; email: string | null } | null;
+    return { ok: true, name: p?.full_name ?? p?.email ?? null, reference_code: lookup.booking.reference_code };
+  };
+
+  return { events, todayList, loading, error, checkIn, checkInByToken, refresh: fetchList };
 };
+
