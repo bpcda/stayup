@@ -79,10 +79,12 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
   const { user, signOut, isAdmin } = useAuth();
   const location = useLocation();
 
-  // Hide chrome on auth screen for cleaner UX
+  // Hide public chrome on auth screen and on the entire admin area:
+  // the admin section renders its own shell via AdminLayout.
   const isAuthRoute = location.pathname === "/auth";
+  const isAdminRoute = location.pathname === "/admin" || location.pathname.startsWith("/admin/");
 
-  if (isAuthRoute) {
+  if (isAuthRoute || isAdminRoute) {
     return <>{children}</>;
   }
 
