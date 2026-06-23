@@ -1,306 +1,203 @@
-# DATABASE CONSISTENCY REPORT
+# Database Consistency Report — Fase 2
 
-Data: 2026-06-23
-Scopo: confronto fra **schema reale** (migrations applicate in `migrations/*.sql`), **tipi TypeScript** (`src/types/supabase.ts`) e **query/codice** (`src/**`).
-Nessuna modifica applicata: solo audit + proposta migrazioni minime.
+Data: 2026-06-24
+Scope: audit schema Supabase ↔ tipi TypeScript ↔ servizi/query del frontend.
 
----
-
-## Legenda
-
-- ✅ coerente
-- ⚠️ incoerente / da correggere
-- ❌ rotto a runtime (colonna/tabella mancante o nome sbagliato)
-- 🗑️ obsoleto (residuo Appwrite / pre-v2)
+Sorgenti incrociate:
+- `migrations/*.sql` (StayUp v2 base + estensioni)
+- `src/types/supabase.ts`
+- `src/services/supabase/*.ts`, `src/lib/supabase/*.ts`
+- tutti gli `.from(...)` / `.rpc(...)` in `src/**`
 
 ---
 
-## 1. `profiles` ❌ (root cause di più errori)
+## 1. Tabelle presenti nel DB (migrations)
 
-### Colonne reali (DB)
-Da `20260623_stayup_v2_schema.sql` + `20260623_consent_management.sql`:
-
-```
-id, email (citext), full_name, phone, avatar_url, birthdate, city,
-marketing_opt_in (bool),
-privacy_accepted_at, privacy_version,
-marketing_consent (bool), marketing_consent_at,
-created_at, updated_at
-```
-
-### Colonne usate dal codice
-| Colonna | File | Stato |
+| Tabella | Migration che la crea | Note |
 |---|---|---|
-| `id, email, full_name, phone, city, created_at` | `useAdminUsers.ts`, `useAdminBookings.ts`, `useAdminCheckins.ts` | ✅ |
-| `avatar_url, birthdate, marketing_opt_in` | nessuno | ⚠️ presenti in DB, mai usate (non bloccante) |
-| **`first_name`, `last_name`** | `useProfile.ts:8,9,19,45,46`, `useAuth.tsx:121,122`, `Profilo.tsx:50-52,66,67`, `AdminEventoIscritti.tsx:93,107,108` | ❌ **NON esistono in DB** |
-| `privacy_accepted_at, privacy_version, marketing_consent, marketing_consent_at` | `useProfile.ts`, `Profilo.tsx` | ✅ |
+| `user_roles` | `20260623_stayup_v2_schema.sql` | enum `app_role` (admin/organizer/user) |
+| `profiles` | `20260623_stayup_v2_schema.sql` + `20260623_consent_management.sql` | full_name + colonne consent |
+| `event_categories` | `20260623_stayup_v2_schema.sql` | — |
+| `events` | `20260623_stayup_v2_schema.sql` + `20260623_events_editor_extras.sql` + `20260623_stayup_v2_shuttle.sql` | v2 + extra editor + campi legacy shuttle |
+| `bookings` | `20260623_stayup_v2_schema.sql` + `20260623_bookings_qr_and_rpc.sql` | event bookings v2 + `qr_token` |
+| `checkins` | `20260623_stayup_v2_schema.sql` | — |
+| `email_logs` | `20260623_stayup_v2_schema.sql` | enum `email_status` |
+| `newsletter_subscribers` | `20260623_stayup_v2_schema.sql` | — |
+| `sponsors` | `20260623_stayup_v2_schema.sql` | — |
+| `user_interests` | `20260623_stayup_v2_schema.sql` | — |
+| `site_settings` | `20260623_site_settings_v2.sql` | sostituisce v1 (key/value text) con (id, key, value jsonb, is_public) |
+| `consent_log` | `20260623_consent_management.sql` | — |
+| `shuttle_slots` | `20260623_stayup_v2_shuttle.sql` | legacy shuttle |
+| `shuttle_return_slots` | `20260623_stayup_v2_shuttle.sql` | legacy shuttle |
+| `shuttle_bookings` | `20260623_stayup_v2_shuttle.sql` | prenotazioni navetta (≠ bookings) |
+| `event_participations` | `20260623_stayup_v2_shuttle.sql` | RSVP |
 
-### Tipi TypeScript (`src/types/supabase.ts:29-48`)
-Dichiarano `id, email, full_name, phone, created_at, updated_at` ⚠️ — mancano tutte le colonne consent + `avatar_url, birthdate, city, marketing_opt_in`.
+Funzioni: `public.has_role(uuid, app_role)`, `public.create_event_booking(uuid)`,
+`public.handle_new_user()`, `public.set_updated_at()`, `public.update_updated_at_column()`.
 
-### Diagnosi
-La migrazione legacy `20260424_profiles_autocreate.sql` inseriva `first_name, last_name, phone, city` ma non crea quelle colonne. La tabella v2 (`stayup_v2_schema.sql`) crea solo `full_name`. La trigger v2 + consent overrida correttamente a `full_name`. **Il codice non è stato aggiornato dal modello legacy (Appwrite/v1) al v2.**
-
-### Query rotte
-- `useProfile.load()` → `select("id, first_name, last_name, ...")` → errore 42703 (`column profiles.first_name does not exist`).
-- `Profilo.handleSave()` → `update({ first_name, last_name, ... })` → stessa cosa.
-- `AdminEventoIscritti` riga 93 → `select("id, first_name, last_name, phone, email")` → stessa cosa.
-- `useAuth.signUp` mette `first_name`/`last_name` nel `raw_user_meta_data` ma il trigger v2 legge solo `full_name` → dati persi.
-
----
-
-## 2. `events` ✅ (con leggere ridondanze)
-
-### Schema reale
-Da v2 base + `stayup_v2_shuttle` + `events_editor_extras`:
-```
-id, slug, title, description, short_description, cover_image_url,
-location, venue, category_id, organizer_id,
-starts_at, ends_at, capacity, price_cents, currency,
-status (enum: draft|published|cancelled|archived|ended),
-published_at, gallery_urls (text[]), sponsor_ids (uuid[]),
-is_active, is_public, has_shuttle, price_one_way, price_round_trip,
-created_at, updated_at
-```
-
-### Codice ↔ DB
-Tutte le colonne usate (`useAdminEvents`, `Eventi.tsx`, `useEventDetail`, `useShuttleForm`) esistono. ✅
-
-### Tipi TS (`supabase.ts:59-82`)
-Mancano: `venue, category_id, organizer_id, capacity, price_cents, currency, status, published_at, short_description, gallery_urls, sponsor_ids`. ⚠️ Solo problema di tipizzazione (codice usa `as unknown as EventRow`), nessun errore a runtime.
-
-### Note 🗑️
-- I campi `is_active, is_public, has_shuttle, price_one_way, price_round_trip` sono legacy Appwrite ma ancora referenziati da admin (`useAdminEvents`) e overview (`useAdminOverview`). Tenerli finché l'admin UI non viene ricostruito.
+Storage bucket: `event-covers` (creato in `20260424_site_settings_and_storage.sql`),
+`event-images` (creato in `20260623_stayup_v2_shuttle.sql`).
 
 ---
 
-## 3. `bookings` ✅
+## 2. Tabelle usate dal codice (`src/**`)
 
-### Schema reale (v2 + `bookings_qr_and_rpc`)
+Estratte da `rg -o "\.from\(['\"][a-z_]+"`:
+
 ```
-id, event_id, user_id, status (enum), quantity, total_cents, currency,
-notes, reference_code, qr_token,
-booked_at, cancelled_at, created_at, updated_at
+bookings, checkins, consent_log, email_logs, event_categories, events,
+profiles, shuttle_bookings, shuttle_return_slots, shuttle_slots,
+site_settings, sponsors, user_roles
 ```
 
-### Codice
-- `useEventDetail`, `useAdminBookings`, `useAdminOverview`, `useAdminCheckins`, `MyEvents`, `AdminEventoIscritti`: usano `id, event_id, user_id, status, reference_code, qr_token, booked_at, cancelled_at, quantity, total_cents, currency, notes, created_at`. ✅
-- Vincolo `unique(event_id, user_id)` rispettato dall'RPC `create_event_booking`.
+RPC chiamate: `has_role`.
 
-### Tipi TS (`supabase.ts:123-152`) ⚠️
-Dichiarano modello legacy Appwrite (`nome, email, telefono, tipo_viaggio, giorno, fermata, orario, orario_ritorno, pagato, price_paid, stato`). **Non corrisponde alla tabella `bookings` v2** — corrisponde invece a `shuttle_bookings`. Confusione di tipi. Codice non legge questi tipi (usa `from('bookings')` direttamente), quindi nessun crash, ma type-safety persa.
+> `create_event_booking` esiste come RPC server-side ma il frontend la invoca
+> tramite Edge Function `create-event-booking` (vedi `bookings.service.ts` /
+> `supabase/functions`), non direttamente: nessun mismatch.
+
+Tabelle **non usate** dal frontend (presenti nel DB):
+- `user_interests` — feature non ancora wired.
+- `event_participations` — orfana lato UI. Vedi §5.
+- `newsletter_subscribers` — referenziata solo da Edge Functions.
 
 ---
 
-## 4. `checkins` ✅ (tipi mancanti)
+## 3. Stato tipi TypeScript (`src/types/supabase.ts`) prima dell'audit
 
-### Schema reale
-```
-id, booking_id (unique), event_id, user_id, checked_in_at, checked_in_by,
-method, notes, created_at
-```
+| Tabella | Tipizzata? | Allineata allo schema reale? |
+|---|---|---|
+| `user_roles` | sì | ✅ |
+| `profiles` | sì | ❌ mancavano `avatar_url`, `birthdate`, `city`, `marketing_opt_in`, e tutte le colonne consent (`privacy_*`, `marketing_consent*`) |
+| `event_categories` | **no** | — |
+| `events` | sì | ❌ tipo basato sul layout legacy (Appwrite-like). Mancavano `price_cents`, `currency`, `status`, `category_id`, `organizer_id`, `capacity`, `venue`, `published_at`, `short_description`, `gallery_urls`, `sponsor_ids`. Colonne legacy `is_active/is_public/has_shuttle/price_one_way/price_round_trip` corrette ma incomplete. |
+| `bookings` | sì | ❌ tipo del **vecchio** flusso shuttle (nome/email/telefono/tipo_viaggio…). La tabella reale è event-booking v2 (event_id+user_id NOT NULL, status enum, quantity, total_cents, reference_code, qr_token). |
+| `checkins` | **no** | — |
+| `email_logs` | **no** | — |
+| `newsletter_subscribers` | **no** | — |
+| `sponsors` | **no** | — |
+| `user_interests` | **no** | — |
+| `site_settings` | **no** | — |
+| `consent_log` | **no** | — |
+| `shuttle_slots` | sì | ⚠ manca `updated_at` |
+| `shuttle_return_slots` | sì | ⚠ manca `updated_at` |
+| `shuttle_bookings` | **no** | — |
+| `event_participations` | sì | nominale (status testuale), ok |
 
-### Codice
-`useAdminCheckins`, `useAdminOverview`, `useAdminUsers`, `AdminEventoIscritti`, `AdminCheckin`: usano colonne corrette. ✅
-
-### Tipi TS ⚠️
-`checkins` **non è dichiarata** in `src/types/supabase.ts`.
-
----
-
-## 5. `site_settings` ⚠️ (dual-schema)
-
-### Schema reale
-La migration v1 (`20260424_site_settings_and_storage.sql`) crea PK = `key text`, `value text`. La v2 (`20260623_site_settings_v2.sql`) **droppa** la tabella v1 e crea: `id uuid PK, key text unique, value jsonb, description, is_public, created_at, updated_at`.
-
-### Codice
-- `useSiteSettings.ts:18` → `select("key, value")` su `value jsonb`. ✅ funziona, ma il JSON viene letto come oggetto, non come string.
-- `AdminImpostazioni.tsx:30,52` → `select("key, value, description")` + `upsert({ key, value }, { onConflict:"key" })`. ✅ a livello schema. Il valore viene salvato; se l'UI manda string, JSONB accetta strighe quotate.
-
-### Tipi TS ❌
-`site_settings` **non è dichiarata** in `src/types/supabase.ts`.
+Enums tipizzati prima dell'audit: `app_role` (corretto post-fix Fase 1),
+`trip_type`, `booking_status`. **Mancavano**: `event_status`, `email_status`,
+`newsletter_status`, `sponsor_tier`. Inoltre `booking_status` mancava il
+valore `refunded`.
 
 ---
 
-## 6. `email_logs` ✅ (tipi mancanti)
+## 4. Servizi e query — incompatibilità
 
-### Schema reale
-```
-id, to_email, from_email, subject, template, status (enum),
-provider_id, error_message,
-related_user_id, related_event_id, related_booking_id,
-payload (jsonb), sent_at, created_at
-```
+### 4.1 `src/services/supabase/shuttle.service.ts`
 
-### Codice
-`useAdminEmailLogs.ts:38,59`, `useAdminOverview.ts:68,69`. Usa `id, template, status, created_at`. ✅
+Le funzioni `listBookings / updateBooking / deleteBooking` usano
+`supabase.from("bookings")` con `TablesUpdate<"bookings">`, ma con lo schema
+v2 reale `public.bookings` **non contiene** `nome/email/telefono/giorno/
+fermata/tipo_viaggio/stato/pagato`. Quelle colonne vivono in
+`public.shuttle_bookings`.
 
-### Tipi TS ❌
-Non dichiarata in `supabase.ts`.
+→ **Bug logico**: il service è ancora puntato alla tabella sbagliata.
+Il modulo dichiara «not yet wired into the UI», quindi non rompe nulla a
+runtime, ma se collegato genera errori PostgREST 400/404 sulle colonne.
 
----
+Fix consigliato (non incluso in questo PR per non toccare logica oltre
+l'allineamento tipi): rinominare quelle 3 funzioni a `*ShuttleBooking` e
+puntare a `.from("shuttle_bookings")`. Tracciato qui per follow-up.
 
-## 7. `campaigns` ⚠️/🗑️
+### 4.2 `src/integrations/supabase/client.ts`
 
-### Schema reale
-**Nessuna tabella `campaigns`** in nessuna migration.
+Crea il client **non tipizzato** (`SupabaseClient` senza `<Database>`). I tipi
+generati in `src/types/supabase.ts` non vengono quindi applicati alle query
+fatte tramite questo client. Tutto il codice UI esistente usa questo client.
+Il client tipato (`src/lib/supabase/client.ts → supabaseBrowser`) esiste ma è
+usato solo dai due `services/`.
 
-### Codice
-Nessun riferimento (`rg campaigns src` → 0). ✅ né rotta né definita.
+→ Non è un mismatch di schema, è una **mancata adozione** del tipo.
+Migrazione progressiva consigliata: importare `supabaseBrowser` al posto di
+`supabase` file-by-file. Nessun impatto runtime.
 
-Conclusione: voce dell'inventario senza impatto. Se servirà newsletter campaigns, creare migrazione dedicata.
+### 4.3 Query frontend
 
----
-
-## 8. `newsletter_subscribers` ⚠️
-
-### Schema reale (v2 base)
-```
-id, email, status (enum: pending|confirmed|unsubscribed),
-source, user_id, confirmation_token,
-confirmed_at, unsubscribed_at, created_at, updated_at
-```
-
-### Codice
-**Nessun riferimento in `src/`** (`rg newsletter src` → 0). ✅ tabella presente, non ancora usata dal frontend.
-
-### Tipi TS ❌
-Non dichiarata.
+Sweep su tutti gli `.from(...).select(...)` non ha rivelato riferimenti a
+colonne inesistenti (post-fix Fase 1: rimozione di `event_participations.attended`
+e dei riferimenti a `first_name/last_name`). L'unico residuo strutturale è
+quello del §4.1.
 
 ---
 
-## 9. `event_categories` ✅ (tipi mancanti)
+## 5. Tabelle/colonne potenzialmente obsolete
 
-### Schema
-`id, slug, name, description, color, icon, sort_order, created_at, updated_at`.
+| Oggetto | Stato | Azione consigliata |
+|---|---|---|
+| `events.is_active`, `is_public`, `has_shuttle`, `price_one_way`, `price_round_trip` | Legacy "Appwrite-like", convivono con i campi v2 (`status`, `price_cents`). Usati dagli hook admin esistenti. | Mantenere finché l'admin non migra completamente ai campi v2; nessuna DROP. |
+| `event_participations` | Tabella creata nello shuttle migration. Nessun riferimento in `src/**`. | Lasciare in DB (FK su events ok). Valutare DROP in una fase futura se rimane non usata. |
+| `site_settings` v1 (key text PK) | Sostituita dalla v2 con colonna `id` (`20260623_site_settings_v2.sql` esegue DROP CASCADE se rileva lo schema vecchio). | Nessuna azione, già gestita. |
+| `bookings.qr_token` e RPC `create_event_booking` | Schema definitivo (Fase 1). | Mantenere. |
 
-### Codice
-- `Eventi.tsx:72` → `select("id, slug, name")` + join via `events.event_categories(slug,name)`. ✅
-- `useAdminEvents.ts:81`, `useAdminUsers.ts:70`. ✅
-
-### Tipi TS ❌
-Non dichiarata.
-
----
-
-## 10. `event_participations` 🗑️ (root cause originale)
-
-### Schema reale
-Esiste (creata in `20260623_stayup_v2_shuttle.sql`) con: `id, event_id, user_id, status, created_at`. **Non ha mai avuto `attended`/`attended_at`.**
-
-### Codice
-- **Zero riferimenti in `src/`** (grep negativo). ✅
-- **Presente nei tipi TS** (`supabase.ts:153-169`). ⚠️ tipo orfano.
-
-### Errore "`column event_participations.attended does not exist`"
-Causa probabile **non in codice frontend** (il src è pulito). Possibili origini residue:
-1. **Cached schema PostgREST**: una richiesta vecchia ancora in retry/queue.
-2. **Edge Function** lato server (non in `src/`) che fa ancora reference.
-3. **DB object** (VIEW / FUNCTION / TRIGGER) creato manualmente o da una migration cancellata.
-
-Verifica suggerita (eseguire su DB):
-```sql
-select n.nspname, p.proname
-from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-where pg_get_functiondef(p.oid) ilike '%event_participations.attended%';
-
-select schemaname, viewname from pg_views
-where definition ilike '%event_participations.attended%';
-
-select tgname, tgrelid::regclass from pg_trigger
-where pg_get_triggerdef(oid) ilike '%attended%';
-```
+Nessuna **colonna obsoleta** ancora referenziata in modo errato dal codice.
 
 ---
 
-## Riepilogo errori bloccanti
+## 6. Differenze Appwrite → Supabase
 
-| # | Severità | Tabella | Sintesi |
-|---|---|---|---|
-| A | 🔴 alta | `profiles` | Codice select/update `first_name, last_name` su tabella che ha solo `full_name`. Rompe `useProfile`, `Profilo`, `AdminEventoIscritti`, signup. |
-| B | 🟡 media | `src/types/supabase.ts` | Tipi disallineati: manca `checkins, site_settings, email_logs, newsletter_subscribers, event_categories, sponsors, user_interests, consent_log`. `bookings` definita con schema shuttle errato. `event_participations` ancora dichiarata. `profiles` priva di campi consent. |
-| C | 🟡 media | `event_participations` | Tabella esiste ma non più usata. Errore runtime `attended` arriva da fonte non-`src/` (edge function o oggetto DB). |
-| D | 🟢 bassa | `events` | Tipi TS incompleti (campi v2 mancanti); nessun crash. |
-| E | 🟢 bassa | Inventario | `campaigns` non esiste e non è usata. |
+Eredità del vecchio backend Appwrite ancora visibili:
+- Naming italiano sulle colonne shuttle (`giorno`, `fermata`, `orario`,
+  `nascosto`, `pagato`, `stato`). Mantenuto per compatibilità con le UI esistenti.
+- Campi `events.is_active / is_public / has_shuttle / price_one_way /
+  price_round_trip` (vedi sopra).
+- Tipo `bookings` lato TS modellava ancora il payload Appwrite — risolto.
 
----
-
-## Migrazioni minime proposte
-
-Obiettivo: **risolvere A senza inventare colonne** e **chiudere C**.
-
-### Opzione consigliata per (A): aggiornare il **codice**, non lo schema
-
-Il modello v2 ha intenzionalmente solo `full_name`. Aggiungere colonne `first_name`/`last_name` sarebbe regressione. Quindi:
-
-- Refactor `useProfile.ts`, `Profilo.tsx`, `useAuth.signUp`, `AdminEventoIscritti.tsx` per usare `full_name` (split/parse opzionale solo nell'UI).
-- Nessuna migration SQL necessaria per A.
-
-Se invece si preferisce **mantenere il form a due campi** lato UI senza toccarlo:
-
-```sql
--- migrations/20260624_profiles_legacy_name_columns.sql
-alter table public.profiles
-  add column if not exists first_name text,
-  add column if not exists last_name  text;
-
--- backfill da full_name (split sul primo spazio)
-update public.profiles
-   set first_name = coalesce(first_name, split_part(full_name, ' ', 1)),
-       last_name  = coalesce(last_name,  nullif(regexp_replace(full_name, '^\S+\s*', ''), ''))
- where full_name is not null
-   and (first_name is null or last_name is null);
-
--- mantieni full_name in sync via trigger
-create or replace function public.profiles_sync_full_name()
-returns trigger language plpgsql as $$
-begin
-  if (new.full_name is null or new.full_name = '')
-     and (new.first_name is not null or new.last_name is not null) then
-    new.full_name := trim(coalesce(new.first_name,'') || ' ' || coalesce(new.last_name,''));
-  end if;
-  return new;
-end$$;
-
-drop trigger if exists trg_profiles_sync_full_name on public.profiles;
-create trigger trg_profiles_sync_full_name
-  before insert or update on public.profiles
-  for each row execute function public.profiles_sync_full_name();
-```
-
-### Per (C): drop tabella obsoleta `event_participations`
-
-Solo dopo aver confermato che nessuna edge function la usa:
-
-```sql
--- migrations/20260624_drop_event_participations.sql
-do $$
-begin
-  if exists (select 1 from pg_tables where schemaname='public' and tablename='event_participations') then
-    drop table public.event_participations cascade;
-  end if;
-end$$;
-```
-
-Questo elimina anche eventuali viste/policy dipendenti (cascade) e fa **sparire l'errore `column does not exist`** nel caso provenga da un oggetto orfano che la referenzia.
-
-### Per (B): rigenerare `src/types/supabase.ts`
-
-Non è una migration SQL ma un'azione necessaria:
-
-```
-supabase gen types typescript --project-id <ref> --schema public > src/types/supabase.ts
-```
-
-In alternativa, riscrittura manuale del file allineata alle migrations correnti.
+Nessuna chiamata residua a SDK Appwrite (`node_appwrite`, `appwrite`,
+`databases.listDocuments`, ecc.) — verificato con `rg`.
 
 ---
 
-## Raccomandazione finale
+## 7. Azioni eseguite in questo PR
 
-1. **Prima**: applicare la migration di drop `event_participations` (C) → conferma se l'errore sparisce. Se sparisce, era un oggetto DB orfano.
-2. **Poi**: decidere se rifattorizzare il codice profilo (consigliato) o aggiungere le colonne legacy (`first_name/last_name`) come migration di compatibilità (A).
-3. **Infine**: rigenerare tipi TS (B) per riallineare type-safety.
+1. **Riscritto `src/types/supabase.ts`** completo, basato su tutte le
+   migrations attualmente in `migrations/`. Aggiunte tutte le tabelle e gli
+   enum mancanti; corretto il tipo `bookings`; aggiornato `profiles` con i
+   campi consent.
+2. Aggiunte le RPC `has_role` e `create_event_booking` nel blocco `Functions`.
+3. Esportato il nuovo helper `Enums<T>`.
+4. **Eliminate** le definizioni manuali approssimative (vecchio `bookings`
+   shuttle-like, `BookingStatus` parziale, `TripType` come enum PG). Sostituite
+   con definizioni 1:1 al DB.
 
-Nessuna feature aggiunta, nessuna UI modificata.
+Niente modifiche a UI, autenticazione, routing, RLS o dati.
+
+---
+
+## 8. Migration SQL necessarie
+
+**Nessuna nuova migration richiesta** per allineare lo schema: le migrations
+esistenti sotto `migrations/` descrivono già lo stato definitivo. I tipi
+TypeScript sono stati allineati a quello stato.
+
+Follow-up opzionali (non eseguiti, da decidere con il prodotto):
+- `migrations/<data>_shuttle_service_rename.sql`: nessuna SQL necessaria;
+  serve solo refactor TS (`shuttle.service.ts` → puntare a `shuttle_bookings`).
+- `migrations/<data>_drop_event_participations.sql`: solo se si conferma che
+  la feature RSVP non verrà riusata.
+- Adozione globale di `supabaseBrowser` (tipato) al posto del client legacy in
+  `src/integrations/supabase/client.ts`. Refactor incrementale, fuori scope.
+
+---
+
+## 9. Comando per rigenerare i tipi dal DB live
+
+```sh
+supabase gen types typescript \
+  --project-id <PROJECT_REF> \
+  --schema public \
+  > src/types/supabase.ts
+```
+
+Eseguirlo dopo ogni nuova migration e committare il diff: sostituirà la
+versione hand-curated mantenendo la stessa shape (`Database`, `Tables<>`,
+`TablesInsert<>`, `TablesUpdate<>`).
