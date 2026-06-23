@@ -57,7 +57,7 @@ export type TripType = "andata" | "ritorno" | "andata_ritorno";
 type Timestamp = string;
 type UUID = string;
 
-type BaseTable<Row> = {
+type BaseTable<Row extends Record<string, unknown>> = {
   Row: Row;
   Insert: Partial<Row>;
   Update: Partial<Row>;
