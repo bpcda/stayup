@@ -20,6 +20,7 @@ import AdminCheckin from "./pages/admin/AdminCheckin";
 import AdminCheckinScan from "./pages/admin/AdminCheckinScan";
 import AdminEmailLogs from "./pages/admin/AdminEmailLogs";
 import Auth from "./pages/Auth";
+import AuthCallback from "./pages/AuthCallback";
 import ResetPassword from "./pages/ResetPassword";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
@@ -50,6 +51,7 @@ const AppRoutes = () => (
       <Route path="/profilo" element={<UserGuard><Profilo /></UserGuard>} />
       <Route path="/grill-contest" element={<GrillContest />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/admin" element={<Admin><AdminOverview /></Admin>} />
       <Route path="/admin/eventi" element={<Admin><AdminEventi /></Admin>} />

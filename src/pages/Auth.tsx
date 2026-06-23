@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,17 @@ const GoogleIcon = () => (
 
 const Auth = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { signIn, signUp, signInWithGoogle, session, loading } = useAuth();
+
+  // Rotta di provenienza (impostata da UserGuard/AdminGuard) o ?next=...
+  const fromState = (location.state as { from?: string } | null)?.from;
+  const nextParam = searchParams.get("next");
+  const redirectTarget =
+    (fromState && fromState.startsWith("/") && fromState) ||
+    (nextParam && nextParam.startsWith("/") && nextParam) ||
+    "/";
 
   const [tab, setTab] = useState<"login" | "signup">("login");
 
@@ -39,11 +49,19 @@ const Auth = () => {
 
   const [submitting, setSubmitting] = useState(false);
 
+  // Mostra eventuali errori OAuth restituiti da /auth/callback.
+  useEffect(() => {
+    const err = searchParams.get("error");
+    if (err) {
+      toast({ title: "Accesso non riuscito", description: err, variant: "destructive" });
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     if (!loading && session) {
-      navigate("/", { replace: true });
+      navigate(redirectTarget, { replace: true });
     }
-  }, [loading, session, navigate]);
+  }, [loading, session, navigate, redirectTarget]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,11 +116,16 @@ const Auth = () => {
 
   const handleGoogle = async () => {
     setSubmitting(true);
-    const { error } = await signInWithGoogle();
-    setSubmitting(false);
+    // Passa la rotta di destinazione finale a /auth/callback come ?next=...
+    const { error } = await signInWithGoogle(
+      redirectTarget !== "/" ? redirectTarget : undefined
+    );
     if (error) {
+      setSubmitting(false);
       toast({ title: "Errore Google", description: error, variant: "destructive" });
     }
+    // Se non c'è errore il browser viene reindirizzato a Google; lasciamo
+    // submitting=true per disabilitare il bottone durante il redirect.
   };
 
   return (
