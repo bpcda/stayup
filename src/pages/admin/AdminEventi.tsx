@@ -45,7 +45,7 @@ const AdminEventi = () => {
         </Card>
       )}
 
-      <EventModals 
+      <EventModals
         editOpen={admin.editOpen}
         setEditOpen={admin.setEditOpen}
         editing={admin.editing}
@@ -53,6 +53,12 @@ const AdminEventi = () => {
         saveEvent={admin.saveEvent}
         uploadingCover={admin.uploadingCover}
         handleCoverUpload={admin.handleCoverUpload}
+        uploadingGallery={admin.uploadingGallery}
+        handleGalleryUpload={admin.handleGalleryUpload}
+        removeGalleryImage={admin.removeGalleryImage}
+        toggleSponsor={admin.toggleSponsor}
+        categories={admin.categories}
+        sponsors={admin.sponsors}
         deleteId={admin.deleteId}
         setDeleteId={admin.setDeleteId}
         removeEvent={admin.removeEvent}
