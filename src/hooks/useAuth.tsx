@@ -162,6 +162,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setSession(null);
     setUser(null);
     setIsAdmin(false);
+    setIsOrganizer(false);
   };
 
   const requestPasswordReset = async (email: string) => {
