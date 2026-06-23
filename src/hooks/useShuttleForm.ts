@@ -1,15 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { databases, functions, isAppwriteConfigured } from "@/lib/appwrite";
-import { ID, Query } from "appwrite";
+import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 import { ShuttleSlot, ReturnSlot, TipoViaggio } from "@/interfaces/shuttle";
 import { EventRow } from "@/interfaces/events";
 import { toast } from "@/hooks/use-toast";
-
-const DB_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID || '';
-const BOOKINGS_ID = import.meta.env.VITE_APPWRITE_COLLECTION_BOOKINGS || '';
-const SLOTS_ID = import.meta.env.VITE_APPWRITE_COLLECTION_SHUTTLE_SLOTS || '';
-const RETURN_SLOTS_ID = import.meta.env.VITE_APPWRITE_COLLECTION_RETURN_SLOTS || '';
 
 export const DAYS = ["25 Aprile", "26 Aprile"];
 export const STOPS = ["Università Cattolica", "Cheope"];
@@ -28,7 +22,7 @@ export const timeToMinutes = (t: string): number => {
 
 export const useShuttleForm = (onSuccess: () => void, eventId?: string) => {
   const { t } = useTranslation();
-  
+
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
@@ -37,17 +31,17 @@ export const useShuttleForm = (onSuccess: () => void, eventId?: string) => {
   const [fermata, setFermata] = useState("");
   const [orario, setOrario] = useState("");
   const [orarioRitorno, setOrarioRitorno] = useState("");
-  
+
   const [slots, setSlots] = useState<ShuttleSlot[]>([]);
   const [returnSlots, setReturnSlots] = useState<ReturnSlot[]>([]);
   const [bookingCounts, setBookingCounts] = useState<Record<string, number>>({});
   const [returnCounts, setReturnCounts] = useState<Record<string, number>>({});
   const [eventData, setEventData] = useState<EventRow | null>(null);
-  
+
   const [loading, setLoading] = useState(false);
   const [loadingSchedules, setLoadingSchedules] = useState(false);
   const [loadingReturnSlots, setLoadingReturnSlots] = useState(false);
-  
+
   const [accettaTermini, setAccettaTermini] = useState(false);
   const [accettaPagamento, setAccettaPagamento] = useState(false);
   const [accettaRimborso, setAccettaRimborso] = useState(false);
@@ -55,47 +49,62 @@ export const useShuttleForm = (onSuccess: () => void, eventId?: string) => {
   const needsAndata = tipoViaggio === "andata" || tipoViaggio === "andata_ritorno";
   const needsRitorno = tipoViaggio === "ritorno" || tipoViaggio === "andata_ritorno";
 
-  // Fetch Event Data for pricing
+  // Fetch evento per pricing
   useEffect(() => {
-    if (!eventId || !isAppwriteConfigured || !DB_ID) return;
-    const fetchEvent = async () => {
+    if (!eventId || !isSupabaseConfigured) return;
+    (async () => {
       try {
-        const res = await databases.getDocument(DB_ID, import.meta.env.VITE_APPWRITE_COLLECTION_EVENTS, eventId);
-        setEventData({ ...res, id: res.$id } as any);
+        const { data, error } = await supabase
+          .from("events")
+          .select("*")
+          .eq("id", eventId)
+          .maybeSingle();
+        if (error) throw error;
+        if (data) setEventData(data as unknown as EventRow);
       } catch (err) { console.error("Error fetching event:", err); }
-    };
-    fetchEvent();
+    })();
   }, [eventId]);
 
-  // Fetch Andata Slots
+  // Andata
   useEffect(() => {
     if (!needsAndata || !giorno || !fermata) {
       setSlots([]); setBookingCounts({}); setOrario(""); return;
     }
 
-    if (!isAppwriteConfigured || !DB_ID) {
+    if (!isSupabaseConfigured) {
       const times = FALLBACK_SCHEDULES[fermata] || [];
       setSlots(times.map((time, i) => ({ id: `fallback-${i}`, fermata, orario: time, giorno, capienza: 50 })));
       setBookingCounts({}); setOrario(""); return;
     }
 
-    const fetchSlots = async () => {
+    (async () => {
       setLoadingSchedules(true); setOrario("");
       try {
-        const queries = [Query.equal("giorno", giorno), Query.equal("fermata", fermata)];
-        if (eventId) queries.push(Query.equal("event_id", eventId));
+        let slotsQ = supabase
+          .from("shuttle_slots")
+          .select("*")
+          .eq("giorno", giorno)
+          .eq("fermata", fermata);
+        if (eventId) slotsQ = slotsQ.eq("event_id", eventId);
 
-        const [slotsRes, bookingsRes] = await Promise.all([
-          databases.listDocuments(DB_ID, SLOTS_ID, queries),
-          databases.listDocuments(DB_ID, BOOKINGS_ID, [...queries, Query.equal("pagato", true)]),
-        ]);
+        let bookingsQ = supabase
+          .from("shuttle_bookings")
+          .select("orario")
+          .eq("giorno", giorno)
+          .eq("fermata", fermata)
+          .eq("pagato", true);
+        if (eventId) bookingsQ = bookingsQ.eq("event_id", eventId);
+
+        const [slotsRes, bookingsRes] = await Promise.all([slotsQ, bookingsQ]);
+        if (slotsRes.error) throw slotsRes.error;
 
         const counts: Record<string, number> = {};
-        bookingsRes.documents.forEach((b: any) => { counts[b.orario] = (counts[b.orario] || 0) + 1; });
+        (bookingsRes.data ?? []).forEach((b: { orario: string | null }) => {
+          if (b.orario) counts[b.orario] = (counts[b.orario] || 0) + 1;
+        });
 
-        const mappedSlots = slotsRes.documents.map((d: any) => ({ ...d, id: d.$id })) as any as (ShuttleSlot & { nascosto?: boolean })[];
-        
-        setSlots(mappedSlots.filter(s => !s.nascosto).filter(s => s.capienza > (counts[s.orario] || 0)));
+        const all = (slotsRes.data ?? []) as unknown as (ShuttleSlot & { nascosto?: boolean })[];
+        setSlots(all.filter(s => !s.nascosto).filter(s => s.capienza > (counts[s.orario] || 0)));
         setBookingCounts(counts);
       } catch (err) {
         console.error("Error fetching slots:", err);
@@ -104,42 +113,48 @@ export const useShuttleForm = (onSuccess: () => void, eventId?: string) => {
         setBookingCounts({});
       }
       setLoadingSchedules(false);
-    };
-    fetchSlots();
-  }, [giorno, fermata, needsAndata]);
+    })();
+  }, [giorno, fermata, needsAndata, eventId]);
 
-  // Fetch Ritorno Slots
+  // Ritorno
   useEffect(() => {
     if (!needsRitorno || !giorno) {
       setReturnSlots([]); setReturnCounts({}); setOrarioRitorno(""); return;
     }
 
-    if (!isAppwriteConfigured || !DB_ID) {
+    if (!isSupabaseConfigured) {
       setReturnSlots(FALLBACK_RETURN_TIMES.map((time, i) => ({ id: `fr-${i}`, giorno, orario: time, capienza: 50 })));
       setReturnCounts({}); return;
     }
 
-    const fetchReturnSlots = async () => {
+    (async () => {
       setLoadingReturnSlots(true); setOrarioRitorno("");
       try {
-        const queries = [Query.equal("giorno", giorno)];
-        if (eventId) queries.push(Query.equal("event_id", eventId));
+        let slotsQ = supabase
+          .from("shuttle_return_slots")
+          .select("*")
+          .eq("giorno", giorno);
+        if (eventId) slotsQ = slotsQ.eq("event_id", eventId);
 
-        const [slotsRes, bookingsRes] = await Promise.all([
-          databases.listDocuments(DB_ID, RETURN_SLOTS_ID, queries),
-          databases.listDocuments(DB_ID, BOOKINGS_ID, [...queries, Query.equal("pagato", true)]),
-        ]);
+        let bookingsQ = supabase
+          .from("shuttle_bookings")
+          .select("orario_ritorno, tipo_viaggio")
+          .eq("giorno", giorno)
+          .eq("pagato", true);
+        if (eventId) bookingsQ = bookingsQ.eq("event_id", eventId);
+
+        const [slotsRes, bookingsRes] = await Promise.all([slotsQ, bookingsQ]);
+        if (slotsRes.error) throw slotsRes.error;
 
         const counts: Record<string, number> = {};
-        bookingsRes.documents.forEach((b: any) => { 
+        (bookingsRes.data ?? []).forEach((b: { orario_ritorno: string | null; tipo_viaggio: string }) => {
           if (b.orario_ritorno && (b.tipo_viaggio === "ritorno" || b.tipo_viaggio === "andata_ritorno")) {
-            counts[b.orario_ritorno] = (counts[b.orario_ritorno] || 0) + 1; 
+            counts[b.orario_ritorno] = (counts[b.orario_ritorno] || 0) + 1;
           }
         });
 
-        const mappedSlots = slotsRes.documents.map((d: any) => ({ ...d, id: d.$id })) as any as (ReturnSlot & { nascosto?: boolean })[];
-        
-        setReturnSlots(mappedSlots.filter(s => !s.nascosto).filter(s => s.capienza > (counts[s.orario] || 0)));
+        const all = (slotsRes.data ?? []) as unknown as (ReturnSlot & { nascosto?: boolean })[];
+        setReturnSlots(all.filter(s => !s.nascosto).filter(s => s.capienza > (counts[s.orario] || 0)));
         setReturnCounts(counts);
       } catch (err) {
         console.error("Error fetching return slots:", err);
@@ -147,27 +162,23 @@ export const useShuttleForm = (onSuccess: () => void, eventId?: string) => {
         setReturnCounts({});
       }
       setLoadingReturnSlots(false);
-    };
-    fetchReturnSlots();
-  }, [giorno, needsRitorno]);
+    })();
+  }, [giorno, needsRitorno, eventId]);
 
-  // Reset states when dependencies change
   useEffect(() => { setGiorno(""); setFermata(""); setOrario(""); setOrarioRitorno(""); }, [tipoViaggio]);
-  useEffect(() => { if (orario && orarioRitorno && timeToMinutes(orarioRitorno) <= timeToMinutes(orario)) setOrarioRitorno(""); }, [orario, orarioRitorno]);
+  useEffect(() => {
+    if (orario && orarioRitorno && timeToMinutes(orarioRitorno) <= timeToMinutes(orario)) {
+      setOrarioRitorno("");
+    }
+  }, [orario, orarioRitorno]);
 
   const totalPrice = useMemo(() => {
     if (!tipoViaggio || !eventData) return 0;
-    
     let base = tipoViaggio === "andata_ritorno" ? eventData.price_round_trip : eventData.price_one_way;
-    
-    // Check for slot overrides
     if (needsAndata && orario) {
       const slot = slots.find(s => s.orario === orario);
       if (slot?.price_override) base = slot.price_override;
     }
-    // Note: If both have overrides, we might need a more complex sum logic, 
-    // but for now let's assume override replaces the base trip price.
-    
     return base;
   }, [tipoViaggio, eventData, orario, slots, needsAndata]);
 
@@ -192,38 +203,36 @@ export const useShuttleForm = (onSuccess: () => void, eventId?: string) => {
     setLoading(true);
     try {
       const testMode = typeof window !== "undefined" && localStorage.getItem("stayup_test_mode") === "1";
-      
-      if (isAppwriteConfigured && DB_ID) {
+
+      if (isSupabaseConfigured) {
         const payload = {
-          nome, email, telefono, tipo_viaggio: tipoViaggio, giorno,
+          nome, email, telefono,
+          tipo_viaggio: tipoViaggio,
+          giorno,
           fermata: needsAndata ? fermata : null,
           orario: needsAndata ? orario : null,
           orario_ritorno: needsRitorno ? orarioRitorno : null,
           event_id: eventId || null,
           price_paid: totalPrice,
-          testMode
+          testMode,
         };
 
-        const execution = await functions.createExecution(
-          import.meta.env.VITE_APPWRITE_FUNCTION_CREATE_BOOKING, 
-          JSON.stringify(payload)
-        );
+        const { data, error } = await supabase.functions.invoke("create-booking", { body: payload });
+        if (error) throw error;
+        const result = data as { error?: string; bumped?: boolean };
+        if (result?.error) throw new Error(result.error);
 
-        const result = JSON.parse(execution.responseBody);
-        if (result.error) throw new Error(result.error);
-
-        if (result.bumped) {
-          toast({ 
-            title: "Orario Modificato", 
+        if (result?.bumped) {
+          toast({
+            title: "Orario Modificato",
             description: "Uno degli slot scelti era pieno. Sei stato spostato all'orario disponibile più vicino.",
-            variant: "default" 
           });
         }
       } else {
         console.log("Demo mode — booking data:", { nome, email, telefono, tipoViaggio, giorno, fermata, orario, orarioRitorno });
       }
       onSuccess();
-    } catch (err: any) {
+    } catch (err) {
       console.error("Submit error:", err);
       toast({ title: t("common.confirm"), description: t("form.errors.generic"), variant: "destructive" });
     } finally {
@@ -240,6 +249,6 @@ export const useShuttleForm = (onSuccess: () => void, eventId?: string) => {
     accettaTermini, setAccettaTermini, accettaPagamento, setAccettaPagamento, accettaRimborso, setAccettaRimborso,
     needsAndata, needsRitorno,
     totalPrice,
-    handleSubmit
+    handleSubmit,
   };
 };

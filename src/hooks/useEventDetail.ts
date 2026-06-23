@@ -1,15 +1,14 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { databases, isAppwriteConfigured } from "@/lib/appwrite";
-import { ID, Query } from "appwrite";
+import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { EventRow } from "@/interfaces/events";
 
-const DB_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID || '';
-const EVENTS_ID = import.meta.env.VITE_APPWRITE_COLLECTION_EVENTS || '';
-const PARTICIPATIONS_ID = import.meta.env.VITE_APPWRITE_COLLECTION_EVENT_PARTICIPATIONS || '';
-
+/**
+ * Carica il dettaglio evento via Supabase + stato iscrizione utente.
+ * UI invariata: stessa firma di prima.
+ */
 export const useEventDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -22,26 +21,32 @@ export const useEventDetail = () => {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!slug || !isAppwriteConfigured || !DB_ID) { setLoading(false); return; }
+    if (!slug || !isSupabaseConfigured) { setLoading(false); return; }
 
     (async () => {
       setLoading(true);
       try {
-        const res = await databases.listDocuments(DB_ID, EVENTS_ID, [Query.equal("slug", slug)]);
-        if (res.total === 0) { setEvent(null); setLoading(false); return; }
+        const { data: ev, error } = await supabase
+          .from("events")
+          .select("*")
+          .eq("slug", slug)
+          .maybeSingle();
 
-        const doc = res.documents[0];
-        const eventData = { ...doc, id: doc.$id } as any as EventRow;
-        setEvent(eventData);
+        if (error) throw error;
+        if (!ev) { setEvent(null); setLoading(false); return; }
+
+        setEvent(ev as unknown as EventRow);
 
         if (user) {
-          const partRes = await databases.listDocuments(DB_ID, PARTICIPATIONS_ID, [
-            Query.equal("event_id", eventData.id),
-            Query.equal("user_id", user.id)
-          ]);
-          setRegistered(partRes.total > 0);
+          const { data: parts } = await supabase
+            .from("event_participations")
+            .select("id")
+            .eq("event_id", (ev as { id: string }).id)
+            .eq("user_id", user.id)
+            .limit(1);
+          setRegistered(!!parts && parts.length > 0);
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error(err);
       }
       setLoading(false);
@@ -50,42 +55,45 @@ export const useEventDetail = () => {
 
   const register = async () => {
     if (!user) { navigate("/auth"); return; }
-    if (!event || !DB_ID) return;
+    if (!event || !isSupabaseConfigured) return;
     setBusy(true);
     try {
-      await databases.createDocument(DB_ID, PARTICIPATIONS_ID, ID.unique(), {
-        event_id: event.id,
-        user_id: user.id,
-        status: "registered"
-      });
+      const { error } = await supabase
+        .from("event_participations")
+        .insert({ event_id: event.id, user_id: user.id, status: "registered" });
+      if (error) throw error;
       toast({ title: "Iscrizione confermata" });
       setRegistered(true);
-    } catch (err: any) {
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast({ title: "Errore", description: message, variant: "destructive" });
     }
     setBusy(false);
   };
 
   const unregister = async () => {
-    if (!user || !event || !DB_ID) return;
+    if (!user || !event || !isSupabaseConfigured) return;
     setBusy(true);
     try {
-      const partRes = await databases.listDocuments(DB_ID, PARTICIPATIONS_ID, [
-        Query.equal("event_id", event.id),
-        Query.equal("user_id", user.id)
-      ]);
-      if (partRes.total > 0) {
-        await databases.deleteDocument(DB_ID, PARTICIPATIONS_ID, partRes.documents[0].$id);
-        toast({ title: "Iscrizione annullata" });
-        setRegistered(false);
-      }
-    } catch (err: any) {
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+      const { error } = await supabase
+        .from("event_participations")
+        .delete()
+        .eq("event_id", event.id)
+        .eq("user_id", user.id);
+      if (error) throw error;
+      toast({ title: "Iscrizione annullata" });
+      setRegistered(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast({ title: "Errore", description: message, variant: "destructive" });
     }
     setBusy(false);
   };
 
-  const isPast = useMemo(() => (event?.starts_at ? new Date(event.starts_at).getTime() < Date.now() : false), [event?.starts_at]);
+  const isPast = useMemo(
+    () => (event?.starts_at ? new Date(event.starts_at).getTime() < Date.now() : false),
+    [event?.starts_at]
+  );
 
   return { event, loading, registered, busy, register, unregister, isPast };
 };
