@@ -17,6 +17,7 @@ import AdminImpostazioni from "./pages/admin/AdminImpostazioni";
 import AdminPrenotazioni from "./pages/admin/AdminPrenotazioni";
 import AdminUtenti from "./pages/admin/AdminUtenti";
 import AdminCheckin from "./pages/admin/AdminCheckin";
+import AdminCheckinScan from "./pages/admin/AdminCheckinScan";
 import AdminEmailLogs from "./pages/admin/AdminEmailLogs";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
@@ -56,6 +57,7 @@ const AppRoutes = () => (
       <Route path="/admin/eventi/:eventId/shuttle" element={<Admin adminOnly><AdminShuttle /></Admin>} />
       <Route path="/admin/prenotazioni" element={<Admin><AdminPrenotazioni /></Admin>} />
       <Route path="/admin/checkin" element={<Admin><AdminCheckin /></Admin>} />
+      <Route path="/admin/checkin/scan" element={<Admin><AdminCheckinScan /></Admin>} />
       <Route path="/admin/utenti" element={<Admin adminOnly><AdminUtenti /></Admin>} />
       <Route path="/admin/email-logs" element={<Admin adminOnly><AdminEmailLogs /></Admin>} />
       <Route path="/admin/shuttle" element={<Admin adminOnly><AdminShuttle /></Admin>} />
