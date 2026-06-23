@@ -109,13 +109,23 @@ Deno.serve(async (req) => {
 
   // Invia email (best-effort: non fa fallire la prenotazione)
   const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-  const FROM = Deno.env.get("RESEND_FROM_EMAIL") ?? "StayUp <onboarding@resend.dev>";
+  const FROM = Deno.env.get("RESEND_FROM_EMAIL");
 
   let emailStatus: "sent" | "failed" | "queued" = "queued";
   let emailError: string | null = null;
   let messageId: string | null = null;
 
-  if (RESEND_API_KEY && userEmail && booking.qr_token) {
+  if (!RESEND_API_KEY) {
+    console.error("[create-event-booking] RESEND_API_KEY missing — email not sent");
+    emailStatus = "queued";
+    emailError = "email service not configured";
+  } else if (!FROM) {
+    console.error(
+      "[create-event-booking] RESEND_FROM_EMAIL missing — refusing to send via sandbox sender",
+    );
+    emailStatus = "failed";
+    emailError = "sender address not configured";
+  } else if (userEmail && booking.qr_token) {
     try {
       const html = renderEmail({
         name: userName,
@@ -141,7 +151,9 @@ Deno.serve(async (req) => {
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) {
         emailStatus = "failed";
-        emailError = typeof payload?.message === "string" ? payload.message : `HTTP ${res.status}`;
+        emailError =
+          typeof payload?.message === "string" ? payload.message : `HTTP ${res.status}`;
+        console.error("[create-event-booking] Resend error:", emailError);
       } else {
         emailStatus = "sent";
         messageId = (payload?.id as string | undefined) ?? null;
@@ -149,10 +161,8 @@ Deno.serve(async (req) => {
     } catch (e) {
       emailStatus = "failed";
       emailError = e instanceof Error ? e.message : String(e);
+      console.error("[create-event-booking] Resend exception:", emailError);
     }
-  } else if (!RESEND_API_KEY) {
-    emailStatus = "queued";
-    emailError = "RESEND_API_KEY non configurata";
   }
 
   // Log email (best-effort)
