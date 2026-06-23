@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { PRIVACY_POLICY_VERSION } from "@/lib/consent";
 
 export type Profile = {
   id: string;
@@ -8,7 +9,14 @@ export type Profile = {
   last_name: string | null;
   phone: string | null;
   city: string | null;
+  privacy_version: string | null;
+  privacy_accepted_at: string | null;
+  marketing_consent: boolean;
+  marketing_consent_at: string | null;
 };
+
+const SELECT_COLS =
+  "id, first_name, last_name, phone, city, privacy_version, privacy_accepted_at, marketing_consent, marketing_consent_at";
 
 export const useProfile = () => {
   const { user } = useAuth();
@@ -25,7 +33,7 @@ export const useProfile = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, first_name, last_name, phone, city")
+      .select(SELECT_COLS)
       .eq("id", user.id)
       .maybeSingle();
     if (error) {
@@ -38,6 +46,10 @@ export const useProfile = () => {
           last_name: null,
           phone: null,
           city: null,
+          privacy_version: null,
+          privacy_accepted_at: null,
+          marketing_consent: false,
+          marketing_consent_at: null,
         }
       );
     }
@@ -59,5 +71,33 @@ export const useProfile = () => {
     return { error: error?.message ?? null };
   };
 
-  return { profile, loading, error, reload: load, update };
+  /** Aggiorna il consenso marketing e registra l'evento nel log audit. */
+  const setMarketingConsent = async (granted: boolean) => {
+    if (!user) return { error: "Not authenticated" };
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        marketing_consent: granted,
+        marketing_consent_at: granted ? now : null,
+      })
+      .eq("id", user.id);
+    if (error) return { error: error.message };
+
+    await supabase.from("consent_log").insert({
+      user_id: user.id,
+      consent_type: "marketing",
+      granted,
+      policy_version: PRIVACY_POLICY_VERSION,
+      source: "profile",
+      user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+    });
+
+    setProfile((p) =>
+      p ? { ...p, marketing_consent: granted, marketing_consent_at: granted ? now : null } : p
+    );
+    return { error: null };
+  };
+
+  return { profile, loading, error, reload: load, update, setMarketingConsent };
 };

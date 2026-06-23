@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
@@ -25,8 +26,9 @@ import MyEvents from "@/components/profilo/MyEvents";
 
 const Profilo = () => {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { profile, loading: profileLoading, update } = useProfile();
+  const { profile, loading: profileLoading, update, setMarketingConsent } = useProfile();
   const { toast } = useToast();
+  const [savingConsent, setSavingConsent] = useState(false);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -225,7 +227,57 @@ const Profilo = () => {
               </Button>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Privacy e consensi</CardTitle>
+              <CardDescription>
+                Gestisci i consensi che hai prestato. Puoi revocarli in qualsiasi momento.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-start justify-between gap-4 rounded-md border border-border/60 p-3">
+                <div className="space-y-1">
+                  <div className="text-sm font-medium">Comunicazioni marketing</div>
+                  <p className="text-xs text-muted-foreground">
+                    Ricevi aggiornamenti su nuovi eventi e iniziative.
+                    {profile?.marketing_consent && profile.marketing_consent_at && (
+                      <> Consenso prestato il {new Date(profile.marketing_consent_at).toLocaleDateString("it-IT")}.</>
+                    )}
+                  </p>
+                </div>
+                <Switch
+                  checked={Boolean(profile?.marketing_consent)}
+                  disabled={savingConsent || profileLoading}
+                  onCheckedChange={async (v) => {
+                    setSavingConsent(true);
+                    const { error } = await setMarketingConsent(v);
+                    setSavingConsent(false);
+                    toast({
+                      title: error ? "Errore" : v ? "Consenso marketing attivo" : "Consenso marketing revocato",
+                      description: error ?? undefined,
+                      variant: error ? "destructive" : "default",
+                    });
+                  }}
+                />
+              </div>
+
+              <div className="rounded-md border border-border/60 p-3 text-xs text-muted-foreground space-y-1">
+                <div>
+                  <span className="font-medium text-foreground">Privacy Policy accettata:</span>{" "}
+                  {profile?.privacy_accepted_at
+                    ? new Date(profile.privacy_accepted_at).toLocaleString("it-IT")
+                    : "—"}
+                </div>
+                <div>
+                  <span className="font-medium text-foreground">Versione policy:</span>{" "}
+                  {profile?.privacy_version ?? "—"}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
+
 
         <TabsContent value="eventi" className="mt-6">
           <MyEvents />

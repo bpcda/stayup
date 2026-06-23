@@ -4,9 +4,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
+import { PRIVACY_POLICY_VERSION } from "@/lib/consent";
 import stayupLogo from "@/assets/stayup-logo.png";
 
 const GoogleIcon = () => (
@@ -32,6 +34,8 @@ const Auth = () => {
   const [sPassword, setSPassword] = useState("");
   const [sPhone, setSPhone] = useState("");
   const [sCity, setSCity] = useState("");
+  const [sPrivacy, setSPrivacy] = useState(false);
+  const [sMarketing, setSMarketing] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -64,12 +68,19 @@ const Auth = () => {
       toast({ title: "Password troppo corta", description: "Minimo 6 caratteri.", variant: "destructive" });
       return;
     }
+    if (!sPrivacy) {
+      toast({ title: "Privacy obbligatoria", description: "Accetta la Privacy Policy per registrarti.", variant: "destructive" });
+      return;
+    }
     setSubmitting(true);
     const { error } = await signUp(sEmail.trim().toLowerCase(), sPassword, {
       firstName: sFirstName.trim(),
       lastName: sLastName.trim(),
       phone: sPhone.trim(),
       city: sCity.trim(),
+      privacyAccepted: true,
+      privacyVersion: PRIVACY_POLICY_VERSION,
+      marketingConsent: sMarketing,
     });
     setSubmitting(false);
     if (error) {
@@ -227,13 +238,39 @@ const Auth = () => {
                     />
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={submitting}>
+
+                <div className="space-y-3 rounded-md border border-border/60 bg-muted/30 p-3">
+                  <label className="flex items-start gap-3 text-sm cursor-pointer">
+                    <Checkbox
+                      checked={sPrivacy}
+                      onCheckedChange={(v) => setSPrivacy(v === true)}
+                      aria-required="true"
+                    />
+                    <span className="leading-snug">
+                      <span className="text-destructive mr-0.5">*</span>
+                      Ho letto e accetto la{" "}
+                      <Link to="/privacy" className="underline" target="_blank">Privacy Policy</Link>
+                      {" "}e i{" "}
+                      <Link to="/termini" className="underline" target="_blank">Termini di servizio</Link>.
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-3 text-sm cursor-pointer">
+                    <Checkbox
+                      checked={sMarketing}
+                      onCheckedChange={(v) => setSMarketing(v === true)}
+                    />
+                    <span className="leading-snug text-muted-foreground">
+                      Acconsento a ricevere comunicazioni di marketing e aggiornamenti sugli eventi.
+                      Potrai revocare il consenso in qualsiasi momento dal tuo profilo.
+                    </span>
+                  </label>
+                </div>
+
+                <Button type="submit" className="w-full" disabled={submitting || !sPrivacy}>
                   {submitting ? "Registrazione..." : "Crea account"}
                 </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                  Registrandoti accetti i{" "}
-                  <Link to="/termini" className="underline">Termini</Link> e la{" "}
-                  <Link to="/privacy" className="underline">Privacy</Link>.
+                <p className="text-[10px] text-muted-foreground text-center">
+                  Versione Privacy Policy: {PRIVACY_POLICY_VERSION}
                 </p>
               </form>
             </TabsContent>

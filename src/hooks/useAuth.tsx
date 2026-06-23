@@ -19,6 +19,9 @@ interface SignUpData {
   lastName?: string;
   phone?: string;
   city?: string;
+  privacyAccepted?: boolean;
+  privacyVersion?: string;
+  marketingConsent?: boolean;
 }
 
 interface AuthContextValue {
@@ -101,8 +104,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (email: string, password: string, data?: SignUpData) => {
     if (!isSupabaseConfigured) return { error: "Auth non configurato" };
+    if (!data?.privacyAccepted) {
+      return { error: "Devi accettare la Privacy Policy per registrarti." };
+    }
     const fullName = `${data?.firstName ?? ""} ${data?.lastName ?? ""}`.trim();
     const redirectTo = `${window.location.origin}/`;
+    const marketing = Boolean(data?.marketingConsent);
 
     const { data: signUpResult, error } = await supabase.auth.signUp({
       email,
@@ -115,14 +122,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           last_name: data?.lastName || undefined,
           phone: data?.phone || undefined,
           city: data?.city || undefined,
+          privacy_accepted: "true",
+          privacy_version: data?.privacyVersion,
+          marketing_consent: marketing ? "true" : "false",
         },
       },
     });
 
     if (error) return { error: error.message };
 
-    // Il trigger `handle_new_user` crea già la riga in `profiles`. Se siamo
-    // già loggati (email confirmation disabilitata) aggiorniamo i campi extra.
+    // Il trigger `handle_new_user` crea già la riga in `profiles` con i consensi
+    // dal raw_user_meta_data. Se siamo già loggati (email confirmation off)
+    // completiamo i campi anagrafici extra.
     const newUserId = signUpResult.user?.id;
     if (newUserId && signUpResult.session) {
       const { error: profileError } = await supabase
@@ -134,7 +145,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         })
         .eq("id", newUserId);
       if (profileError) {
-        // Non bloccante: profilo verrà completato dall'utente in seguito.
         console.warn("[useAuth] profile post-signup update failed", profileError);
       }
     }
