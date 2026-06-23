@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(newSession?.user ?? null);
       // Deferred per non bloccare il callback.
       setTimeout(() => {
-        checkAdmin(newSession?.user?.id ?? null);
+        checkRoles(newSession?.user?.id ?? null);
       }, 0);
     });
 
@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setUser(data.session?.user ?? null);
-      checkAdmin(data.session?.user?.id ?? null);
+      checkRoles(data.session?.user?.id ?? null);
       setLoading(false);
     });
 
