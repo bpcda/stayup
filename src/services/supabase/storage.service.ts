@@ -1,7 +1,7 @@
 /**
  * Supabase Storage helpers for the `event-covers` bucket.
  */
-import { getSupabaseBrowser } from "@/lib/supabase/client";
+import { getSupabaseBrowser } from "@/integrations/supabase/client";
 
 export const EVENT_COVERS_BUCKET = "event-covers";
 

@@ -2,7 +2,7 @@
  * Shuttle slots + bookings service. Replaces the previous legacy calls in
  * `src/hooks/useShuttleForm.ts` and `src/hooks/useAdminShuttleData.ts`.
  */
-import { getSupabaseBrowser } from "@/lib/supabase/client";
+import { getSupabaseBrowser } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/types/supabase";
 
 export type ShuttleSlot = Tables<"shuttle_slots">;

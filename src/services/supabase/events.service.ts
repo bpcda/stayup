@@ -3,7 +3,7 @@
  * performed in `src/hooks/useAdminEvents.ts` and
  * `src/hooks/useEventDetail.ts`. Not yet wired into the UI.
  */
-import { getSupabaseBrowser } from "@/lib/supabase/client";
+import { getSupabaseBrowser } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/types/supabase";
 
 export type EventRow = Tables<"events">;

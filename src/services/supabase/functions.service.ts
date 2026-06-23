@@ -3,7 +3,7 @@
  * Edge Functions. Centralising the names here keeps callers free of magic
  * strings.
  */
-import { getSupabaseBrowser } from "@/lib/supabase/client";
+import { getSupabaseBrowser } from "@/integrations/supabase/client";
 
 export type EdgeFunctionName =
   | "create-booking"
