@@ -293,37 +293,22 @@ interface EventParticipationRow {
 export interface Database {
   public: {
     Tables: {
-      user_roles: BaseTable<UserRoleRow, "user_id" | "role">;
-      profiles: BaseTable<ProfileRow, "id">;
-      event_categories: BaseTable<EventCategoryRow, "slug" | "name">;
-      events: BaseTable<EventRow, "slug" | "title" | "starts_at">;
-      bookings: BaseTable<BookingRow, "event_id" | "user_id">;
-      checkins: BaseTable<CheckinRow, "booking_id" | "event_id" | "user_id">;
-      email_logs: BaseTable<EmailLogRow, "to_email" | "subject">;
-      newsletter_subscribers: BaseTable<NewsletterSubscriberRow, "email">;
-      sponsors: BaseTable<SponsorRow, "slug" | "name">;
-      user_interests: BaseTable<UserInterestRow, "user_id" | "category_id">;
-      site_settings: BaseTable<SiteSettingRow, "key">;
-      consent_log: BaseTable<
-        ConsentLogRow,
-        "user_id" | "consent_type" | "granted"
-      >;
-      shuttle_slots: BaseTable<
-        ShuttleSlotRow,
-        "giorno" | "fermata" | "orario"
-      >;
-      shuttle_return_slots: BaseTable<
-        ShuttleReturnSlotRow,
-        "giorno" | "orario"
-      >;
-      shuttle_bookings: BaseTable<
-        ShuttleBookingRow,
-        "nome" | "email" | "telefono" | "tipo_viaggio" | "giorno"
-      >;
-      event_participations: BaseTable<
-        EventParticipationRow,
-        "event_id" | "user_id"
-      >;
+      user_roles: BaseTable<UserRoleRow>;
+      profiles: BaseTable<ProfileRow>;
+      event_categories: BaseTable<EventCategoryRow>;
+      events: BaseTable<EventRow>;
+      bookings: BaseTable<BookingRow>;
+      checkins: BaseTable<CheckinRow>;
+      email_logs: BaseTable<EmailLogRow>;
+      newsletter_subscribers: BaseTable<NewsletterSubscriberRow>;
+      sponsors: BaseTable<SponsorRow>;
+      user_interests: BaseTable<UserInterestRow>;
+      site_settings: BaseTable<SiteSettingRow>;
+      consent_log: BaseTable<ConsentLogRow>;
+      shuttle_slots: BaseTable<ShuttleSlotRow>;
+      shuttle_return_slots: BaseTable<ShuttleReturnSlotRow>;
+      shuttle_bookings: BaseTable<ShuttleBookingRow>;
+      event_participations: BaseTable<EventParticipationRow>;
     };
     Views: Record<string, never>;
     Functions: {
