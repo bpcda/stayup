@@ -26,14 +26,15 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 // Helper to map Appwrite user to Supabase User interface to prevent breaking existing components
 const mapAppwriteUserToSupabaseUser = (appwriteUser: Models.User<Models.Preferences>): User => {
+  const prefs = (appwriteUser.prefs ?? {}) as Record<string, string | undefined>;
   return {
     id: appwriteUser.$id,
     app_metadata: {},
     user_metadata: {
-      first_name: appwriteUser.prefs?.firstName || appwriteUser.name?.split(' ')[0] || '',
-      last_name: appwriteUser.prefs?.lastName || appwriteUser.name?.split(' ').slice(1).join(' ') || '',
-      phone: appwriteUser.prefs?.phone || '',
-      city: appwriteUser.prefs?.city || '',
+      first_name: prefs.firstName || appwriteUser.name?.split(' ')[0] || '',
+      last_name: prefs.lastName || appwriteUser.name?.split(' ').slice(1).join(' ') || '',
+      phone: prefs.phone || '',
+      city: prefs.city || '',
     },
     aud: 'authenticated',
     created_at: appwriteUser.$createdAt,
