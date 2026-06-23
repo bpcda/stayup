@@ -13,6 +13,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
+import { getSiteUrl } from "@/lib/siteUrl";
 
 interface SignUpData {
   firstName?: string;
@@ -32,8 +33,8 @@ interface AuthContextValue {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, data?: SignUpData) => Promise<{ error: string | null }>;
-  /** Stub: struttura pronta, OAuth Google verrà abilitato in seguito. */
-  signInWithGoogle: () => Promise<{ error: string | null }>;
+  /** Avvia OAuth con Google. `next` è la rotta dove tornare dopo il login. */
+  signInWithGoogle: (next?: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<{ error: string | null }>;
   updatePassword: (newPassword: string) => Promise<{ error: string | null }>;
@@ -154,13 +155,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error: null };
   };
 
-  const signInWithGoogle = async () => {
-    // Struttura pronta per OAuth — verrà attivato in un task successivo.
-    // Nessuna chiamata reale finché il provider non è configurato sul
-    // progetto Supabase esterno.
-    return {
-      error: "Accesso con Google non ancora disponibile. Usa email e password.",
-    };
+  const signInWithGoogle = async (next?: string) => {
+    if (!isSupabaseConfigured) return { error: "Auth non configurato" };
+    const base = getSiteUrl();
+    const nextParam =
+      next && next.startsWith("/") ? `?next=${encodeURIComponent(next)}` : "";
+    const redirectTo = `${base}/auth/callback${nextParam}`;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo,
+        queryParams: {
+          // Forza il consent screen al primo accesso così Google restituisce
+          // sempre given_name/family_name nei claim.
+          access_type: "offline",
+          prompt: "select_account",
+        },
+      },
+    });
+    return { error: error?.message ?? null };
   };
 
   const signOut = async () => {
