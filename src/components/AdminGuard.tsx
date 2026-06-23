@@ -7,10 +7,12 @@ import { Card, CardContent } from "@/components/ui/card";
 
 interface Props {
   children: ReactNode;
+  requireRole?: "admin" | "organizer";
 }
 
-const AdminGuard = ({ children }: Props) => {
-  const { session, isAdmin, loading, signOut } = useAuth();
+const AdminGuard = ({ children, requireRole = "organizer" }: Props) => {
+  const { session, isAdmin, isOrganizer, loading, signOut } = useAuth();
+  const allowed = requireRole === "admin" ? isAdmin : (isAdmin || isOrganizer);
   const { t } = useTranslation();
 
   if (loading) {
@@ -25,7 +27,7 @@ const AdminGuard = ({ children }: Props) => {
     return <Navigate to="/auth" replace />;
   }
 
-  if (!isAdmin) {
+  if (!allowed) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <Card className="max-w-md w-full">

@@ -25,6 +25,7 @@ interface AuthContextValue {
   session: Session | null;
   user: User | null;
   isAdmin: boolean;
+  isOrganizer: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, data?: SignUpData) => Promise<{ error: string | null }>;
@@ -41,25 +42,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isOrganizer, setIsOrganizer] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const checkAdmin = async (uid: string | null) => {
+  const checkRoles = async (uid: string | null) => {
     if (!uid || !isSupabaseConfigured) {
       setIsAdmin(false);
+      setIsOrganizer(false);
       return;
     }
     try {
-      const { data, error } = await supabase.rpc("has_role", {
-        _user_id: uid,
-        _role: "admin",
-      });
-      if (error) {
-        setIsAdmin(false);
-        return;
-      }
-      setIsAdmin(Boolean(data));
+      const [adminRes, orgRes] = await Promise.all([
+        supabase.rpc("has_role", { _user_id: uid, _role: "admin" }),
+        supabase.rpc("has_role", { _user_id: uid, _role: "organizer" }),
+      ]);
+      setIsAdmin(Boolean(adminRes.data));
+      setIsOrganizer(Boolean(orgRes.data));
     } catch {
       setIsAdmin(false);
+      setIsOrganizer(false);
     }
   };
 
@@ -75,7 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(newSession?.user ?? null);
       // Deferred per non bloccare il callback.
       setTimeout(() => {
-        checkAdmin(newSession?.user?.id ?? null);
+        checkRoles(newSession?.user?.id ?? null);
       }, 0);
     });
 
@@ -83,7 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setUser(data.session?.user ?? null);
-      checkAdmin(data.session?.user?.id ?? null);
+      checkRoles(data.session?.user?.id ?? null);
       setLoading(false);
     });
 
@@ -161,6 +162,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setSession(null);
     setUser(null);
     setIsAdmin(false);
+    setIsOrganizer(false);
   };
 
   const requestPasswordReset = async (email: string) => {
@@ -183,6 +185,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         session,
         user,
         isAdmin,
+        isOrganizer,
         loading,
         signIn,
         signUp,
