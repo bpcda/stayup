@@ -8,3 +8,7 @@ verify_jwt = false
 
 [functions.delete-account]
 verify_jwt = false
+
+[functions.create-event-booking]
+verify_jwt = true
+
