@@ -42,25 +42,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isOrganizer, setIsOrganizer] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const checkAdmin = async (uid: string | null) => {
+  const checkRoles = async (uid: string | null) => {
     if (!uid || !isSupabaseConfigured) {
       setIsAdmin(false);
+      setIsOrganizer(false);
       return;
     }
     try {
-      const { data, error } = await supabase.rpc("has_role", {
-        _user_id: uid,
-        _role: "admin",
-      });
-      if (error) {
-        setIsAdmin(false);
-        return;
-      }
-      setIsAdmin(Boolean(data));
+      const [adminRes, orgRes] = await Promise.all([
+        supabase.rpc("has_role", { _user_id: uid, _role: "admin" }),
+        supabase.rpc("has_role", { _user_id: uid, _role: "organizer" }),
+      ]);
+      setIsAdmin(Boolean(adminRes.data));
+      setIsOrganizer(Boolean(orgRes.data));
     } catch {
       setIsAdmin(false);
+      setIsOrganizer(false);
     }
   };
 
