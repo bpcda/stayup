@@ -156,21 +156,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signInWithGoogle = async (next?: string) => {
-    console.log("[oauth] signInWithGoogle called", { next });
-    if (!isSupabaseConfigured) {
-      console.warn("[oauth] Supabase NOT configured");
-      return { error: "Auth non configurato" };
-    }
+    if (!isSupabaseConfigured) return { error: "Auth non configurato" };
     const base = getSiteUrl();
     const nextParam =
       next && next.startsWith("/") ? `?next=${encodeURIComponent(next)}` : "";
     const redirectTo = `${base}/auth/callback${nextParam}`;
-    console.log("[oauth] computed redirectTo", {
-      base,
-      redirectTo,
-      origin: window.location.origin,
-      href: window.location.href,
-    });
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -183,20 +173,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           },
         },
       });
-      console.log("[oauth] signInWithOAuth result", { data, error });
-      if (error) {
-        console.error("[oauth] supabase error", error);
-        return { error: error.message };
-      }
-      if (!data?.url) {
-        console.error("[oauth] no URL returned from Supabase");
-        return { error: "Nessun URL restituito da Supabase" };
-      }
-      console.log("[oauth] redirecting browser to", data.url);
+      if (error) return { error: error.message };
+      if (!data?.url) return { error: "Nessun URL restituito" };
       window.location.href = data.url;
       return { error: null };
     } catch (e: any) {
-      console.error("[oauth] exception", e);
       return { error: e?.message ?? "Errore sconosciuto" };
     }
   };
