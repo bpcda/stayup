@@ -227,7 +227,57 @@ const Profilo = () => {
               </Button>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Privacy e consensi</CardTitle>
+              <CardDescription>
+                Gestisci i consensi che hai prestato. Puoi revocarli in qualsiasi momento.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-start justify-between gap-4 rounded-md border border-border/60 p-3">
+                <div className="space-y-1">
+                  <div className="text-sm font-medium">Comunicazioni marketing</div>
+                  <p className="text-xs text-muted-foreground">
+                    Ricevi aggiornamenti su nuovi eventi e iniziative.
+                    {profile?.marketing_consent && profile.marketing_consent_at && (
+                      <> Consenso prestato il {new Date(profile.marketing_consent_at).toLocaleDateString("it-IT")}.</>
+                    )}
+                  </p>
+                </div>
+                <Switch
+                  checked={Boolean(profile?.marketing_consent)}
+                  disabled={savingConsent || profileLoading}
+                  onCheckedChange={async (v) => {
+                    setSavingConsent(true);
+                    const { error } = await setMarketingConsent(v);
+                    setSavingConsent(false);
+                    toast({
+                      title: error ? "Errore" : v ? "Consenso marketing attivo" : "Consenso marketing revocato",
+                      description: error ?? undefined,
+                      variant: error ? "destructive" : "default",
+                    });
+                  }}
+                />
+              </div>
+
+              <div className="rounded-md border border-border/60 p-3 text-xs text-muted-foreground space-y-1">
+                <div>
+                  <span className="font-medium text-foreground">Privacy Policy accettata:</span>{" "}
+                  {profile?.privacy_accepted_at
+                    ? new Date(profile.privacy_accepted_at).toLocaleString("it-IT")
+                    : "—"}
+                </div>
+                <div>
+                  <span className="font-medium text-foreground">Versione policy:</span>{" "}
+                  {profile?.privacy_version ?? "—"}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
+
 
         <TabsContent value="eventi" className="mt-6">
           <MyEvents />
