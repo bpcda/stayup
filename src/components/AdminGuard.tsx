@@ -27,7 +27,7 @@ const AdminGuard = ({ children, requireRole = "organizer" }: Props) => {
     return <Navigate to="/auth" replace />;
   }
 
-  if (!isAdmin) {
+  if (!allowed) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <Card className="max-w-md w-full">
