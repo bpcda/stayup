@@ -1,7 +1,17 @@
+/**
+ * Auth context — Supabase Auth (esterno).
+ *
+ * Migrato da Appwrite a Supabase Auth mantenendo invariata la firma del
+ * context (`AuthContextValue`): tutta la UI (`Auth.tsx`, `AdminGuard`,
+ * `Profilo`, ecc.) continua a consumare gli stessi metodi.
+ *
+ * Flusso sessione:
+ *   1. registriamo `onAuthStateChange` SUBITO (sincrono, no await dentro)
+ *   2. poi facciamo `getSession()` per ripristinare lo stato iniziale
+ *   3. il ruolo admin viene risolto in modo asincrono via `has_role` RPC
+ */
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { Session, User } from "@supabase/supabase-js";
-import { account, isAppwriteConfigured } from "@/lib/appwrite";
-import { ID, AppwriteException, Models } from "appwrite";
+import type { Session, User } from "@supabase/supabase-js";
 import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 
 interface SignUpData {
@@ -18,44 +28,14 @@ interface AuthContextValue {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, data?: SignUpData) => Promise<{ error: string | null }>;
+  /** Stub: struttura pronta, OAuth Google verrà abilitato in seguito. */
   signInWithGoogle: () => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<{ error: string | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: string | null }>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-
-// Helper to map Appwrite user to Supabase User interface to prevent breaking existing components
-const mapAppwriteUserToSupabaseUser = (appwriteUser: Models.User<Models.Preferences>): User => {
-  const prefs = (appwriteUser.prefs ?? {}) as Record<string, string | undefined>;
-  return {
-    id: appwriteUser.$id,
-    app_metadata: {},
-    user_metadata: {
-      first_name: prefs.firstName || appwriteUser.name?.split(' ')[0] || '',
-      last_name: prefs.lastName || appwriteUser.name?.split(' ').slice(1).join(' ') || '',
-      phone: prefs.phone || '',
-      city: prefs.city || '',
-    },
-    aud: 'authenticated',
-    created_at: appwriteUser.$createdAt,
-    email: appwriteUser.email,
-    phone: appwriteUser.phone,
-    updated_at: appwriteUser.$updatedAt,
-    role: 'authenticated',
-    factors: [],
-  } as unknown as User;
-};
-
-const mapAppwriteSessionToSupabaseSession = (appwriteSession: Models.Session, user: User): Session => {
-  return {
-    access_token: appwriteSession.$id,
-    refresh_token: '',
-    expires_in: 0,
-    expires_at: new Date(appwriteSession.expire).getTime() / 1000,
-    token_type: 'bearer',
-    user: user,
-  };
-};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
@@ -63,10 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Check admin role for the current user (temporarily using Supabase RPC if still needed)
   const checkAdmin = async (uid: string | null) => {
-    // If we have fully moved to Appwrite Auth, the UID won't exist in Supabase DB.
-    // For now, we will safely set false if it fails.
     if (!uid || !isSupabaseConfigured) {
       setIsAdmin(false);
       return;
@@ -81,117 +58,102 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       setIsAdmin(Boolean(data));
-    } catch (err) {
+    } catch {
       setIsAdmin(false);
-    }
-  };
-
-  const loadSession = async () => {
-    if (!isAppwriteConfigured) {
-      setLoading(false);
-      return;
-    }
-    try {
-      const appwriteSession = await account.getSession({ sessionId: 'current' });
-      const appwriteUser = await account.get();
-
-      const mappedUser = mapAppwriteUserToSupabaseUser(appwriteUser);
-      const mappedSession = mapAppwriteSessionToSupabaseSession(appwriteSession, mappedUser);
-
-      setSession(mappedSession);
-      setUser(mappedUser);
-
-      // We don't await checkAdmin here to avoid blocking UI unnecessarily
-      checkAdmin(mappedUser.id);
-    } catch (error) {
-      // No active session
-      setSession(null);
-      setUser(null);
-      setIsAdmin(false);
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadSession();
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      return;
+    }
+
+    // 1) Listener sincrono — niente await qui dentro per evitare deadlock.
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
+      // Deferred per non bloccare il callback.
+      setTimeout(() => {
+        checkAdmin(newSession?.user?.id ?? null);
+      }, 0);
+    });
+
+    // 2) Bootstrap della sessione persistita.
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setUser(data.session?.user ?? null);
+      checkAdmin(data.session?.user?.id ?? null);
+      setLoading(false);
+    });
+
+    return () => {
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    if (!isAppwriteConfigured) {
-      return { error: "Auth non configurato" };
-    }
-    try {
-      await account.createEmailPasswordSession({ email, password });
-      await loadSession();
-      return { error: null };
-    } catch (error) {
-      const e = error as AppwriteException;
-      return { error: e.message ?? "Errore sconosciuto" };
-    }
+    if (!isSupabaseConfigured) return { error: "Auth non configurato" };
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return { error: error?.message ?? null };
   };
 
   const signUp = async (email: string, password: string, data?: SignUpData) => {
-    if (!isAppwriteConfigured) {
-      return { error: "Auth non configurato" };
-    }
-    try {
-      const name = `${data?.firstName || ''} ${data?.lastName || ''}`.trim();
-      const newAccount = await account.create({
-        userId: ID.unique(),
-        email: email,
-        password: password,
-        name: name
-      });
+    if (!isSupabaseConfigured) return { error: "Auth non configurato" };
+    const fullName = `${data?.firstName ?? ""} ${data?.lastName ?? ""}`.trim();
+    const redirectTo = `${window.location.origin}/`;
 
-      // Attempt to set preferences if provided
-      if (data) {
-        // We need an active session to update preferences
-        await account.createEmailPasswordSession({ email, password });
-        await account.updatePrefs({
-          firstName: data.firstName || '',
-          lastName: data.lastName || '',
-          phone: data.phone || '',
-          city: data.city || ''
-        });
-        // We log out to keep the "verify your email" flow if desired, 
-        // or we just keep them logged in. The current code did not explicitly log them out but didn't log them in either (Supabase default behavior depends on email confirmation settings).
-        // The user mentioned SMTP is set up for Verification, so they might want to require email verification.
-        // Let's create a verification if we want, but let's just log out for now to force login.
-        // If we want to send verification email: await account.createVerification(`${window.location.origin}/verify`);
-        await account.deleteSession({ sessionId: 'current' });
+    const { data: signUpResult, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectTo,
+        data: {
+          full_name: fullName || undefined,
+          first_name: data?.firstName || undefined,
+          last_name: data?.lastName || undefined,
+          phone: data?.phone || undefined,
+          city: data?.city || undefined,
+        },
+      },
+    });
+
+    if (error) return { error: error.message };
+
+    // Il trigger `handle_new_user` crea già la riga in `profiles`. Se siamo
+    // già loggati (email confirmation disabilitata) aggiorniamo i campi extra.
+    const newUserId = signUpResult.user?.id;
+    if (newUserId && signUpResult.session) {
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          full_name: fullName || null,
+          phone: data?.phone || null,
+          city: data?.city || null,
+        })
+        .eq("id", newUserId);
+      if (profileError) {
+        // Non bloccante: profilo verrà completato dall'utente in seguito.
+        console.warn("[useAuth] profile post-signup update failed", profileError);
       }
-
-      return { error: null };
-    } catch (error) {
-      const e = error as AppwriteException;
-      return { error: e.message ?? "Errore sconosciuto" };
     }
+
+    return { error: null };
   };
 
   const signInWithGoogle = async () => {
-    if (!isAppwriteConfigured) {
-      return { error: "Auth non configurato" };
-    }
-    try {
-      // Appwrite OAuth2 implementation
-      account.createOAuth2Session({
-        provider: 'google' as any,
-        success: `${window.location.origin}/`,
-        failure: `${window.location.origin}/auth`
-      });
-      // It will redirect, so we just return null for now.
-      return { error: null };
-    } catch (error) {
-      const e = error as AppwriteException;
-      return { error: e.message ?? "Errore sconosciuto" };
-    }
+    // Struttura pronta per OAuth — verrà attivato in un task successivo.
+    // Nessuna chiamata reale finché il provider non è configurato sul
+    // progetto Supabase esterno.
+    return {
+      error: "Accesso con Google non ancora disponibile. Usa email e password.",
+    };
   };
 
   const signOut = async () => {
-    if (isAppwriteConfigured) {
+    if (isSupabaseConfigured) {
       try {
-        await account.deleteSession({ sessionId: 'current' });
+        await supabase.auth.signOut();
       } catch (e) {
         console.warn("Error during signout", e);
       }
@@ -201,8 +163,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsAdmin(false);
   };
 
+  const requestPasswordReset = async (email: string) => {
+    if (!isSupabaseConfigured) return { error: "Auth non configurato" };
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    return { error: error?.message ?? null };
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    if (!isSupabaseConfigured) return { error: "Auth non configurato" };
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    return { error: error?.message ?? null };
+  };
+
   return (
-    <AuthContext.Provider value={{ session, user, isAdmin, loading, signIn, signUp, signInWithGoogle, signOut }}>
+    <AuthContext.Provider
+      value={{
+        session,
+        user,
+        isAdmin,
+        loading,
+        signIn,
+        signUp,
+        signInWithGoogle,
+        signOut,
+        requestPasswordReset,
+        updatePassword,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
