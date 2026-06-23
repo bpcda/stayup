@@ -55,7 +55,8 @@ export const QrScannerPanel = ({ enabled, onToggle, onScan }: Props) => {
       });
     } else {
       vibrate([60, 80, 60]);
-      setFeedback({ kind: "err", title: res.error, at: now });
+      const errMsg = "error" in res ? res.error : "Errore";
+      setFeedback({ kind: "err", title: errMsg, at: now });
     }
   };
 
