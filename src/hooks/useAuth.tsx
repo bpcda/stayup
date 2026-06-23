@@ -139,6 +139,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
+          first_name: data?.firstName || null,
+          last_name: data?.lastName || null,
           full_name: fullName || null,
           phone: data?.phone || null,
           city: data?.city || null,
