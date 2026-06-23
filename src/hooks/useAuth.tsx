@@ -25,6 +25,7 @@ interface AuthContextValue {
   session: Session | null;
   user: User | null;
   isAdmin: boolean;
+  isOrganizer: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, data?: SignUpData) => Promise<{ error: string | null }>;
