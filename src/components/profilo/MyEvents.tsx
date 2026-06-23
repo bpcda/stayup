@@ -1,12 +1,15 @@
-import { useEffect, useState } from "react";
-import { Calendar, MapPin, QrCode } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Calendar, CheckCircle2, MapPin, QrCode, XCircle } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 type Booking = {
   id: string;
@@ -21,6 +24,8 @@ type Booking = {
     location: string | null;
     starts_at: string | null;
   } | null;
+  /** Iniettato lato client dopo lookup su public.checkins */
+  checked_in_at?: string | null;
 };
 
 const statusVariant = (s: string): "default" | "secondary" | "outline" | "destructive" => {
@@ -28,6 +33,12 @@ const statusVariant = (s: string): "default" | "secondary" | "outline" | "destru
   if (s === "cancelled" || s === "refunded") return "destructive";
   return "secondary";
 };
+
+const fmtDateTime = (iso: string) =>
+  new Date(iso).toLocaleString("it-IT", {
+    day: "2-digit", month: "long", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+  });
 
 const MyEvents = () => {
   const { user } = useAuth();
@@ -39,16 +50,37 @@ const MyEvents = () => {
   const load = async () => {
     if (!user || !isSupabaseConfigured) return;
     setLoading(true);
+
     const { data, error } = await supabase
       .from("bookings")
       .select("id, status, reference_code, qr_token, booked_at, events:event_id ( id, title, short_description, location, starts_at )")
       .eq("user_id", user.id)
       .order("booked_at", { ascending: false });
+
     if (error) {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
-    } else {
-      setItems((data as unknown as Booking[]) ?? []);
+      setLoading(false);
+      return;
     }
+
+    const bookings = (data as unknown as Booking[]) ?? [];
+
+    // Storico partecipazioni: join lato client con public.checkins
+    // (RLS "checkins user read own" consente all'utente di leggere i propri checkin).
+    const ids = bookings.map((b) => b.id);
+    if (ids.length > 0) {
+      const { data: checkins } = await supabase
+        .from("checkins")
+        .select("booking_id, checked_in_at")
+        .in("booking_id", ids);
+      const map = new Map<string, string>();
+      (checkins as { booking_id: string; checked_in_at: string }[] | null)?.forEach((c) =>
+        map.set(c.booking_id, c.checked_in_at),
+      );
+      bookings.forEach((b) => { b.checked_in_at = map.get(b.id) ?? null; });
+    }
+
+    setItems(bookings);
     setLoading(false);
   };
 
@@ -70,6 +102,27 @@ const MyEvents = () => {
     setItems((prev) => prev.map((b) => b.id === bookingId ? { ...b, status: "cancelled" } : b));
   };
 
+  // Split prossimi / passati in base a events.starts_at
+  const { upcoming, past } = useMemo(() => {
+    const now = Date.now();
+    const up: Booking[] = [];
+    const ps: Booking[] = [];
+    for (const b of items) {
+      const ts = b.events?.starts_at ? new Date(b.events.starts_at).getTime() : null;
+      if (ts !== null && ts < now) ps.push(b);
+      else up.push(b);
+    }
+    // Passati: i più recenti prima (per data evento)
+    ps.sort((a, z) =>
+      new Date(z.events?.starts_at ?? 0).getTime() - new Date(a.events?.starts_at ?? 0).getTime(),
+    );
+    // Prossimi: il più vicino prima
+    up.sort((a, z) =>
+      new Date(a.events?.starts_at ?? 0).getTime() - new Date(z.events?.starts_at ?? 0).getTime(),
+    );
+    return { upcoming: up, past: ps };
+  }, [items]);
+
   if (loading) return <p className="text-muted-foreground text-sm">Caricamento prenotazioni…</p>;
 
   if (items.length === 0) {
@@ -85,62 +138,114 @@ const MyEvents = () => {
     );
   }
 
+  const renderCard = (b: Booking, variant: "upcoming" | "past") => {
+    const ev = b.events;
+    if (!ev) return null;
+    const isActive = b.status === "confirmed" || b.status === "pending";
+    const attended = !!b.checked_in_at;
+
+    return (
+      <Card key={b.id}>
+        <CardHeader>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <CardTitle className="text-lg">{ev.title}</CardTitle>
+            <div className="flex items-center gap-2">
+              {variant === "past" && (
+                attended ? (
+                  <Badge variant="default" className="gap-1">
+                    <CheckCircle2 className="h-3 w-3" /> Partecipato
+                  </Badge>
+                ) : isActive ? (
+                  <Badge variant="outline" className="gap-1">
+                    <XCircle className="h-3 w-3" /> Non partecipato
+                  </Badge>
+                ) : null
+              )}
+              <Badge variant={statusVariant(b.status)}>{b.status}</Badge>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm text-muted-foreground">
+          {ev.short_description && <p>{ev.short_description}</p>}
+          {ev.starts_at && (
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span>{fmtDateTime(ev.starts_at)}</span>
+            </div>
+          )}
+          {ev.location && (
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              <span>{ev.location}</span>
+            </div>
+          )}
+          {b.reference_code && (
+            <p className="text-xs font-mono tracking-widest text-foreground/70">
+              Codice: {b.reference_code}
+            </p>
+          )}
+          {attended && b.checked_in_at && (
+            <p className="text-xs text-foreground/70">
+              Check-in: {fmtDateTime(b.checked_in_at)}
+            </p>
+          )}
+          <div className="flex flex-wrap gap-2 pt-1">
+            {variant === "upcoming" && isActive && b.qr_token && (
+              <Button variant="default" size="sm" onClick={() => setQrOpen(b)}>
+                <QrCode className="h-4 w-4 mr-2" /> Mostra QR
+              </Button>
+            )}
+            {variant === "upcoming" && isActive && (
+              <Button variant="outline" size="sm" onClick={() => cancel(b.id)}>
+                Annulla prenotazione
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const attendedCount = past.filter((b) => b.checked_in_at).length;
+
   return (
     <>
-      <div className="grid gap-4">
-        {items.map((b) => {
-          const ev = b.events;
-          if (!ev) return null;
-          const isActive = b.status === "confirmed" || b.status === "pending";
-          return (
-            <Card key={b.id}>
-              <CardHeader>
-                <div className="flex items-center justify-between gap-2">
-                  <CardTitle className="text-lg">{ev.title}</CardTitle>
-                  <Badge variant={statusVariant(b.status)}>{b.status}</Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm text-muted-foreground">
-                {ev.short_description && <p>{ev.short_description}</p>}
-                {ev.starts_at && (
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    <span>
-                      {new Date(ev.starts_at).toLocaleString("it-IT", {
-                        day: "2-digit", month: "long", year: "numeric",
-                        hour: "2-digit", minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                )}
-                {ev.location && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    <span>{ev.location}</span>
-                  </div>
-                )}
-                {b.reference_code && (
-                  <p className="text-xs font-mono tracking-widest text-foreground/70">
-                    Codice: {b.reference_code}
-                  </p>
-                )}
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {isActive && b.qr_token && (
-                    <Button variant="default" size="sm" onClick={() => setQrOpen(b)}>
-                      <QrCode className="h-4 w-4 mr-2" /> Mostra QR
-                    </Button>
-                  )}
-                  {isActive && (
-                    <Button variant="outline" size="sm" onClick={() => cancel(b.id)}>
-                      Annulla prenotazione
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      <Tabs defaultValue="upcoming" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="upcoming">
+            Prossimi {upcoming.length > 0 && `(${upcoming.length})`}
+          </TabsTrigger>
+          <TabsTrigger value="past">
+            Passati {past.length > 0 && `(${past.length})`}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="upcoming" className="mt-4">
+          {upcoming.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4">
+              Nessuna prenotazione futura.
+            </p>
+          ) : (
+            <div className="grid gap-4">{upcoming.map((b) => renderCard(b, "upcoming"))}</div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="past" className="mt-4 space-y-3">
+          {past.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4">
+              Nessun evento passato.
+            </p>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground">
+                Hai partecipato a <span className="font-semibold text-foreground">{attendedCount}</span>{" "}
+                {attendedCount === 1 ? "evento" : "eventi"} su {past.length}.
+              </p>
+              <div className="grid gap-4">{past.map((b) => renderCard(b, "past"))}</div>
+            </>
+          )}
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={!!qrOpen} onOpenChange={(o) => !o && setQrOpen(null)}>
         <DialogContent className="sm:max-w-sm">
