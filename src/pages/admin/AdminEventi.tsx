@@ -53,6 +53,7 @@ const AdminEventi = () => {
         saveEvent={admin.saveEvent}
         uploadingCover={admin.uploadingCover}
         handleCoverUpload={admin.handleCoverUpload}
+        removeCoverImage={admin.removeCoverImage}
         uploadingGallery={admin.uploadingGallery}
         handleGalleryUpload={admin.handleGalleryUpload}
         removeGalleryImage={admin.removeGalleryImage}
@@ -62,6 +63,7 @@ const AdminEventi = () => {
         deleteId={admin.deleteId}
         setDeleteId={admin.setDeleteId}
         removeEvent={admin.removeEvent}
+        editingBookedCount={admin.editingBookedCount}
       />
     </div>
   );

@@ -3,7 +3,7 @@ import { Pencil, Trash2, Users, Calendar, MapPin, Eye, EyeOff, Bus } from "lucid
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { EventRow } from "@/interfaces/events";
+import { EventRow, EventStatus } from "@/interfaces/events";
 
 interface EventsTableProps {
   events: EventRow[];
@@ -11,6 +11,21 @@ interface EventsTableProps {
   openEdit: (e: EventRow) => void;
   setDeleteId: (id: string) => void;
 }
+
+const STATUS_META: Record<EventStatus, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
+  draft:     { label: "Bozza",       variant: "secondary" },
+  published: { label: "Pubblicato",  variant: "default"   },
+  cancelled: { label: "Annullato",   variant: "destructive" },
+  ended:     { label: "Concluso",    variant: "outline"   },
+  archived:  { label: "Archiviato",  variant: "outline"   },
+};
+
+const fmtCapacity = (e: EventRow) => {
+  const booked = e._booked_count ?? 0;
+  if (e.capacity == null) return `${booked} iscritti`;
+  const remaining = Math.max(0, e.capacity - booked);
+  return `${booked}/${e.capacity}${remaining === 0 ? " · SOLD OUT" : ""}`;
+};
 
 export const EventsTable = ({ events, toggleField, openEdit, setDeleteId }: EventsTableProps) => {
   return (
@@ -20,13 +35,16 @@ export const EventsTable = ({ events, toggleField, openEdit, setDeleteId }: Even
           <TableHead>Titolo</TableHead>
           <TableHead>Data</TableHead>
           <TableHead>Luogo</TableHead>
+          <TableHead>Posti</TableHead>
           <TableHead>Stato</TableHead>
           <TableHead className="text-right">Azioni</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {events.map((e) => {
-          const isPast = e.starts_at ? new Date(e.starts_at).getTime() < Date.now() : false;
+          const status = (e.status ?? "draft") as EventStatus;
+          const meta = STATUS_META[status] ?? STATUS_META.draft;
+          const soldOut = e.capacity != null && (e._booked_count ?? 0) >= e.capacity;
           return (
             <TableRow key={e.id}>
               <TableCell className="font-medium">{e.title}</TableCell>
@@ -46,15 +64,20 @@ export const EventsTable = ({ events, toggleField, openEdit, setDeleteId }: Even
                 ) : <span className="text-muted-foreground text-sm">—</span>}
               </TableCell>
               <TableCell>
+                <span className={`text-sm ${soldOut ? "text-destructive font-semibold" : ""}`}>
+                  {fmtCapacity(e)}
+                </span>
+              </TableCell>
+              <TableCell>
                 <div className="flex flex-wrap gap-1">
-                  {e.is_active ? <Badge variant="default">Attivo</Badge> : <Badge variant="secondary">Bozza</Badge>}
-                  {e.is_public ? <Badge variant="outline">Pubblico</Badge> : <Badge variant="outline">Privato</Badge>}
-                  {isPast && <Badge variant="outline">Concluso</Badge>}
+                  <Badge variant={meta.variant}>{meta.label}</Badge>
+                  {!e.is_public && <Badge variant="outline">Privato</Badge>}
+                  {!e.is_active && status !== "draft" && <Badge variant="outline">Nascosto</Badge>}
                 </div>
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-1">
-                  <Button size="icon" variant="ghost" title={e.is_active ? "Disattiva" : "Attiva"} onClick={() => toggleField(e, "is_active")}>
+                  <Button size="icon" variant="ghost" title={e.is_active ? "Nascondi" : "Mostra"} onClick={() => toggleField(e, "is_active")}>
                     {e.is_active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                   </Button>
                   {e.has_shuttle && (
