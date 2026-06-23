@@ -73,7 +73,7 @@ export const QrScannerPanel = ({ enabled, onToggle, onScan }: Props) => {
               container: { width: "100%", height: "100%" },
               video: { width: "100%", height: "100%", objectFit: "cover" },
             }}
-            components={{ audio: false, finder: true, torch: true }}
+            components={{ finder: true, torch: true }}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-2">
