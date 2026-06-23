@@ -66,14 +66,14 @@ type BaseTable<Row extends Record<string, unknown>> = {
 
 // ---------- Rows ----------
 
-interface UserRoleRow {
+type UserRoleRow = {
   id: UUID;
   user_id: UUID;
   role: AppRole;
   created_at: Timestamp;
 }
 
-interface ProfileRow {
+type ProfileRow = {
   id: UUID;
   email: string | null;
   full_name: string | null;
@@ -91,7 +91,7 @@ interface ProfileRow {
   updated_at: Timestamp;
 }
 
-interface EventCategoryRow {
+type EventCategoryRow = {
   id: UUID;
   slug: string;
   name: string;
@@ -103,7 +103,7 @@ interface EventCategoryRow {
   updated_at: Timestamp;
 }
 
-interface EventRow {
+type EventRow = {
   id: UUID;
   slug: string;
   title: string;
@@ -133,7 +133,7 @@ interface EventRow {
   updated_at: Timestamp;
 }
 
-interface BookingRow {
+type BookingRow = {
   id: UUID;
   event_id: UUID;
   user_id: UUID;
@@ -150,7 +150,7 @@ interface BookingRow {
   updated_at: Timestamp;
 }
 
-interface CheckinRow {
+type CheckinRow = {
   id: UUID;
   booking_id: UUID;
   event_id: UUID;
@@ -162,7 +162,7 @@ interface CheckinRow {
   created_at: Timestamp;
 }
 
-interface EmailLogRow {
+type EmailLogRow = {
   id: UUID;
   to_email: string;
   from_email: string | null;
@@ -179,7 +179,7 @@ interface EmailLogRow {
   created_at: Timestamp;
 }
 
-interface NewsletterSubscriberRow {
+type NewsletterSubscriberRow = {
   id: UUID;
   email: string;
   status: NewsletterStatus;
@@ -192,7 +192,7 @@ interface NewsletterSubscriberRow {
   updated_at: Timestamp;
 }
 
-interface SponsorRow {
+type SponsorRow = {
   id: UUID;
   slug: string;
   name: string;
@@ -206,14 +206,14 @@ interface SponsorRow {
   updated_at: Timestamp;
 }
 
-interface UserInterestRow {
+type UserInterestRow = {
   id: UUID;
   user_id: UUID;
   category_id: UUID;
   created_at: Timestamp;
 }
 
-interface SiteSettingRow {
+type SiteSettingRow = {
   id: UUID;
   key: string;
   value: Json;
@@ -223,7 +223,7 @@ interface SiteSettingRow {
   updated_at: Timestamp;
 }
 
-interface ConsentLogRow {
+type ConsentLogRow = {
   id: UUID;
   user_id: UUID;
   consent_type: "privacy" | "marketing";
@@ -234,7 +234,7 @@ interface ConsentLogRow {
   created_at: Timestamp;
 }
 
-interface ShuttleSlotRow {
+type ShuttleSlotRow = {
   id: UUID;
   event_id: UUID | null;
   giorno: string;
@@ -248,7 +248,7 @@ interface ShuttleSlotRow {
   updated_at: Timestamp;
 }
 
-interface ShuttleReturnSlotRow {
+type ShuttleReturnSlotRow = {
   id: UUID;
   event_id: UUID | null;
   giorno: string;
@@ -260,7 +260,7 @@ interface ShuttleReturnSlotRow {
   updated_at: Timestamp;
 }
 
-interface ShuttleBookingRow {
+type ShuttleBookingRow = {
   id: UUID;
   event_id: UUID | null;
   user_id: UUID | null;
@@ -280,7 +280,7 @@ interface ShuttleBookingRow {
   updated_at: Timestamp;
 }
 
-interface EventParticipationRow {
+type EventParticipationRow = {
   id: UUID;
   event_id: UUID;
   user_id: UUID;
