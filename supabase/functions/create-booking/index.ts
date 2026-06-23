@@ -232,9 +232,16 @@ serve(async (req) => {
     // --- Send email (skipped in test mode) ---
     const wasBumped = andataBumped || ritornoBumped;
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+    const RESEND_FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL");
     if (testMode === true) {
       console.log("[TEST MODE] create-booking: email NOT sent for", email);
-    } else if (RESEND_API_KEY) {
+    } else if (!RESEND_API_KEY) {
+      console.error("[create-booking] RESEND_API_KEY missing — email not sent");
+    } else if (!RESEND_FROM_EMAIL) {
+      console.error(
+        "[create-booking] RESEND_FROM_EMAIL missing — refusing to send via sandbox sender",
+      );
+    } else {
       let bumpNotice = "";
       if (andataBumped) {
         bumpNotice += `<p style="color: #f59e0b; font-weight: 600;">⚠️ Lo slot di andata delle ${orario} era pieno. Sei stato/a spostato/a alle <strong>${finalOrario}</strong>.</p>`;
@@ -284,14 +291,14 @@ serve(async (req) => {
           Authorization: `Bearer ${RESEND_API_KEY}`,
         },
         body: JSON.stringify({
-          from: "StayUp <noreply@stayupallnight.it>",
+          from: RESEND_FROM_EMAIL,
           to: [email.trim().toLowerCase()],
           subject: wasBumped
             ? "Prenotazione confermata (orario modificato) - StayUp"
             : "Completa il pagamento - StayUp",
           html: htmlContent,
         }),
-      }).catch((err) => console.warn("Email send failed:", err));
+      }).catch((err) => console.warn("[create-booking] Email send failed:", err));
     }
 
     return new Response(
