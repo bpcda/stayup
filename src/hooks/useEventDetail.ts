@@ -112,12 +112,9 @@ export const useEventDetail = () => {
     if (!user || !event || !isSupabaseConfigured) return;
     setBusy(true);
     try {
-      const { error } = await supabase
-        .from("bookings")
-        .update({ status: "cancelled", cancelled_at: new Date().toISOString() })
-        .eq("event_id", event.id)
-        .eq("user_id", user.id)
-        .in("status", ["pending", "confirmed"]);
+      const { error } = await supabase.functions.invoke("cancel-event-booking", {
+        body: { event_id: event.id },
+      });
       if (error) throw error;
       toast({ title: "Prenotazione annullata" });
       setRegistered(false);
