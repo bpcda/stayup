@@ -6,7 +6,7 @@
  * to this file (see MIGRATION_PLAN.md §4 + Fase 3, step 13).
  */
 import type { Session, User } from "@supabase/supabase-js";
-import { getSupabaseBrowser } from "@/lib/supabase/client";
+import { getSupabaseBrowser } from "@/integrations/supabase/client";
 
 export interface SignUpInput {
   email: string;
