@@ -1,4 +1,9 @@
-export type EventStatus = "draft" | "published" | "cancelled" | "ended";
+export type EventStatus =
+  | "draft"
+  | "published"
+  | "cancelled"
+  | "ended"
+  | "archived";
 
 export interface EventRow {
   id: string;
@@ -23,6 +28,13 @@ export interface EventRow {
   sponsor_ids?: string[] | null;
   organizer_id?: string | null;
   created_at?: string;
+  published_at?: string | null;
+  // SEO
+  seo_title?: string | null;
+  seo_description?: string | null;
+  og_image_url?: string | null;
+  // UI-only: contatore iscritti confermati (non in DB)
+  _booked_count?: number;
 }
 
 export interface EventParticipation {
