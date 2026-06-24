@@ -21,6 +21,8 @@ import AdminCheckinScan from "./pages/admin/AdminCheckinScan";
 import AdminEmailLogs from "./pages/admin/AdminEmailLogs";
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
+import WaitlistAccept from "./pages/WaitlistAccept";
+import AdminEventoWaitlist from "./pages/admin/AdminEventoWaitlist";
 import ResetPassword from "./pages/ResetPassword";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
@@ -54,9 +56,11 @@ const AppRoutes = () => (
       <Route path="/auth" element={<Auth />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/waitlist/accept" element={<WaitlistAccept />} />
       <Route path="/admin" element={<Admin><AdminOverview /></Admin>} />
       <Route path="/admin/eventi" element={<Admin><AdminEventi /></Admin>} />
       <Route path="/admin/eventi/:id/iscritti" element={<Admin><AdminEventoIscritti /></Admin>} />
+      <Route path="/admin/eventi/:id/waitlist" element={<Admin><AdminEventoWaitlist /></Admin>} />
       <Route path="/admin/eventi/:eventId/shuttle" element={<Admin adminOnly><AdminShuttle /></Admin>} />
       <Route path="/admin/prenotazioni" element={<Admin><AdminPrenotazioni /></Admin>} />
       <Route path="/admin/checkin" element={<Admin><AdminCheckin /></Admin>} />

@@ -23,6 +23,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import MyEvents from "@/components/profilo/MyEvents";
+import MyWaitlist from "@/components/profilo/MyWaitlist";
 
 const Profilo = () => {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -279,7 +280,8 @@ const Profilo = () => {
         </TabsContent>
 
 
-        <TabsContent value="eventi" className="mt-6">
+        <TabsContent value="eventi" className="mt-6 space-y-6">
+          <MyWaitlist />
           <MyEvents />
         </TabsContent>
 

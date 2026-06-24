@@ -61,6 +61,8 @@ const TEMPLATES: ReadonlyArray<TemplateName> = [
   "booking-confirmation",
   "event-reminder",
   "booking-qr-code",
+  "waitlist-joined",
+  "waitlist-offer",
 ];
 
 const RESEND_API_URL = "https://api.resend.com/emails";
