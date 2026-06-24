@@ -1,41 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
-
 @layer base {
   :root {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 96%;
+    /* ── Background scale ── */
+    --background: 0 0% 2%;          /* #050505 */
+    --foreground: 0 0% 100%;        /* #FFFFFF */
 
-    --card: 0 0% 7%;
-    --card-foreground: 0 0% 96%;
+    /* ── Surface ── */
+    --card: 0 0% 8%;                /* #151515 */
+    --card-foreground: 0 0% 100%;
 
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 96%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 100%;
 
-    --primary: 36 100% 50%;
-    --primary-foreground: 0 0% 4%;
+    /* ── Primary — orange #FF9F00 ── */
+    --primary: 37 100% 50%;
+    --primary-foreground: 0 0% 2%;
 
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 96%;
+    /* ── Secondary surface ── */
+    --secondary: 0 0% 10%;          /* #1A1A1A */
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 55%;
+    /* ── Muted ── */
+    --muted: 0 0% 9%;
+    --muted-foreground: 0 0% 54%;   /* #8A8A8A */
 
-    --accent: 36 100% 50%;
-    --accent-foreground: 0 0% 4%;
+    /* ── Accent ── */
+    --accent: 37 100% 50%;
+    --accent-foreground: 0 0% 2%;
 
-    --destructive: 0 84% 60%;
+    /* ── Destructive ── */
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 16%;
-    --input: 0 0% 16%;
-    --ring: 36 100% 50%;
+    /* ── Borders & inputs ── */
+    --border: 0 0% 12%;             /* slightly above bg */
+    --input: 0 0% 10%;
+    --ring: 37 100% 50%;
 
-    --radius: 0.75rem;
+    --radius: 0.625rem;             /* slightly tighter = more premium */
 
+    /* ── Fonts ── */
     --font-heading: 'Space Grotesk', sans-serif;
     --font-body: 'Inter', sans-serif;
   }
@@ -46,18 +55,75 @@
     @apply border-border;
   }
 
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    background-color: #050505;
+    color: #ffffff;
     font-family: var(--font-body);
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
   }
 }
 
 @layer utilities {
-  .glow-primary {
-    box-shadow: 0 0 20px hsl(36 100% 50% / 0.3), 0 0 60px hsl(36 100% 50% / 0.1);
+  /* ── Premium border using opacity ── */
+  .border-subtle {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  /* ── Admin sidebar active state ── */
+  .admin-nav-active {
+    background-color: rgba(255, 159, 0, 0.12);
+    border-left: 2px solid #FF9F00;
+    color: #ffffff;
+  }
+
+  .admin-nav-item {
+    border-left: 2px solid transparent;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .admin-nav-item:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+    color: #ffffff;
+  }
+
+  /* ── Topbar nav active underline ── */
+  .nav-active-underline {
+    position: relative;
+  }
+
+  .nav-active-underline::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #FF9F00;
+    border-radius: 1px;
+  }
+
+  /* ── Event card image zoom ── */
+  .event-card-img {
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .event-card:hover .event-card-img {
+    transform: scale(1.04);
+  }
+
+  /* ── Subtle orange glow on card hover ── */
+  .event-card:hover {
+    box-shadow: 0 0 0 1px rgba(255, 159, 0, 0.25), 0 8px 32px rgba(0, 0, 0, 0.4);
   }
 }

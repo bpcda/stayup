@@ -10,29 +10,76 @@ interface EventHeroProps {
 
 export const EventHero = ({ event, contactPhone, share }: EventHeroProps) => {
   const navigate = useNavigate();
+
   return (
     <section className="relative">
-      <div className="relative w-full aspect-[3/4] sm:aspect-[16/9] max-h-[80vh] overflow-hidden bg-secondary">
+      {/* Cover image */}
+      <div className="relative w-full aspect-[3/4] sm:aspect-[16/9] max-h-[88vh] overflow-hidden bg-[#0A0A0A]">
         {event.cover_image_url ? (
-          <img src={event.cover_image_url} alt={event.title} className="absolute inset-0 w-full h-full object-cover" />
+          <img
+            src={event.cover_image_url}
+            alt={event.title}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-secondary" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-[#050505]" />
         )}
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-background" />
+
+        {/* Aggressive bottom-to-top overlay so title bleeds over */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to top, #050505 0%, rgba(5,5,5,0.55) 45%, rgba(5,5,5,0.05) 100%)",
+          }}
+        />
       </div>
 
-      <div className="absolute top-4 inset-x-0 px-4 flex items-center justify-between" style={{ paddingTop: "env(safe-area-inset-top)" }}>
-        <button onClick={() => navigate(-1)} className="h-11 w-11 rounded-full bg-background/95 text-foreground shadow-md flex items-center justify-center hover:bg-background transition">
-          <ArrowLeft className="h-5 w-5" />
+      {/* Action buttons — top bar */}
+      <div
+        className="absolute top-0 inset-x-0 flex items-center justify-between px-4 pt-4"
+        style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}
+      >
+        <button
+          onClick={() => navigate(-1)}
+          aria-label="Torna indietro"
+          className="h-11 w-11 rounded-full flex items-center justify-center transition-colors"
+          style={{
+            backgroundColor: "rgba(0,0,0,0.65)",
+            border: "1px solid rgba(255,255,255,0.12)",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.85)")}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.65)")}
+        >
+          <ArrowLeft className="h-5 w-5 text-white" />
         </button>
+
         <div className="flex items-center gap-2">
           {contactPhone && (
-            <a href={`tel:${contactPhone}`} className="h-11 w-11 rounded-full bg-background/95 text-primary shadow-md flex items-center justify-center hover:bg-background transition">
-              <Phone className="h-5 w-5" />
+            <a
+              href={`tel:${contactPhone}`}
+              aria-label="Chiama"
+              className="h-11 w-11 rounded-full flex items-center justify-center transition-colors"
+              style={{
+                backgroundColor: "rgba(0,0,0,0.65)",
+                border: "1px solid rgba(255,255,255,0.12)",
+              }}
+            >
+              <Phone className="h-5 w-5 text-primary" />
             </a>
           )}
-          <button onClick={share} className="h-11 w-11 rounded-full bg-background/95 text-primary shadow-md flex items-center justify-center hover:bg-background transition">
-            <Share2 className="h-5 w-5" />
+          <button
+            onClick={share}
+            aria-label="Condividi"
+            className="h-11 w-11 rounded-full flex items-center justify-center transition-colors"
+            style={{
+              backgroundColor: "rgba(0,0,0,0.65)",
+              border: "1px solid rgba(255,255,255,0.12)",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.85)")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.65)")}
+          >
+            <Share2 className="h-5 w-5 text-primary" />
           </button>
         </div>
       </div>

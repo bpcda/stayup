@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { Shield } from "lucide-react";
+import { Shield, ArrowRight, User, Lock, List } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,20 +32,20 @@ const Profilo = () => {
   const { toast } = useToast();
   const [savingConsent, setSavingConsent] = useState(false);
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [city, setCity] = useState("");
-  const [savingProfile, setSavingProfile] = useState(false);
+  const [firstName, setFirstName]           = useState("");
+  const [lastName, setLastName]             = useState("");
+  const [phone, setPhone]                   = useState("");
+  const [city, setCity]                     = useState("");
+  const [savingProfile, setSavingProfile]   = useState(false);
 
-  const [newEmail, setNewEmail] = useState("");
-  const [emailLoading, setEmailLoading] = useState(false);
+  const [newEmail, setNewEmail]             = useState("");
+  const [emailLoading, setEmailLoading]     = useState(false);
 
-  const [newPassword, setNewPassword] = useState("");
+  const [newPassword, setNewPassword]       = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [pwLoading, setPwLoading] = useState(false);
+  const [pwLoading, setPwLoading]           = useState(false);
 
-  const [deleting, setDeleting] = useState(false);
+  const [deleting, setDeleting]             = useState(false);
 
   // Hydrate inputs once profile loads
   if (profile && firstName === "" && lastName === "" && phone === "" && city === "") {
@@ -58,7 +58,11 @@ const Profilo = () => {
   }
 
   if (authLoading) {
-    return <div className="container py-20 text-center text-muted-foreground">Caricamento...</div>;
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center text-[#8A8A8A]">
+        Caricamento...
+      </div>
+    );
   }
   if (!user) return <Navigate to="/auth" replace />;
 
@@ -66,15 +70,15 @@ const Profilo = () => {
     setSavingProfile(true);
     const { error } = await update({
       first_name: firstName || null,
-      last_name: lastName || null,
-      phone: phone || null,
-      city: city || null,
+      last_name:  lastName  || null,
+      phone:      phone     || null,
+      city:       city      || null,
     });
     setSavingProfile(false);
     toast({
-      title: error ? "Errore" : "Profilo aggiornato",
+      title:       error ? "Errore" : "Profilo aggiornato",
       description: error ?? "Le modifiche sono state salvate.",
-      variant: error ? "destructive" : "default",
+      variant:     error ? "destructive" : "default",
     });
   };
 
@@ -123,7 +127,6 @@ const Profilo = () => {
       if (error) throw error;
       const result = data as { error?: string } | null;
       if (result?.error) throw new Error(result.error);
-
       toast({ title: "Account eliminato", description: "Ci dispiace vederti andare." });
       await signOut();
     } catch (err) {
@@ -133,41 +136,68 @@ const Profilo = () => {
     setDeleting(false);
   };
 
+  const initial = (user.email?.[0] ?? "U").toUpperCase();
+
   return (
-    <div className="container max-w-3xl mx-auto px-4 py-10 md:py-16">
-      <header className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold mb-2">Il mio profilo</h1>
-        <p className="text-muted-foreground">{user.email}</p>
+    <div className="max-w-3xl mx-auto px-4 py-10 md:py-16">
+      {/* Profile header */}
+      <header className="mb-10 flex items-center gap-5">
+        <div
+          className="h-16 w-16 rounded-full flex items-center justify-center text-xl font-bold text-white shrink-0"
+          style={{ backgroundColor: "#1A1A1A", border: "1px solid rgba(255,255,255,0.1)" }}
+        >
+          {initial}
+        </div>
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-white">Il mio profilo</h1>
+          <p className="text-[#8A8A8A] text-sm mt-0.5">{user.email}</p>
+        </div>
       </header>
 
+      {/* Admin card — shown only for admin/organizer */}
+      {(isAdmin || isOrganizer) && (
+        <div
+          className="mb-8 rounded-2xl border p-5 flex items-start gap-4"
+          style={{
+            borderColor: "rgba(255,159,0,0.3)",
+            backgroundColor: "rgba(255,159,0,0.06)",
+          }}
+        >
+          <div
+            className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
+            style={{ backgroundColor: "rgba(255,159,0,0.15)" }}
+          >
+            <Shield className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-white">Area amministrativa</p>
+            <p className="text-xs text-[#8A8A8A] mt-0.5 leading-relaxed">
+              Gestisci eventi, prenotazioni, check-in e lista d'attesa.
+            </p>
+          </div>
+          <Button asChild size="sm" className="shrink-0">
+            <Link to="/admin" className="flex items-center gap-1.5">
+              Dashboard <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </Button>
+        </div>
+      )}
+
       <Tabs defaultValue="info" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="info">Dati</TabsTrigger>
-          <TabsTrigger value="eventi">I miei eventi</TabsTrigger>
-          <TabsTrigger value="sicurezza">Sicurezza</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 mb-8">
+          <TabsTrigger value="info" className="flex items-center gap-1.5">
+            <User className="h-3.5 w-3.5" /> Dati
+          </TabsTrigger>
+          <TabsTrigger value="eventi" className="flex items-center gap-1.5">
+            <List className="h-3.5 w-3.5" /> I miei eventi
+          </TabsTrigger>
+          <TabsTrigger value="sicurezza" className="flex items-center gap-1.5">
+            <Lock className="h-3.5 w-3.5" /> Sicurezza
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="info" className="mt-6 space-y-6">
-          {(isAdmin || isOrganizer) && (
-            <Card className="border-primary/40 bg-card/60">
-              <CardHeader className="flex flex-row items-start gap-3 space-y-0">
-                <div className="rounded-md bg-primary/10 p-2 text-primary">
-                  <Shield className="h-5 w-5" />
-                </div>
-                <div className="flex-1 space-y-1">
-                  <CardTitle className="text-base">Area amministrativa</CardTitle>
-                  <CardDescription>
-                    Gestisci eventi, prenotazioni, check-in e waitlist.
-                  </CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Button asChild>
-                  <Link to="/admin">Vai alla dashboard</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+        {/* ── Dati ── */}
+        <TabsContent value="info" className="mt-0 space-y-5">
           <Card>
             <CardHeader>
               <CardTitle>Dati personali</CardTitle>
@@ -177,45 +207,21 @@ const Profilo = () => {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">Nome</Label>
-                  <Input
-                    id="firstName"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="Mario"
-                    disabled={profileLoading}
-                  />
+                  <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Mario" disabled={profileLoading} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Cognome</Label>
-                  <Input
-                    id="lastName"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    placeholder="Rossi"
-                    disabled={profileLoading}
-                  />
+                  <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Rossi" disabled={profileLoading} />
                 </div>
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="phone">Telefono</Label>
-                  <Input
-                    id="phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+39 333 1234567"
-                    disabled={profileLoading}
-                  />
+                  <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+39 333 1234567" disabled={profileLoading} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="city">Città</Label>
-                  <Input
-                    id="city"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    placeholder="Rivergaro"
-                    disabled={profileLoading}
-                  />
+                  <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Rivergaro" disabled={profileLoading} />
                 </div>
               </div>
               <Button onClick={handleSaveProfile} disabled={savingProfile || profileLoading}>
@@ -236,13 +242,7 @@ const Profilo = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="newEmail">Nuova email</Label>
-                <Input
-                  id="newEmail"
-                  type="email"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  placeholder="nuova@email.com"
-                />
+                <Input id="newEmail" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="nuova@email.com" />
               </div>
               <Button variant="outline" onClick={handleChangeEmail} disabled={emailLoading || !newEmail}>
                 {emailLoading ? "Invio..." : "Cambia email"}
@@ -253,15 +253,16 @@ const Profilo = () => {
           <Card>
             <CardHeader>
               <CardTitle>Privacy e consensi</CardTitle>
-              <CardDescription>
-                Gestisci i consensi che hai prestato. Puoi revocarli in qualsiasi momento.
-              </CardDescription>
+              <CardDescription>Gestisci i consensi che hai prestato. Puoi revocarli in qualsiasi momento.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-start justify-between gap-4 rounded-md border border-border/60 p-3">
+              <div
+                className="flex items-start justify-between gap-4 rounded-xl border p-4"
+                style={{ borderColor: "rgba(255,255,255,0.08)" }}
+              >
                 <div className="space-y-1">
-                  <div className="text-sm font-medium">Comunicazioni marketing</div>
-                  <p className="text-xs text-muted-foreground">
+                  <div className="text-sm font-medium text-white">Comunicazioni marketing</div>
+                  <p className="text-xs text-[#8A8A8A]">
                     Ricevi aggiornamenti su nuovi eventi e iniziative.
                     {profile?.marketing_consent && profile.marketing_consent_at && (
                       <> Consenso prestato il {new Date(profile.marketing_consent_at).toLocaleDateString("it-IT")}.</>
@@ -276,23 +277,26 @@ const Profilo = () => {
                     const { error } = await setMarketingConsent(v);
                     setSavingConsent(false);
                     toast({
-                      title: error ? "Errore" : v ? "Consenso marketing attivo" : "Consenso marketing revocato",
+                      title:       error ? "Errore" : v ? "Consenso marketing attivo" : "Consenso marketing revocato",
                       description: error ?? undefined,
-                      variant: error ? "destructive" : "default",
+                      variant:     error ? "destructive" : "default",
                     });
                   }}
                 />
               </div>
 
-              <div className="rounded-md border border-border/60 p-3 text-xs text-muted-foreground space-y-1">
+              <div
+                className="rounded-xl border p-4 text-xs text-[#8A8A8A] space-y-1"
+                style={{ borderColor: "rgba(255,255,255,0.08)" }}
+              >
                 <div>
-                  <span className="font-medium text-foreground">Privacy Policy accettata:</span>{" "}
+                  <span className="font-medium text-white">Privacy Policy accettata: </span>
                   {profile?.privacy_accepted_at
                     ? new Date(profile.privacy_accepted_at).toLocaleString("it-IT")
                     : "—"}
                 </div>
                 <div>
-                  <span className="font-medium text-foreground">Versione policy:</span>{" "}
+                  <span className="font-medium text-white">Versione policy: </span>
                   {profile?.privacy_version ?? "—"}
                 </div>
               </div>
@@ -300,13 +304,14 @@ const Profilo = () => {
           </Card>
         </TabsContent>
 
-
-        <TabsContent value="eventi" className="mt-6 space-y-6">
+        {/* ── I miei eventi ── */}
+        <TabsContent value="eventi" className="mt-0 space-y-5">
           <MyWaitlist />
           <MyEvents />
         </TabsContent>
 
-        <TabsContent value="sicurezza" className="mt-6 space-y-6">
+        {/* ── Sicurezza ── */}
+        <TabsContent value="sicurezza" className="mt-0 space-y-5">
           <Card>
             <CardHeader>
               <CardTitle>Cambia password</CardTitle>
@@ -315,21 +320,11 @@ const Profilo = () => {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="new">Nuova password</Label>
-                <Input
-                  id="new"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                />
+                <Input id="new" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirm">Conferma nuova password</Label>
-                <Input
-                  id="confirm"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
+                <Input id="confirm" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
               </div>
               <Button onClick={handleChangePassword} disabled={pwLoading || !newPassword}>
                 {pwLoading ? "Aggiornamento..." : "Aggiorna password"}

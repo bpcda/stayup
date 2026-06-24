@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface Props {
   title: string;
@@ -11,18 +10,21 @@ interface Props {
 const AdminPageHeader = ({ title, description, actions }: Props) => {
   return (
     <div className="mb-8">
-      <Button asChild variant="ghost" size="sm" className="mb-3 -ml-2">
-        <Link to="/admin">
-          <ChevronLeft className="h-4 w-4 mr-1" />
-          Dashboard
-        </Link>
-      </Button>
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+      <Link
+        to="/admin"
+        className="inline-flex items-center gap-1 text-xs text-[#8A8A8A] hover:text-white transition-colors mb-4"
+      >
+        <ChevronLeft className="h-3.5 w-3.5" />
+        Dashboard
+      </Link>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">{title}</h1>
-          {description && <p className="text-muted-foreground mt-1">{description}</p>}
+          <h1 className="text-2xl font-bold text-white tracking-tight">{title}</h1>
+          {description && (
+            <p className="text-sm text-[#8A8A8A] mt-1">{description}</p>
+          )}
         </div>
-        {actions && <div className="flex gap-2">{actions}</div>}
+        {actions && <div className="flex gap-2 shrink-0">{actions}</div>}
       </div>
     </div>
   );
