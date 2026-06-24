@@ -12,3 +12,16 @@ verify_jwt = false
 [functions.create-event-booking]
 verify_jwt = true
 
+[functions.cancel-event-booking]
+verify_jwt = true
+
+[functions.join-waitlist]
+verify_jwt = true
+
+[functions.accept-waitlist-offer]
+verify_jwt = true
+
+[functions.process-waitlist-outbox]
+verify_jwt = false
+
+

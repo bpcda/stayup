@@ -11,7 +11,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import { WaitlistPanel } from "@/pages/admin/AdminEventoWaitlist";
 
 type EventRow = {
   id: string;
@@ -254,59 +256,71 @@ const AdminEventoIscritti = () => {
         />
       </div>
 
-      <Card>
-        <CardContent className="p-0 overflow-x-auto">
-          {loading ? (
-            <p className="text-center text-muted-foreground py-12">Caricamento...</p>
-          ) : filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-12">
-              {participants.length === 0 ? "Nessun iscritto." : "Nessun risultato per la ricerca."}
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-16">Pres.</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Telefono</TableHead>
-                  <TableHead>Codice</TableHead>
-                  <TableHead>Iscritto il</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((p) => {
-                  const present = p.checkin_id !== null;
-                  return (
-                    <TableRow key={p.id} className={present ? "bg-muted/30" : ""}>
-                      <TableCell>
-                        <Checkbox
-                          checked={present}
-                          onCheckedChange={(v) => toggleAttended(p, !!v)}
-                          aria-label="Segna come presente"
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">{displayName(p)}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{p.profiles?.email ?? "—"}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{p.profiles?.phone ?? "—"}</TableCell>
-                      <TableCell className="text-sm font-mono text-muted-foreground">{p.reference_code ?? "—"}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {new Date(p.created_at).toLocaleDateString("it-IT")}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button size="icon" variant="ghost" onClick={() => removeParticipant(p.id)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </TableCell>
+      <Tabs defaultValue="prenotati">
+        <TabsList>
+          <TabsTrigger value="prenotati">Prenotati</TabsTrigger>
+          <TabsTrigger value="waitlist">Lista d'attesa</TabsTrigger>
+        </TabsList>
+        <TabsContent value="prenotati" className="mt-4">
+          <Card>
+            <CardContent className="p-0 overflow-x-auto">
+              {loading ? (
+                <p className="text-center text-muted-foreground py-12">Caricamento...</p>
+              ) : filtered.length === 0 ? (
+                <p className="text-center text-muted-foreground py-12">
+                  {participants.length === 0 ? "Nessun iscritto." : "Nessun risultato per la ricerca."}
+                </p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-16">Pres.</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Telefono</TableHead>
+                      <TableHead>Codice</TableHead>
+                      <TableHead>Iscritto il</TableHead>
+                      <TableHead className="text-right">Azioni</TableHead>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.map((p) => {
+                      const present = p.checkin_id !== null;
+                      return (
+                        <TableRow key={p.id} className={present ? "bg-muted/30" : ""}>
+                          <TableCell>
+                            <Checkbox
+                              checked={present}
+                              onCheckedChange={(v) => toggleAttended(p, !!v)}
+                              aria-label="Segna come presente"
+                            />
+                          </TableCell>
+                          <TableCell className="font-medium">{displayName(p)}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{p.profiles?.email ?? "—"}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{p.profiles?.phone ?? "—"}</TableCell>
+                          <TableCell className="text-sm font-mono text-muted-foreground">{p.reference_code ?? "—"}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(p.created_at).toLocaleDateString("it-IT")}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button size="icon" variant="ghost" onClick={() => removeParticipant(p.id)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="waitlist" className="mt-4">
+          {id ? <WaitlistPanel eventId={id} /> : null}
+        </TabsContent>
+      </Tabs>
+
     </div>
   );
 };

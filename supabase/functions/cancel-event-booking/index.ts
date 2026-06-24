@@ -58,47 +58,62 @@ serve(async (req) => {
     return json({ error: "cancel_failed", message: updErr.message }, 500);
   }
 
-  // 2) Tenta di promuovere il primo in lista (service role).
+  // 2) Tenta di promuovere il primo in lista (service role). Il TRIGGER
+  //    `bookings_waitlist_auto_promote` ha già fatto la promozione DB-side;
+  //    qui chiamiamo `promote_next_waitlist` solo per ottenere i dati della
+  //    riga "offered" attuale (se c'è) e mandare l'email subito. Idempotente:
+  //    se la riga ha già offer_email_sent_at non manderemo doppie email.
   let promoted: { user_email: string; expires_at: string } | null = null;
   try {
-    const { data: rows, error: promErr } = await admin
-      .rpc("promote_next_waitlist", { _event_id: eventId });
-    if (promErr) {
-      console.warn("[cancel-event-booking] promote rpc error:", promErr.message);
-    } else if (Array.isArray(rows) && rows.length > 0) {
-      const r = rows[0] as {
-        waitlist_id: string;
-        user_id: string;
-        user_email: string;
-        offer_token: string;
-        offer_expires_at: string;
-        event_id: string;
-        event_title: string;
-        event_slug: string;
-      };
-      const SITE_URL = Deno.env.get("SITE_URL") ?? Deno.env.get("VITE_SITE_URL") ?? "";
-      const acceptUrl = `${(SITE_URL || "").replace(/\/$/, "")}/waitlist/accept?token=${r.offer_token}`;
-      try {
-        await admin.functions.invoke("send-email", {
-          body: {
-            template: "waitlist-offer",
-            to: r.user_email,
-            data: {
-              eventTitle: r.event_title,
-              acceptUrl,
-              expiresAt: r.offer_expires_at,
+    // Garantisce stato coerente: scade le offerte stantie e (eventualmente)
+    // promuove un nuovo utente se serve.
+    await admin.rpc("expire_and_repromote_all");
+
+    // Legge l'ultima offerta attiva da notificare.
+    const { data: pend } = await admin
+      .from("waitlist")
+      .select("id, user_id, event_id, offer_token, offer_expires_at, event:events(title, slug)")
+      .eq("event_id", eventId)
+      .eq("status", "offered")
+      .is("offer_email_sent_at", null)
+      .order("offered_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (pend && pend.offer_token) {
+      const { data: u } = await admin.auth.admin.getUserById(pend.user_id as string);
+      const email = u?.user?.email;
+      if (email) {
+        const SITE_URL = (Deno.env.get("SITE_URL") ?? Deno.env.get("VITE_SITE_URL") ?? "").replace(/\/$/, "");
+        const acceptUrl = `${SITE_URL}/waitlist/accept?token=${pend.offer_token}`;
+        const ev = (pend as { event: { title: string; slug: string } | null }).event;
+        try {
+          await admin.functions.invoke("send-email", {
+            body: {
+              template: "waitlist-offer",
+              to: email,
+              data: {
+                eventTitle: ev?.title ?? "Evento StayUp",
+                acceptUrl,
+                expiresAt: pend.offer_expires_at,
+              },
+              related: { user_id: pend.user_id, event_id: pend.event_id },
             },
-            related: { user_id: r.user_id, event_id: r.event_id },
-          },
-        });
-      } catch (e) {
-        console.warn("[cancel-event-booking] offer email failed:", (e as Error).message);
+          });
+          await admin
+            .from("waitlist")
+            .update({ offer_email_sent_at: new Date().toISOString() })
+            .eq("id", pend.id as string);
+          promoted = { user_email: email, expires_at: pend.offer_expires_at as string };
+        } catch (e) {
+          console.warn("[cancel-event-booking] offer email failed:", (e as Error).message);
+        }
       }
-      promoted = { user_email: r.user_email, expires_at: r.offer_expires_at };
     }
   } catch (e) {
     console.warn("[cancel-event-booking] promote exception:", (e as Error).message);
   }
+
 
   return json({ ok: true, promoted });
 });
