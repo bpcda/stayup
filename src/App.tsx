@@ -21,6 +21,8 @@ import AdminCheckinScan from "./pages/admin/AdminCheckinScan";
 import AdminEmailLogs from "./pages/admin/AdminEmailLogs";
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
+import WaitlistAccept from "./pages/WaitlistAccept";
+import AdminEventoWaitlist from "./pages/admin/AdminEventoWaitlist";
 import ResetPassword from "./pages/ResetPassword";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
