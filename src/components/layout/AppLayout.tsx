@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, Info, Calendar, Mail, User, LogIn, LogOut } from "lucide-react";
+import { Home, Info, Calendar, Mail, User, LogIn, LogOut, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -76,7 +76,7 @@ const BottomNav = () => {
 };
 
 const AppLayout = ({ children }: { children: ReactNode }) => {
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, signOut, isAdmin, isOrganizer } = useAuth();
   const location = useLocation();
 
   // Hide public chrome on auth screen and on the entire admin area:
@@ -111,8 +111,8 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
           {user ? (
             <>
               <SideLink item={{ to: "/profilo", label: "Profilo", icon: User }} collapsed={collapsed} />
-              {isAdmin && (
-                <SideLink item={{ to: "/admin", label: "Admin", icon: User }} collapsed={collapsed} />
+              {(isAdmin || isOrganizer) && (
+                <SideLink item={{ to: "/admin", label: "Dashboard", icon: Shield }} collapsed={collapsed} />
               )}
               <Button
                 variant="ghost"
