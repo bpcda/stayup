@@ -37,12 +37,13 @@ export const useEventCapacityStatus = (eventId: string | null | undefined) => {
   return { status, loading, reload: load };
 };
 
-/** Lista delle waitlist attive (waiting/offered) dell'utente loggato. */
+/** Lista delle waitlist dell'utente loggato (tutti gli stati). */
+export type MyWaitlistStatus = "waiting" | "offered" | "accepted" | "expired" | "cancelled";
 export type MyWaitlistEntry = {
   id: string;
   event_id: string;
   position: number;
-  status: "waiting" | "offered";
+  status: MyWaitlistStatus;
   offer_expires_at: string | null;
   offer_token: string | null;
   created_at: string;
@@ -61,7 +62,7 @@ export const useMyWaitlist = () => {
       .from("waitlist")
       .select("id, event_id, position, status, offer_expires_at, offer_token, created_at, event:events(title, slug, starts_at)")
       .eq("user_id", user.id)
-      .in("status", ["waiting", "offered"])
+      .order("status", { ascending: true })
       .order("created_at", { ascending: false });
     setEntries((data ?? []) as unknown as MyWaitlistEntry[]);
     setLoading(false);
@@ -69,4 +70,10 @@ export const useMyWaitlist = () => {
 
   useEffect(() => { void load(); }, [load]);
   return { entries, loading, reload: load };
+};
+
+/** Annulla una propria iscrizione waitlist (RPC con controllo permessi). */
+export const cancelMyWaitlist = async (waitlistId: string) => {
+  const { error } = await supabase.rpc("cancel_waitlist_entry", { _waitlist_id: waitlistId });
+  if (error) throw error;
 };
