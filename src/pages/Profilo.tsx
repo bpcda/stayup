@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
+import { Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,7 +27,7 @@ import MyEvents from "@/components/profilo/MyEvents";
 import MyWaitlist from "@/components/profilo/MyWaitlist";
 
 const Profilo = () => {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading, signOut, isAdmin, isOrganizer } = useAuth();
   const { profile, loading: profileLoading, update, setMarketingConsent } = useProfile();
   const { toast } = useToast();
   const [savingConsent, setSavingConsent] = useState(false);
@@ -147,6 +148,26 @@ const Profilo = () => {
         </TabsList>
 
         <TabsContent value="info" className="mt-6 space-y-6">
+          {(isAdmin || isOrganizer) && (
+            <Card className="border-primary/40 bg-card/60">
+              <CardHeader className="flex flex-row items-start gap-3 space-y-0">
+                <div className="rounded-md bg-primary/10 p-2 text-primary">
+                  <Shield className="h-5 w-5" />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <CardTitle className="text-base">Area amministrativa</CardTitle>
+                  <CardDescription>
+                    Gestisci eventi, prenotazioni, check-in e waitlist.
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Button asChild>
+                  <Link to="/admin">Vai alla dashboard</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
           <Card>
             <CardHeader>
               <CardTitle>Dati personali</CardTitle>
