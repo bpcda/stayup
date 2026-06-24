@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ const AdminGuard = ({ children, requireRole = "organizer" }: Props) => {
   const { session, isAdmin, isOrganizer, loading, signOut } = useAuth();
   const allowed = requireRole === "admin" ? isAdmin : (isAdmin || isOrganizer);
   const { t } = useTranslation();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -24,7 +25,8 @@ const AdminGuard = ({ children, requireRole = "organizer" }: Props) => {
   }
 
   if (!session) {
-    return <Navigate to="/auth" replace />;
+    const from = `${location.pathname}${location.search}${location.hash}`;
+    return <Navigate to="/auth" replace state={{ from }} />;
   }
 
   if (!allowed) {
