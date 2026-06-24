@@ -23,6 +23,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import MyEvents from "@/components/profilo/MyEvents";
+import MyWaitlist from "@/components/profilo/MyWaitlist";
 
 const Profilo = () => {
   const { user, loading: authLoading, signOut } = useAuth();
