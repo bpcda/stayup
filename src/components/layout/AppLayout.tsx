@@ -1,6 +1,6 @@
 import { ReactNode, useState, useRef, useEffect } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
-import { Home, Calendar, User, LogIn, LogOut, Shield, Info, Mail, ChevronDown } from "lucide-react";
+import { Home, Calendar, User, LogIn, LogOut, Shield, Info, Mail, ChevronDown, Search, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -56,13 +56,10 @@ const ProfileDropdown = () => {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 text-sm text-[#8A8A8A] hover:text-white transition-colors"
+        className="flex items-center justify-center h-9 w-9 rounded-full bg-[#1A1A1A] hover:bg-[#2A2A2A] transition-colors border border-white/10"
         aria-label="Menu profilo"
       >
-        <div className="h-8 w-8 rounded-full bg-[#1A1A1A] border border-white/10 flex items-center justify-center text-xs font-semibold text-white">
-          {initial}
-        </div>
-        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
+        <User className="h-4 w-4 text-[#D0D0D0]" />
       </button>
 
       {open && (
@@ -104,49 +101,71 @@ const ProfileDropdown = () => {
 };
 
 // ── Desktop Topbar ────────────────────────────────────────────────────────────
-const Topbar = () => (
-  <header
-    className="hidden md:flex sticky top-0 z-50 h-16 items-center gap-8 px-8 border-b"
-    style={{
-      backgroundColor: "rgba(5,5,5,0.96)",
-      borderColor: "rgba(255,255,255,0.08)",
-      backdropFilter: "blur(12px)",
-      WebkitBackdropFilter: "blur(12px)",
-    }}
-  >
-    {/* Logo */}
-    <Link to="/" className="flex items-center shrink-0">
-      <img src={stayupLogo} alt="StayUp" className="h-8 w-auto" />
-    </Link>
+const Topbar = () => {
+  const { user, isAdmin, isOrganizer } = useAuth();
 
-    {/* Nav links */}
-    <nav className="flex items-center gap-6 flex-1">
-      {desktopNavItems.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          end={item.end}
-          className={({ isActive }) =>
-            cn(
-              "relative text-sm font-medium pb-0.5 transition-colors",
-              isActive
-                ? "text-white nav-active-underline"
-                : "text-[#8A8A8A] hover:text-white"
-            )
-          }
-        >
-          {item.label}
-        </NavLink>
-      ))}
-    </nav>
+  return (
+    <header
+      className="hidden md:flex sticky top-0 z-50 h-16 items-center gap-8 px-8 border-b"
+      style={{
+        backgroundColor: "rgba(5,5,5,0.96)",
+        borderColor: "rgba(255,255,255,0.08)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+      }}
+    >
+      {/* Logo */}
+      <Link to="/" className="flex items-center shrink-0">
+        <img src={stayupLogo} alt="StayUp" className="h-8 w-auto" />
+      </Link>
 
-    {/* Right side */}
-    <div className="flex items-center gap-4">
-      <LanguageSwitcher />
-      <ProfileDropdown />
-    </div>
-  </header>
-);
+      {/* Nav links */}
+      <nav className="flex items-center gap-6 flex-1 ml-4">
+        {desktopNavItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            className={({ isActive }) =>
+              cn(
+                "relative text-sm font-medium pb-0.5 transition-colors",
+                isActive
+                  ? "text-white nav-active-underline"
+                  : "text-[#8A8A8A] hover:text-white"
+              )
+            }
+          >
+            {item.label}
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* Right side */}
+      <div className="flex items-center gap-5">
+        <Link to="/eventi" className="text-[#8A8A8A] hover:text-white transition-colors" aria-label="Cerca eventi">
+          <Search className="h-4 w-4" />
+        </Link>
+        <LanguageSwitcher />
+        {(isAdmin || isOrganizer) && (
+          <Link
+            to="/admin"
+            className="hidden lg:flex items-center gap-2 px-4 py-1.5 rounded-full border transition-colors"
+            style={{
+              borderColor: "rgba(255,159,0,0.4)",
+              color: "#FF9F00",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(255,159,0,0.1)")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+          >
+            <Crown className="h-3.5 w-3.5" />
+            <span className="text-xs font-semibold tracking-wider uppercase">Dashboard</span>
+          </Link>
+        )}
+        <ProfileDropdown />
+      </div>
+    </header>
+  );
+};
 
 // ── Mobile bottom nav ─────────────────────────────────────────────────────────
 const BottomNav = () => {

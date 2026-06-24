@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { Shield, ArrowRight, User, Lock, List } from "lucide-react";
+import { Shield, ArrowRight, User, Lock, List, Crown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
@@ -157,27 +157,30 @@ const Profilo = () => {
       {/* Admin card — shown only for admin/organizer */}
       {(isAdmin || isOrganizer) && (
         <div
-          className="mb-8 rounded-2xl border p-5 flex items-start gap-4"
+          className="mb-8 rounded-2xl border p-5 flex flex-col gap-4"
           style={{
             borderColor: "rgba(255,159,0,0.3)",
-            backgroundColor: "rgba(255,159,0,0.06)",
+            backgroundColor: "rgba(255,159,0,0.03)",
+            boxShadow: "0 0 40px rgba(255,159,0,0.05)",
           }}
         >
-          <div
-            className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{ backgroundColor: "rgba(255,159,0,0.15)" }}
-          >
-            <Shield className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-3">
+            <div
+              className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
+              style={{ backgroundColor: "rgba(255,159,0,0.1)" }}
+            >
+              <Crown className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="font-semibold text-white">Area amministrativa</p>
+              <p className="text-xs text-[#8A8A8A] mt-0.5 leading-relaxed">
+                Gestisci eventi, prenotazioni, check-in e waitlist.
+              </p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-white">Area amministrativa</p>
-            <p className="text-xs text-[#8A8A8A] mt-0.5 leading-relaxed">
-              Gestisci eventi, prenotazioni, check-in e lista d'attesa.
-            </p>
-          </div>
-          <Button asChild size="sm" className="shrink-0">
-            <Link to="/admin" className="flex items-center gap-1.5">
-              Dashboard <ArrowRight className="h-3.5 w-3.5" />
+          <Button asChild className="w-full transition-all hover:opacity-90" style={{ backgroundColor: "#FF9F00", color: "#050505" }}>
+            <Link to="/admin" className="flex justify-center font-semibold">
+              Vai alla dashboard
             </Link>
           </Button>
         </div>

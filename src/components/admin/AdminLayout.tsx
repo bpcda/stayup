@@ -2,11 +2,11 @@ import { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { LogOut, ExternalLink } from "lucide-react";
+import { LogOut, ExternalLink, Bell } from "lucide-react";
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, signOut } = useAuth();
+  const initial = (user?.email?.[0] ?? "U").toUpperCase();
 
   return (
     <div className="min-h-screen flex w-full" style={{ backgroundColor: "#050505" }}>
@@ -15,9 +15,9 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
 
       {/* Main area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Admin topbar */}
+        {/* Admin topbar — minimal come da mockup */}
         <header
-          className="h-14 flex items-center gap-3 px-5 sticky top-0 z-10 border-b shrink-0"
+          className="h-16 flex items-center justify-end gap-5 px-6 sticky top-0 z-10 border-b shrink-0"
           style={{
             backgroundColor: "rgba(5,5,5,0.97)",
             borderColor: "rgba(255,255,255,0.08)",
@@ -25,44 +25,42 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
             WebkitBackdropFilter: "blur(12px)",
           }}
         >
-          {/* Mobile: hamburger placeholder — sidebar hidden on mobile, accessible via profile */}
-          <div className="flex-1" />
-
-          <span className="text-xs text-[#8A8A8A] hidden sm:inline font-mono">
-            {user?.email}
-          </span>
-
-          <span
-            className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full border"
-            style={{
-              color: "#FF9F00",
-              borderColor: "rgba(255,159,0,0.3)",
-              backgroundColor: "rgba(255,159,0,0.08)",
-            }}
+          {/* Quick Actions (Sito, Esci, Notifiche, Avatar) */}
+          <Link
+            to="/"
+            title="Vai al sito pubblico"
+            className="text-[#8A8A8A] hover:text-white transition-colors flex items-center justify-center h-8 w-8 rounded-full"
           >
-            {isAdmin ? "admin" : "organizer"}
-          </span>
-
-          <Button asChild variant="ghost" size="sm" className="text-[#8A8A8A] hover:text-white">
-            <Link to="/">
-              <ExternalLink className="h-4 w-4 mr-1.5" />
-              Sito
-            </Link>
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
+            <ExternalLink className="h-4 w-4" />
+          </Link>
+          <button
             onClick={signOut}
-            className="text-[#8A8A8A] hover:text-white"
+            title="Esci"
+            className="text-[#8A8A8A] hover:text-white transition-colors flex items-center justify-center h-8 w-8 rounded-full"
           >
-            <LogOut className="h-4 w-4 mr-1.5" />
-            Esci
-          </Button>
+            <LogOut className="h-4 w-4" />
+          </button>
+
+          <div className="h-4 w-px bg-white/10 mx-1" />
+
+          <button
+            title="Notifiche"
+            className="text-[#8A8A8A] hover:text-white transition-colors relative flex items-center justify-center h-8 w-8 rounded-full"
+          >
+            <Bell className="h-4 w-4" />
+            <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
+          </button>
+
+          <div
+            className="h-8 w-8 rounded-full border flex items-center justify-center text-xs font-semibold text-white ml-1"
+            style={{ backgroundColor: "#1A1A1A", borderColor: "rgba(255,255,255,0.1)" }}
+          >
+            {initial}
+          </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 min-w-0">{children}</main>
+        <main className="flex-1 min-w-0 p-6 md:p-8">{children}</main>
       </div>
     </div>
   );

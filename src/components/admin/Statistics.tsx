@@ -19,19 +19,21 @@ const StatCard = ({
   accent?: boolean;
 }) => (
   <div
-    className="rounded-xl p-4 border flex flex-col gap-2"
+    className="rounded-xl p-5 border flex flex-col gap-3"
     style={{
-      backgroundColor: "#111111",
-      borderColor: accent ? "rgba(255,159,0,0.2)" : "rgba(255,255,255,0.08)",
+      backgroundColor: "#0A0A0A",
+      borderColor: accent ? "rgba(255,159,0,0.2)" : "rgba(255,255,255,0.04)",
     }}
   >
+    <span className="text-[11px] font-semibold text-[#8A8A8A] uppercase tracking-wider">
+      {label}
+    </span>
     <span
-      className="text-2xl font-bold tabular-nums"
+      className="text-3xl font-bold tabular-nums"
       style={{ color: accent ? "#FF9F00" : "#ffffff" }}
     >
       {value}
     </span>
-    <span className="text-xs text-[#8A8A8A] uppercase tracking-wider">{label}</span>
   </div>
 );
 

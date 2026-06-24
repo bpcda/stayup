@@ -82,9 +82,9 @@
 
   /* ── Admin sidebar active state ── */
   .admin-nav-active {
-    background-color: rgba(255, 159, 0, 0.12);
+    background-color: transparent;
     border-left: 2px solid #FF9F00;
-    color: #ffffff;
+    color: #FF9F00;
   }
 
   .admin-nav-item {
