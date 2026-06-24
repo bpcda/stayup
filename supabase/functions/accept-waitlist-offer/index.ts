@@ -53,6 +53,11 @@ serve(async (req) => {
     const code = (error.message || "").trim();
     const mapped = ERROR_MAP[code];
     if (mapped) return json({ error: code, message: mapped.message }, mapped.status);
+    // 23505 = unique_violation sull'indice bookings_event_user_active_uq
+    // (race estrema: l'utente ha appena ottenuto un booking attivo per altra via).
+    if ((error as { code?: string }).code === "23505") {
+      return json({ error: "already_booked", message: "Hai già una prenotazione attiva per questo evento." }, 409);
+    }
     console.error("[accept-waitlist-offer] rpc error:", error);
     return json({ error: "rpc_failed", message: error.message }, 500);
   }
