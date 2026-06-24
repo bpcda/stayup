@@ -43,13 +43,26 @@ const AdminEventoWaitlist = () => {
         supabase.from("events").select("title, capacity").eq("id", eventId).maybeSingle(),
         supabase
           .from("waitlist")
-          .select("id, position, status, created_at, offered_at, offer_expires_at, user_id, profile:profiles!waitlist_user_id_fkey(full_name, email)")
+          .select("id, position, status, created_at, offered_at, offer_expires_at, user_id")
           .eq("event_id", eventId)
           .order("status", { ascending: true })
           .order("position", { ascending: true }),
       ]);
       setEvent((ev.data as { title: string; capacity: number | null } | null) ?? null);
-      setRows((wl.data ?? []) as unknown as Row[]);
+      const wlRows = (wl.data ?? []) as Array<Omit<Row, "profile">>;
+      // Fetch profili in batch (waitlist.user_id → auth.users, joiniamo via profiles.id).
+      const userIds = Array.from(new Set(wlRows.map((r) => r.user_id)));
+      let profileMap = new Map<string, { full_name: string | null; email: string | null }>();
+      if (userIds.length > 0) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("id, full_name, email")
+          .in("id", userIds);
+        profileMap = new Map(
+          (profs ?? []).map((p) => [p.id as string, { full_name: p.full_name ?? null, email: p.email ?? null }]),
+        );
+      }
+      setRows(wlRows.map((r) => ({ ...r, profile: profileMap.get(r.user_id) ?? null })));
       setLoading(false);
     })();
   }, [eventId]);
