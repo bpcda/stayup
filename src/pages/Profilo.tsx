@@ -280,7 +280,8 @@ const Profilo = () => {
         </TabsContent>
 
 
-        <TabsContent value="eventi" className="mt-6">
+        <TabsContent value="eventi" className="mt-6 space-y-6">
+          <MyWaitlist />
           <MyEvents />
         </TabsContent>
 
