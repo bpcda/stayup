@@ -219,22 +219,38 @@ const BottomNav = () => {
 };
 
 // ── Mobile topbar ─────────────────────────────────────────────────────────────
-const MobileTopbar = () => (
-  <header
-    className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 border-b"
-    style={{
-      backgroundColor: "rgba(5,5,5,0.96)",
-      borderColor: "rgba(255,255,255,0.08)",
-      backdropFilter: "blur(12px)",
-      WebkitBackdropFilter: "blur(12px)",
-    }}
-  >
-    <Link to="/">
-      <img src={stayupLogo} alt="StayUp" className="h-7 w-auto" />
-    </Link>
-    <LanguageSwitcher />
-  </header>
-);
+const MobileTopbar = () => {
+  const { user, signOut } = useAuth();
+
+  return (
+    <header
+      className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 border-b"
+      style={{
+        backgroundColor: "rgba(5,5,5,0.96)",
+        borderColor: "rgba(255,255,255,0.08)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+      }}
+    >
+      <Link to="/">
+        <img src={stayupLogo} alt="StayUp" className="h-7 w-auto" />
+      </Link>
+      <div className="flex items-center gap-3">
+        <LanguageSwitcher />
+        {user && (
+          <button
+            onClick={signOut}
+            title="Esci"
+            aria-label="Esci"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-[#8A8A8A] hover:bg-white/5 hover:text-white transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    </header>
+  );
+};
 
 // ── AppLayout ─────────────────────────────────────────────────────────────────
 const AppLayout = ({ children }: { children: ReactNode }) => {
