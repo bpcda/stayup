@@ -69,6 +69,7 @@ const AppRoutes = () => (
       <Route path="/admin/utenti" element={<Admin adminOnly><AdminUtenti /></Admin>} />
       <Route path="/admin/email-logs" element={<Admin adminOnly><AdminEmailLogs /></Admin>} />
       <Route path="/admin/shuttle" element={<Admin adminOnly><AdminShuttle /></Admin>} />
+      <Route path="/admin/sponsor" element={<Admin adminOnly><AdminSponsors /></Admin>} />
       <Route path="/admin/impostazioni" element={<Admin adminOnly><AdminImpostazioni /></Admin>} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/termini" element={<TermsConditions />} />
