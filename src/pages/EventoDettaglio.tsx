@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useEventDetail } from "@/hooks/useEventDetail";
 import { useEventCapacityStatus } from "@/hooks/useWaitlist";
 import { EventHero } from "@/components/event-detail/EventHero";
