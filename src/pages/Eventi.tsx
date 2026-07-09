@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { MapPin, Search, AlertCircle, RefreshCw } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
