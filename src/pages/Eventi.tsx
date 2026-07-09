@@ -289,7 +289,22 @@ const Eventi = () => {
 
       {/* Content */}
       {loading ? (
-        <p className="text-center text-[#8A8A8A] py-16">Caricamento eventi...</p>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="rounded-2xl overflow-hidden border"
+              style={{ backgroundColor: "#111111", borderColor: "rgba(255,255,255,0.08)" }}
+            >
+              <Skeleton className="aspect-[4/5] w-full rounded-none bg-white/5" />
+              <div className="p-4 space-y-2">
+                <Skeleton className="h-3 w-24 bg-white/5" />
+                <Skeleton className="h-5 w-3/4 bg-white/5" />
+                <Skeleton className="h-3 w-1/2 bg-white/5" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : error ? (
         <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
           <AlertCircle className="h-8 w-8 text-red-400" />
