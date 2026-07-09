@@ -25,7 +25,15 @@ const STATUS_LABEL: Record<MyWaitlistStatus, { label: string; variant: "default"
 const MyWaitlist = () => {
   const { entries, loading, reload } = useMyWaitlist();
   const { toast } = useToast();
-  if (loading) return null;
+  if (loading) return (
+    <Card>
+      <CardHeader><Skeleton className="h-6 w-40" /></CardHeader>
+      <CardContent className="space-y-3">
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-16 w-full" />
+      </CardContent>
+    </Card>
+  );
   if (entries.length === 0) return null;
 
   const onCancel = async (id: string) => {
