@@ -19,6 +19,7 @@ import AdminUtenti from "./pages/admin/AdminUtenti";
 import AdminCheckin from "./pages/admin/AdminCheckin";
 import AdminCheckinScan from "./pages/admin/AdminCheckinScan";
 import AdminEmailLogs from "./pages/admin/AdminEmailLogs";
+import AdminSponsors from "./pages/admin/AdminSponsors";
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
 import WaitlistAccept from "./pages/WaitlistAccept";
@@ -68,6 +69,7 @@ const AppRoutes = () => (
       <Route path="/admin/utenti" element={<Admin adminOnly><AdminUtenti /></Admin>} />
       <Route path="/admin/email-logs" element={<Admin adminOnly><AdminEmailLogs /></Admin>} />
       <Route path="/admin/shuttle" element={<Admin adminOnly><AdminShuttle /></Admin>} />
+      <Route path="/admin/sponsor" element={<Admin adminOnly><AdminSponsors /></Admin>} />
       <Route path="/admin/impostazioni" element={<Admin adminOnly><AdminImpostazioni /></Admin>} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/termini" element={<TermsConditions />} />

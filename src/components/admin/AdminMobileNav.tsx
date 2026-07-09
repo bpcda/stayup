@@ -1,7 +1,7 @@
 import { NavLink, Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
-  LayoutDashboard, Calendar, Ticket, QrCode, ScanLine, Users, Mail, Bus, Settings, Menu,
+  LayoutDashboard, Calendar, Ticket, QrCode, ScanLine, Users, Mail, Bus, Settings, Menu, Handshake,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +25,7 @@ const items: Item[] = [
   { to: "/admin/utenti", label: "Utenti", icon: Users, adminOnly: true },
   { to: "/admin/email-logs", label: "Email logs", icon: Mail, adminOnly: true },
   { to: "/admin/shuttle", label: "Shuttle", icon: Bus, adminOnly: true },
+  { to: "/admin/sponsor", label: "Sponsor", icon: Handshake, adminOnly: true },
   { to: "/admin/impostazioni", label: "Impostazioni", icon: Settings, adminOnly: true },
 ];
 

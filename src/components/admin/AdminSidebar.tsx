@@ -10,6 +10,7 @@ import {
   Bus,
   Settings,
   Clock,
+  Handshake,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -32,6 +33,7 @@ const items: Item[] = [
   { to: "/admin/utenti", label: "Utenti", icon: Users, adminOnly: true },
   { to: "/admin/email-logs", label: "Email logs", icon: Mail, adminOnly: true },
   { to: "/admin/shuttle", label: "Shuttle", icon: Bus, adminOnly: true },
+  { to: "/admin/sponsor", label: "Sponsor", icon: Handshake, adminOnly: true },
   { to: "/admin/impostazioni", label: "Impostazioni", icon: Settings, adminOnly: true },
 ];
 
