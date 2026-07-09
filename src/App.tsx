@@ -19,6 +19,7 @@ import AdminUtenti from "./pages/admin/AdminUtenti";
 import AdminCheckin from "./pages/admin/AdminCheckin";
 import AdminCheckinScan from "./pages/admin/AdminCheckinScan";
 import AdminEmailLogs from "./pages/admin/AdminEmailLogs";
+import AdminSponsors from "./pages/admin/AdminSponsors";
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
 import WaitlistAccept from "./pages/WaitlistAccept";
