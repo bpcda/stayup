@@ -10,6 +10,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Booking = {
   id: string;
@@ -123,7 +124,20 @@ const MyEvents = () => {
     return { upcoming: up, past: ps };
   }, [items]);
 
-  if (loading) return <p className="text-muted-foreground text-sm">Caricamento prenotazioni…</p>;
+  if (loading) return (
+    <div className="grid gap-4">
+      {Array.from({ length: 2 }).map((_, i) => (
+        <Card key={i}>
+          <CardHeader><Skeleton className="h-6 w-2/3" /></CardHeader>
+          <CardContent className="space-y-3">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-9 w-32" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
 
   if (items.length === 0) {
     return (

@@ -220,8 +220,6 @@ const BottomNav = () => {
 
 // ── Mobile topbar ─────────────────────────────────────────────────────────────
 const MobileTopbar = () => {
-  const { user, signOut } = useAuth();
-
   return (
     <header
       className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 border-b"
@@ -237,16 +235,7 @@ const MobileTopbar = () => {
       </Link>
       <div className="flex items-center gap-3">
         <LanguageSwitcher />
-        {user && (
-          <button
-            onClick={signOut}
-            title="Esci"
-            aria-label="Esci"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-[#8A8A8A] hover:bg-white/5 hover:text-white transition-colors"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
-        )}
+        <ProfileDropdown />
       </div>
     </header>
   );
