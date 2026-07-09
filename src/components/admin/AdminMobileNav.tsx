@@ -1,7 +1,7 @@
 import { NavLink, Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
-  LayoutDashboard, Calendar, Ticket, QrCode, ScanLine, Users, Mail, Bus, Settings, Menu,
+  LayoutDashboard, Calendar, Ticket, QrCode, ScanLine, Users, Mail, Bus, Settings, Menu, Handshake,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
