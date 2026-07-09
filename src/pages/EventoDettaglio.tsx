@@ -38,7 +38,20 @@ const EventoDettaglio = () => {
     }
   };
 
-  if (loading) return <div className="container mx-auto px-4 py-20 text-center text-muted-foreground">Caricamento…</div>;
+  if (loading) return (
+    <div className="pb-28">
+      <Skeleton className="h-[45vh] md:h-[60vh] w-full rounded-none bg-white/5" />
+      <div className="container mx-auto px-4 py-8 max-w-3xl space-y-4">
+        <Skeleton className="h-8 w-3/4 bg-white/5" />
+        <Skeleton className="h-4 w-1/2 bg-white/5" />
+        <div className="space-y-2 pt-4">
+          <Skeleton className="h-4 w-full bg-white/5" />
+          <Skeleton className="h-4 w-full bg-white/5" />
+          <Skeleton className="h-4 w-2/3 bg-white/5" />
+        </div>
+      </div>
+    </div>
+  );
   if (!event) {
     return (
       <div className="container mx-auto px-4 py-20 text-center">
