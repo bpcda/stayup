@@ -24,7 +24,11 @@ export interface OverviewBooking {
   booked_at: string;
   reference_code: string | null;
   event_id: string;
+  user_id: string | null;
+  full_name: string | null;
+  email: string | null;
 }
+
 
 export const useAdminOverview = () => {
   const [kpi, setKpi] = useState<OverviewKpi>({
@@ -68,7 +72,7 @@ export const useAdminOverview = () => {
           supabase.from("email_logs").select("id", { count: "exact", head: true }).eq("status", "sent").gte("created_at", iso7),
           supabase.from("email_logs").select("id", { count: "exact", head: true }).in("status", ["bounced", "failed"]).gte("created_at", iso7),
           supabase.from("events").select("id, title, starts_at, location").gte("starts_at", nowIso).order("starts_at", { ascending: true }).limit(5),
-          supabase.from("bookings").select("id, status, booked_at, reference_code, event_id").order("booked_at", { ascending: false }).limit(10),
+          supabase.from("bookings").select("id, status, booked_at, reference_code, event_id, user_id").order("booked_at", { ascending: false }).limit(10),
         ]);
 
         if (cancelled) return;
@@ -82,7 +86,30 @@ export const useAdminOverview = () => {
           emailsBounced7d: bounced7.count ?? 0,
         });
         setUpcoming((upcomingList.data as OverviewEvent[]) ?? []);
-        setRecentBookings((recentList.data as OverviewBooking[]) ?? []);
+
+        const bookingsRaw = (recentList.data as Array<{
+          id: string; status: string; booked_at: string;
+          reference_code: string | null; event_id: string; user_id: string | null;
+        }>) ?? [];
+        const userIds = Array.from(new Set(bookingsRaw.map((b) => b.user_id).filter((x): x is string => !!x)));
+        const profMap = new Map<string, { full_name: string | null; email: string | null }>();
+        if (userIds.length) {
+          const { data: profs } = await supabase
+            .from("profiles")
+            .select("id, full_name, email")
+            .in("id", userIds);
+          (profs as Array<{ id: string; full_name: string | null; email: string | null }> | null)?.forEach((p) =>
+            profMap.set(p.id, { full_name: p.full_name, email: p.email }),
+          );
+        }
+        setRecentBookings(
+          bookingsRaw.map((b) => ({
+            ...b,
+            full_name: b.user_id ? profMap.get(b.user_id)?.full_name ?? null : null,
+            email: b.user_id ? profMap.get(b.user_id)?.email ?? null : null,
+          })),
+        );
+
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Errore caricamento");
       } finally {

@@ -145,12 +145,17 @@ const AdminOverview = () => {
               recentBookings.map((b) => (
                 <div
                   key={b.id}
-                  className="flex justify-between items-center px-5 py-3"
+                  className="flex justify-between items-center gap-3 px-5 py-3"
                 >
-                  <div className="text-sm font-mono text-[#D0D0D0]">
-                    {b.reference_code ?? b.id.slice(0, 8)}
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-white truncate">
+                      {b.full_name ?? b.email ?? "Ospite"}
+                    </div>
+                    <div className="text-[11px] text-[#8A8A8A] font-mono truncate mt-0.5">
+                      {b.reference_code ?? b.id.slice(0, 8)}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 shrink-0">
                     <StatusBadge status={b.status} />
                     <span className="text-xs text-[#8A8A8A]">
                       {new Date(b.booked_at).toLocaleDateString("it-IT")}
@@ -158,6 +163,7 @@ const AdminOverview = () => {
                   </div>
                 </div>
               ))
+
             )}
           </div>
         </div>
