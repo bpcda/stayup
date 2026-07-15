@@ -119,7 +119,6 @@ export const useAdminEvents = () => {
   const [sponsors, setSponsors] = useState<SponsorRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<EventRow> | null>(null);
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -245,7 +244,7 @@ export const useAdminEvents = () => {
     });
   };
 
-  const openCreate = () => { setEditing(emptyEvent()); setEditOpen(true); };
+  const openCreate = () => { setEditing(emptyEvent()); };
   const openEdit = (e: EventRow) => {
     setEditing({
       ...e,
@@ -254,19 +253,18 @@ export const useAdminEvents = () => {
       gallery_urls: e.gallery_urls ?? [],
       sponsor_ids: e.sponsor_ids ?? [],
     });
-    setEditOpen(true);
   };
 
   const saveEvent = async () => {
-    if (!editing) return;
-    if (!editing.title?.trim()) { toast({ title: "Titolo obbligatorio", variant: "destructive" }); return; }
-    if (!editing.starts_at) { toast({ title: "Data inizio obbligatoria", variant: "destructive" }); return; }
+    if (!editing) return false;
+    if (!editing.title?.trim()) { toast({ title: "Titolo obbligatorio", variant: "destructive" }); return false; }
+    if (!editing.starts_at) { toast({ title: "Data inizio obbligatoria", variant: "destructive" }); return false; }
     // Validazione date: ends_at >= starts_at (se entrambe presenti)
     if (editing.ends_at && editing.starts_at && editing.ends_at < editing.starts_at) {
       toast({ title: "La data di fine deve essere successiva all'inizio", variant: "destructive" });
-      return;
+      return false;
     }
-    if (!isSupabaseConfigured) return;
+    if (!isSupabaseConfigured) return false;
 
     // Slug: rispetta il valore manuale; se vuoto, il trigger DB lo genera dal title.
     const manualSlug = editing.slug?.trim() || null;
@@ -336,12 +334,13 @@ export const useAdminEvents = () => {
         });
         toast({ title: "Evento creato" });
       }
-      setEditOpen(false);
       setEditing(null);
       fetchEvents();
+      return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       toast({ title: "Errore", description: message, variant: "destructive" });
+      return false;
     }
   };
 
@@ -376,7 +375,7 @@ export const useAdminEvents = () => {
 
   return {
     events, categories, sponsors, loading, counts,
-    editOpen, setEditOpen, editing, setEditing, openCreate, openEdit, saveEvent,
+    editing, setEditing, openCreate, openEdit, saveEvent,
     deleteId, setDeleteId, removeEvent,
     uploadingCover, handleCoverUpload, removeCoverImage,
     uploadingGallery, handleGalleryUpload, removeGalleryImage,

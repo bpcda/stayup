@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Plus, Pencil, Trash2, Users, Calendar, MapPin, Eye, EyeOff, Bus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,13 +29,14 @@ const fmtCapacity = (e: EventRow) => {
 
 const AdminEventi = () => {
   const admin = useAdminEvents();
+  const navigate = useNavigate();
 
   return (
     <div className="container max-w-6xl mx-auto px-4 py-5 sm:py-10">
       <AdminPageHeader
         title="Eventi"
         description="Crea, modifica e gestisci gli iscritti agli eventi."
-        actions={<Button onClick={admin.openCreate} className="w-full sm:w-auto"><Plus className="h-4 w-4 mr-2" />Nuovo evento</Button>}
+        actions={<Button asChild className="w-full sm:w-auto"><Link to="/admin/eventi/nuovo"><Plus className="h-4 w-4 mr-2" />Nuovo evento</Link></Button>}
       />
 
       <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4 sm:mb-6">
@@ -50,7 +51,7 @@ const AdminEventi = () => {
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground mb-4">Nessun evento ancora creato.</p>
-            <Button onClick={admin.openCreate}><Plus className="h-4 w-4 mr-2" />Crea il primo evento</Button>
+            <Button asChild><Link to="/admin/eventi/nuovo"><Plus className="h-4 w-4 mr-2" />Crea il primo evento</Link></Button>
           </CardContent>
         </Card>
       ) : (
@@ -88,8 +89,8 @@ const AdminEventi = () => {
                       <Button size="sm" variant="default" asChild>
                         <Link to={`/admin/eventi/${e.id}/iscritti`}><Users className="mr-2 h-4 w-4" /> Iscritti</Link>
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => admin.openEdit(e)}>
-                        <Pencil className="mr-2 h-4 w-4" /> Modifica
+                      <Button size="sm" variant="outline" asChild>
+                        <Link to={`/admin/eventi/${e.id}/modifica`}><Pencil className="mr-2 h-4 w-4" /> Modifica</Link>
                       </Button>
                       <Button size="sm" variant="outline" onClick={() => admin.toggleField(e, "is_active")}>
                         {e.is_active ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
@@ -121,7 +122,7 @@ const AdminEventi = () => {
               <EventsTable
                 events={admin.events}
                 toggleField={admin.toggleField}
-                openEdit={admin.openEdit}
+                openEdit={(e) => navigate(`/admin/eventi/${e.id}/modifica`)}
                 setDeleteId={admin.setDeleteId}
               />
             </CardContent>
@@ -130,24 +131,9 @@ const AdminEventi = () => {
       )}
 
       <EventModals
-        editOpen={admin.editOpen}
-        setEditOpen={admin.setEditOpen}
-        editing={admin.editing}
-        setEditing={admin.setEditing}
-        saveEvent={admin.saveEvent}
-        uploadingCover={admin.uploadingCover}
-        handleCoverUpload={admin.handleCoverUpload}
-        removeCoverImage={admin.removeCoverImage}
-        uploadingGallery={admin.uploadingGallery}
-        handleGalleryUpload={admin.handleGalleryUpload}
-        removeGalleryImage={admin.removeGalleryImage}
-        toggleSponsor={admin.toggleSponsor}
-        categories={admin.categories}
-        sponsors={admin.sponsors}
         deleteId={admin.deleteId}
         setDeleteId={admin.setDeleteId}
         removeEvent={admin.removeEvent}
-        editingBookedCount={admin.editingBookedCount}
       />
     </div>
   );

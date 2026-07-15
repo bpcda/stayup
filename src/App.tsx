@@ -12,6 +12,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import AdminOverview from "./pages/admin/AdminOverview";
 import AdminShuttle from "./pages/admin/AdminShuttle";
 import AdminEventi from "./pages/admin/AdminEventi";
+import AdminEventoEditor from "./pages/admin/AdminEventoEditor";
 import AdminEventoIscritti from "./pages/admin/AdminEventoIscritti";
 import AdminImpostazioni from "./pages/admin/AdminImpostazioni";
 import AdminPrenotazioni from "./pages/admin/AdminPrenotazioni";
@@ -60,6 +61,8 @@ const AppRoutes = () => (
       <Route path="/waitlist/accept" element={<WaitlistAccept />} />
       <Route path="/admin" element={<Admin><AdminOverview /></Admin>} />
       <Route path="/admin/eventi" element={<Admin><AdminEventi /></Admin>} />
+      <Route path="/admin/eventi/nuovo" element={<Admin><AdminEventoEditor /></Admin>} />
+      <Route path="/admin/eventi/:id/modifica" element={<Admin><AdminEventoEditor /></Admin>} />
       <Route path="/admin/eventi/:id/iscritti" element={<Admin><AdminEventoIscritti /></Admin>} />
       <Route path="/admin/eventi/:id/waitlist" element={<Admin><AdminEventoWaitlist /></Admin>} />
       <Route path="/admin/eventi/:eventId/shuttle" element={<Admin adminOnly><AdminShuttle /></Admin>} />
