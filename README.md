@@ -23,35 +23,10 @@ StayUpAllNight si propone come uno strumento moderno per chi vuole vivere la not
 
 ## 🛠️ Stack Tecnologico
 
-> Nota: aggiornare questa sezione in base alle tecnologie effettivamente utilizzate.
-
 * Frontend: HTML, CSS, TypeScript
 * Framework/Librerie: Vite & React (TypeScript)
 * Backend: Supabase, Resend, Google Cloud
 * Hosting: Vercel
----
-
-## 📦 Installazione
-
-Clona la repository:
-
-```bash
-git clone https://github.com/tuo-username/stayupallnight.git
-cd stayupallnight
-```
-
-Installa le dipendenze:
-
-```bash
-npm install
-```
-
-Avvia il progetto in locale:
-
-```bash
-npm run dev
-```
-
 ---
 
 ## 🌍 Deploy
