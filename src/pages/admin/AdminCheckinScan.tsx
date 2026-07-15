@@ -226,16 +226,25 @@ const AdminCheckinScan = () => {
   const cameraReady = cam.kind === "ready";
 
   return (
-    <div className="container max-w-md mx-auto px-3 py-4 space-y-4 sm:max-w-2xl sm:py-8 sm:px-4">
-      <AdminPageHeader
-        title="Check-in QR"
-        description="Inquadra il QR del partecipante: l'evento viene riconosciuto automaticamente."
-      />
+    <div className="mx-auto max-w-md space-y-3 sm:max-w-2xl sm:py-4">
+      <div className="hidden sm:block">
+        <AdminPageHeader
+          title="Scanner Check-in"
+          description="Inquadra il QR del partecipante: l'evento viene riconosciuto automaticamente."
+        />
+      </div>
+      <header className="flex items-center justify-between px-1 py-1 sm:hidden">
+        <div>
+          <h1 className="text-lg font-semibold text-white">Scanner Check-in</h1>
+          <p className="text-xs text-[#8A8A8A]">Inquadra il QR del biglietto</p>
+        </div>
+        <Badge variant="outline" className="border-primary/40 text-primary">QR</Badge>
+      </header>
 
       {/* Area Scanner */}
-      <Card>
+      <Card className="overflow-hidden rounded-lg border-white/10 bg-[#101010]">
         <CardContent className="p-3 sm:p-4 space-y-3">
-          <div className="relative aspect-square w-full overflow-hidden rounded-xl border border-border bg-black">
+          <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg border border-white/10 bg-black sm:aspect-square">
             {cameraReady && enabled ? (
               <Scanner
                 onScan={handleScan}
@@ -283,6 +292,16 @@ const AdminCheckinScan = () => {
                 )}
               </div>
             )}
+
+            {cameraReady && !result && (
+              <div className="pointer-events-none absolute inset-x-8 top-8 bottom-8 rounded-lg border-2 border-white/80">
+                <span className="absolute -left-0.5 -top-0.5 h-8 w-8 border-l-4 border-t-4 border-white" />
+                <span className="absolute -right-0.5 -top-0.5 h-8 w-8 border-r-4 border-t-4 border-white" />
+                <span className="absolute -bottom-0.5 -left-0.5 h-8 w-8 border-b-4 border-l-4 border-white" />
+                <span className="absolute -bottom-0.5 -right-0.5 h-8 w-8 border-b-4 border-r-4 border-white" />
+                <span className="absolute left-0 right-0 top-1/2 h-px bg-primary shadow-[0_0_16px_rgba(255,159,0,0.9)]" />
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-2">
@@ -290,7 +309,7 @@ const AdminCheckinScan = () => {
               type="button"
               variant="outline"
               size="lg"
-              className="h-12"
+              className="h-12 border-white/10 bg-white/[0.03]"
               onClick={togglePause}
               disabled={!cameraReady}
             >
@@ -305,15 +324,15 @@ const AdminCheckinScan = () => {
               onClick={scanAgain}
               disabled={isProcessing || !cameraReady}
             >
-              <Camera className="h-4 w-4 mr-2" /> Scansiona altro QR
+              <Camera className="h-4 w-4 mr-2" /> Altro QR
             </Button>
           </div>
 
           {/* Fallback manuale: sempre disponibile, anche senza camera */}
-          <div className="rounded-lg border border-border bg-muted/30 p-3">
+          <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
             <button
               type="button"
-              className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
+              className="flex w-full items-center justify-center gap-2 text-sm font-medium text-primary transition-colors"
               onClick={() => setManualOpen((v) => !v)}
               aria-expanded={manualOpen}
             >

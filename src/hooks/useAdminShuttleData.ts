@@ -3,6 +3,7 @@ import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 import { Booking, ShuttleSlot, ReturnSlot } from "@/interfaces/shuttle";
 import { toast } from "@/hooks/use-toast";
 import { computeStats, computeSlotGroupMembers, computeSlotStats, computeReturnSlotStats } from "@/lib/shuttleStats";
+import { sendEmail } from "@/services/supabase/functions.service";
 
 export const useAdminShuttleData = (testMode: boolean, eventId?: string) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -59,8 +60,7 @@ export const useAdminShuttleData = (testMode: boolean, eventId?: string) => {
         if (newPagato && !testMode) {
           // Invio email di conferma via Resend (Edge Function send-email)
           try {
-            await supabase.functions.invoke("send-email", {
-              body: {
+            const body = {
                 template: "booking-confirmation",
                 to: booking.email,
                 locale: "it",
@@ -74,8 +74,9 @@ export const useAdminShuttleData = (testMode: boolean, eventId?: string) => {
                   referenceCode: booking.id,
                 },
                 related: { booking_id: booking.id, event_id: booking.event_id ?? undefined },
-              },
-            });
+              };
+
+            await sendEmail(body);
           } catch (mailErr) {
             console.warn("send-email invoke failed:", mailErr);
           }
@@ -144,8 +145,7 @@ export const useAdminShuttleData = (testMode: boolean, eventId?: string) => {
       return;
     }
     try {
-      const { error } = await supabase.functions.invoke("send-email", {
-        body: {
+      const body = {
           template: "booking-confirmation",
           to: booking.email,
           locale: "it",
@@ -159,8 +159,8 @@ export const useAdminShuttleData = (testMode: boolean, eventId?: string) => {
             referenceCode: booking.id,
           },
           related: { booking_id: booking.id, event_id: booking.event_id ?? undefined },
-        },
-      });
+        };
+      const { error } = await sendEmail(body);
       if (error) throw error;
       toast({ title: "Inviata", description: `Email inviata a ${booking.email}` });
     } catch (err) {

@@ -3,8 +3,8 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { acceptWaitlistOffer } from "@/services/supabase/functions.service";
 
 /**
  * /waitlist/accept?token=<uuid>
@@ -35,9 +35,7 @@ const WaitlistAccept = () => {
     if (state.kind !== "idle") return;
     void (async () => {
       setState({ kind: "loading" });
-      const { data, error } = await supabase.functions.invoke("accept-waitlist-offer", {
-        body: { token },
-      });
+      const { data, error } = await acceptWaitlistOffer({ token });
       if (error) {
         const ctx = (error as { context?: Response }).context;
         let code = "rpc_failed";

@@ -3,6 +3,7 @@
  * `src/hooks/useShuttleForm.ts` and `src/hooks/useAdminShuttleData.ts`.
  */
 import { getSupabaseBrowser } from "@/integrations/supabase/client";
+import { createBooking } from "@/services/supabase/functions.service";
 import type { Tables, TablesInsert, TablesUpdate } from "@/types/supabase";
 
 export type ShuttleSlot = Tables<"shuttle_slots">;
@@ -112,6 +113,5 @@ export async function deleteBooking(id: string) {
  * booking insert). Payload shape mirrors the create-booking Edge Function.
  */
 export async function invokeCreateBooking(payload: Record<string, unknown>) {
-  const supabase = getSupabaseBrowser();
-  return supabase.functions.invoke("create-booking", { body: payload });
+  return createBooking(payload);
 }

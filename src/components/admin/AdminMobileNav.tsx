@@ -1,7 +1,7 @@
 import { NavLink, Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
-  LayoutDashboard, Calendar, Ticket, QrCode, ScanLine, Users, Mail, Bus, Settings, Menu, Handshake,
+  LayoutDashboard, Calendar, Ticket, QrCode, ScanLine, Users, Mail, Bus, Settings, Menu, Handshake, X,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,7 +21,7 @@ const items: Item[] = [
   { to: "/admin/eventi", label: "Eventi", icon: Calendar },
   { to: "/admin/prenotazioni", label: "Prenotazioni", icon: Ticket },
   { to: "/admin/checkin", label: "Check-in", icon: QrCode, end: true },
-  { to: "/admin/checkin/scan", label: "Scan QR", icon: ScanLine },
+  { to: "/admin/checkin/scan", label: "Scanner", icon: ScanLine },
   { to: "/admin/utenti", label: "Utenti", icon: Users, adminOnly: true },
   { to: "/admin/email-logs", label: "Email logs", icon: Mail, adminOnly: true },
   { to: "/admin/shuttle", label: "Shuttle", icon: Bus, adminOnly: true },
@@ -45,23 +45,31 @@ export const AdminMobileNav = () => {
         <button
           type="button"
           aria-label="Apri menu"
-          className="md:hidden flex items-center justify-center h-9 w-9 rounded-lg text-[#D0D0D0] hover:bg-white/5"
+          className="md:hidden flex items-center justify-center h-11 w-11 rounded-lg text-[#D0D0D0] hover:bg-white/5"
         >
           <Menu className="h-5 w-5" />
         </button>
       </SheetTrigger>
       <SheetContent
         side="left"
-        className="p-0 w-72 border-r"
-        style={{ backgroundColor: "#0A0A0A", borderColor: "rgba(255,255,255,0.08)" }}
+        className="p-0 w-72 border-r [&>button]:hidden"
+        style={{ backgroundColor: "#090909", borderColor: "rgba(255,159,0,0.22)" }}
       >
         <div
-          className="flex items-center h-16 px-5 border-b"
+          className="flex items-center h-20 px-5 border-b"
           style={{ borderColor: "rgba(255,255,255,0.08)" }}
         >
           <Link to="/admin" onClick={() => setOpen(false)}>
             <img src={stayupLogo} alt="StayUp" className="h-7 w-auto" />
           </Link>
+          <button
+            type="button"
+            aria-label="Chiudi menu"
+            onClick={() => setOpen(false)}
+            className="ml-auto flex h-10 w-10 items-center justify-center rounded-lg text-white/80 hover:bg-white/5"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         <div className="px-4 pt-5 pb-2">
@@ -83,7 +91,7 @@ export const AdminMobileNav = () => {
                 to={item.to}
                 end={item.end}
                 className={cn(
-                  "admin-nav-item flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium",
+                  "admin-nav-item flex items-center gap-3 px-4 py-3.5 rounded-md text-sm font-medium",
                   active ? "admin-nav-active" : "text-[#8A8A8A]",
                 )}
               >

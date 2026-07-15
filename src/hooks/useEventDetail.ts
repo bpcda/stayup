@@ -4,6 +4,7 @@ import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { EventRow } from "@/interfaces/events";
+import { cancelEventBooking, createEventBooking } from "@/services/supabase/functions.service";
 
 /**
  * Carica il dettaglio evento via Supabase + stato iscrizione utente.
@@ -59,9 +60,7 @@ export const useEventDetail = () => {
     if (!event || !isSupabaseConfigured) return;
     setBusy(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-event-booking", {
-        body: { event_id: event.id },
-      });
+      const { data, error } = await createEventBooking({ event_id: event.id });
       if (error) {
         const ctx = (error as { context?: Response | { error?: string; message?: string } }).context;
         let code = "";
@@ -112,9 +111,7 @@ export const useEventDetail = () => {
     if (!user || !event || !isSupabaseConfigured) return;
     setBusy(true);
     try {
-      const { error } = await supabase.functions.invoke("cancel-event-booking", {
-        body: { event_id: event.id },
-      });
+      const { error } = await cancelEventBooking({ event_id: event.id });
       if (error) throw error;
       toast({ title: "Prenotazione annullata" });
       setRegistered(false);

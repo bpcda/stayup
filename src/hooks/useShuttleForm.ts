@@ -4,6 +4,7 @@ import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 import { ShuttleSlot, ReturnSlot, TipoViaggio } from "@/interfaces/shuttle";
 import { EventRow } from "@/interfaces/events";
 import { toast } from "@/hooks/use-toast";
+import { createBooking } from "@/services/supabase/functions.service";
 
 export const DAYS = ["25 Aprile", "26 Aprile"];
 export const STOPS = ["Università Cattolica", "Cheope"];
@@ -217,7 +218,7 @@ export const useShuttleForm = (onSuccess: () => void, eventId?: string) => {
           testMode,
         };
 
-        const { data, error } = await supabase.functions.invoke("create-booking", { body: payload });
+        const { data, error } = await createBooking(payload);
         if (error) throw error;
         const result = data as { error?: string; bumped?: boolean };
         if (result?.error) throw new Error(result.error);

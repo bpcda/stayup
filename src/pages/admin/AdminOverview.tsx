@@ -1,35 +1,64 @@
 import { Link } from "react-router-dom";
-import { Users, Calendar, CalendarClock, Ticket, QrCode, MailCheck, MailX } from "lucide-react";
+import { Calendar, CalendarClock, Ticket, QrCode, Plus, ArrowRight, ScanLine } from "lucide-react";
 import { useAdminOverview } from "@/hooks/useAdminOverview";
-import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 // ── KPI Card ──────────────────────────────────────────────────────────────────
 const KpiCard = ({
   label,
   value,
   icon: Icon,
+  meta,
 }: {
   label: string;
   value: number;
-  icon: typeof Users;
+  icon: typeof Calendar;
+  meta: string;
 }) => (
   <div
-    className="rounded-xl p-4 border flex flex-col gap-3"
+    className="rounded-lg p-4 border flex min-h-24 flex-col justify-between"
     style={{
-      backgroundColor: "#111111",
+      background: "linear-gradient(145deg, #111111, #0A0A0A)",
       borderColor: "rgba(255,255,255,0.08)",
     }}
   >
     <div className="flex items-center justify-between">
-      <span className="text-xs font-medium text-[#8A8A8A] uppercase tracking-wider">{label}</span>
-      <div
-        className="h-7 w-7 rounded-lg flex items-center justify-center"
-        style={{ backgroundColor: "rgba(255,159,0,0.1)" }}
-      >
-        <Icon className="h-3.5 w-3.5 text-primary" />
-      </div>
+      <span className="text-xs font-medium text-white/85">{label}</span>
+      <Icon className="h-4 w-4 text-primary" />
     </div>
-    <span className="text-3xl font-bold text-white tabular-nums">{value}</span>
+    <div>
+      <span className="text-3xl font-semibold text-white tabular-nums">{value.toLocaleString("it-IT")}</span>
+      <p className="mt-1 text-xs text-primary">{meta}</p>
+    </div>
+  </div>
+);
+
+const MiniChart = ({ title, bars = false }: { title: string; bars?: boolean }) => (
+  <div
+    className="rounded-lg border p-4"
+    style={{ backgroundColor: "#101010", borderColor: "rgba(255,255,255,0.08)" }}
+  >
+    <h2 className="text-sm font-semibold text-white">{title}</h2>
+    <div className="mt-4 h-36 rounded-md border border-white/5 bg-[linear-gradient(rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-[size:44px_32px] p-3">
+      {bars ? (
+        <div className="flex h-full items-end gap-2">
+          {[35, 72, 46, 82, 58, 90, 64, 96].map((h, i) => (
+            <div key={i} className="flex-1 rounded-t-sm bg-primary" style={{ height: `${h}%`, opacity: i % 2 ? 1 : 0.55 }} />
+          ))}
+        </div>
+      ) : (
+        <svg viewBox="0 0 320 130" className="h-full w-full" role="img" aria-label={title}>
+          <defs>
+            <linearGradient id="admin-chart-fill" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="#FF9F00" stopOpacity="0.45" />
+              <stop offset="100%" stopColor="#FF9F00" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path d="M0 104 L46 90 L92 32 L138 70 L184 94 L230 76 L276 24 L320 18 L320 130 L0 130 Z" fill="url(#admin-chart-fill)" />
+          <path d="M0 104 L46 90 L92 32 L138 70 L184 94 L230 76 L276 24 L320 18" fill="none" stroke="#FF9F00" strokeWidth="3" />
+        </svg>
+      )}
+    </div>
   </div>
 );
 
@@ -54,13 +83,32 @@ const StatusBadge = ({ status }: { status: string }) => {
 // ── AdminOverview ─────────────────────────────────────────────────────────────
 const AdminOverview = () => {
   const { kpi, upcoming, recentBookings, loading, error } = useAdminOverview();
+  const { user } = useAuth();
+  const firstName = user?.email?.split("@")[0] ?? "admin";
 
   return (
-    <div className="max-w-7xl mx-auto px-5 py-8 space-y-8">
+    <div className="mx-auto max-w-6xl space-y-5 md:space-y-6">
       {/* Header */}
-      <header className="space-y-1">
-        <h1 className="text-2xl font-bold text-white">Overview</h1>
-        <p className="text-sm text-[#8A8A8A]">Stato generale della piattaforma StayUp.</p>
+      <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="space-y-1">
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary md:hidden">Dashboard</p>
+          <h1 className="text-2xl font-semibold text-white md:text-3xl">Bentornato, {firstName}</h1>
+          <p className="text-sm text-[#8A8A8A]">Ecco cosa sta succedendo oggi.</p>
+        </div>
+        <div className="grid grid-cols-2 gap-2 md:flex">
+          <Link
+            to="/admin/checkin/scan"
+            className="flex h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground md:hidden"
+          >
+            <ScanLine className="h-4 w-4" /> Scanner QR
+          </Link>
+          <Link
+            to="/admin/eventi"
+            className="flex h-11 items-center justify-center gap-2 rounded-lg border border-white/10 px-4 text-sm font-medium text-white hover:bg-white/5"
+          >
+            <Plus className="h-4 w-4 text-primary" /> Nuovo evento
+          </Link>
+        </div>
       </header>
 
       {/* Error */}
@@ -74,28 +122,31 @@ const AdminOverview = () => {
       )}
 
       {/* KPI Grid */}
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
-        <KpiCard label="Utenti"              value={kpi.users}                icon={Users}        />
-        <KpiCard label="Eventi attivi"       value={kpi.activeEvents}          icon={Calendar}     />
-        <KpiCard label="Eventi futuri"       value={kpi.upcomingEvents}        icon={CalendarClock}/>
-        <KpiCard label="Prenotazioni 30gg"   value={kpi.confirmedBookings30d}  icon={Ticket}       />
-        <KpiCard label="Check-in oggi"       value={kpi.checkinsToday}         icon={QrCode}       />
-        <KpiCard label="Email inviate 7gg"   value={kpi.emailsSent7d}          icon={MailCheck}    />
-        <KpiCard label="Email fallite 7gg"   value={kpi.emailsBounced7d}       icon={MailX}        />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <KpiCard label="Eventi attivi" value={kpi.activeEvents} icon={Calendar} meta="live" />
+        <KpiCard label="Prenotazioni" value={kpi.confirmedBookings30d} icon={Ticket} meta="ultimi 30 gg" />
+        <KpiCard label="Check-in oggi" value={kpi.checkinsToday} icon={QrCode} meta="tempo reale" />
+        <KpiCard label="Eventi futuri" value={kpi.upcomingEvents} icon={CalendarClock} meta="in arrivo" />
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <MiniChart title="Prenotazioni (ultimi 7 giorni)" />
+        <MiniChart title="Check-in (ultimi 7 giorni)" bars />
       </div>
 
       {/* Tables row */}
       <div className="grid gap-5 lg:grid-cols-2">
         {/* Prossimi eventi */}
         <div
-          className="rounded-xl border overflow-hidden"
+          className="rounded-lg border overflow-hidden"
           style={{ borderColor: "rgba(255,255,255,0.08)", backgroundColor: "#111111" }}
         >
           <div
-            className="px-5 py-3.5 border-b"
+            className="flex items-center justify-between px-5 py-3.5 border-b"
             style={{ borderColor: "rgba(255,255,255,0.08)" }}
           >
             <h2 className="text-sm font-semibold text-white">Prossimi eventi</h2>
+            <Link to="/admin/eventi" className="text-xs font-medium text-primary">Vedi tutti</Link>
           </div>
           <div className="divide-y" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
             {loading ? (
@@ -127,7 +178,7 @@ const AdminOverview = () => {
 
         {/* Ultime prenotazioni */}
         <div
-          className="rounded-xl border overflow-hidden"
+          className="rounded-lg border overflow-hidden"
           style={{ borderColor: "rgba(255,255,255,0.08)", backgroundColor: "#111111" }}
         >
           <div
@@ -168,6 +219,13 @@ const AdminOverview = () => {
           </div>
         </div>
       </div>
+
+      <Link
+        to="/admin/checkin/scan"
+        className="hidden md:flex items-center justify-end gap-2 text-sm font-medium text-primary"
+      >
+        Apri scanner QR <ArrowRight className="h-4 w-4" />
+      </Link>
     </div>
   );
 };

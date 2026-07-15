@@ -29,7 +29,7 @@ const items: Item[] = [
   { to: "/admin/eventi", label: "Eventi", icon: Calendar },
   { to: "/admin/prenotazioni", label: "Prenotazioni", icon: Ticket },
   { to: "/admin/checkin", label: "Check-in", icon: QrCode, end: true },
-  { to: "/admin/checkin/scan", label: "Scan QR", icon: ScanLine },
+  { to: "/admin/checkin/scan", label: "Scanner", icon: ScanLine },
   { to: "/admin/utenti", label: "Utenti", icon: Users, adminOnly: true },
   { to: "/admin/email-logs", label: "Email logs", icon: Mail, adminOnly: true },
   { to: "/admin/shuttle", label: "Shuttle", icon: Bus, adminOnly: true },
@@ -45,7 +45,7 @@ const AdminSidebar = () => {
 
   return (
     <aside
-      className="hidden md:flex flex-col w-56 shrink-0 border-r"
+      className="hidden md:flex flex-col w-48 shrink-0 border-r"
       style={{
         backgroundColor: "#0A0A0A",
         borderColor: "rgba(255,255,255,0.08)",
@@ -83,7 +83,7 @@ const AdminSidebar = () => {
               to={item.to}
               end={item.end}
               className={cn(
-                "admin-nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium",
+                "admin-nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium",
                 active
                   ? "admin-nav-active"
                   : "text-[#8A8A8A]"

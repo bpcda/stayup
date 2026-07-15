@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import MyEvents from "@/components/profilo/MyEvents";
 import MyWaitlist from "@/components/profilo/MyWaitlist";
+import { deleteCurrentAccount } from "@/services/supabase/functions.service";
 
 const Profilo = () => {
   const { user, loading: authLoading, signOut, isAdmin, isOrganizer } = useAuth();
@@ -123,7 +124,7 @@ const Profilo = () => {
   const handleDeleteAccount = async () => {
     setDeleting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("delete-account", { body: {} });
+      const { data, error } = await deleteCurrentAccount();
       if (error) throw error;
       const result = data as { error?: string } | null;
       if (result?.error) throw new Error(result.error);

@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Hourglass, Loader2 } from "lucide-react";
 import type { EventCapacityStatus } from "@/hooks/useWaitlist";
+import { joinWaitlist } from "@/services/supabase/functions.service";
 
 interface Props {
   eventId: string;
@@ -44,9 +44,7 @@ const WaitlistCTA = ({ eventId, status, onJoined }: Props) => {
     if (!user) { navigate("/auth"); return; }
     setBusy(true);
     try {
-      const { data, error } = await supabase.functions.invoke("join-waitlist", {
-        body: { event_id: eventId },
-      });
+      const { data, error } = await joinWaitlist({ event_id: eventId })
       if (error) {
         const ctx = (error as { context?: Response }).context;
         let msg = error.message ?? "Errore";
