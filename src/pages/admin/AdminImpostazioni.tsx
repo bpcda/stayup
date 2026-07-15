@@ -60,12 +60,12 @@ const AdminImpostazioni = () => {
   };
 
   return (
-    <div className="container max-w-3xl mx-auto px-4 py-10">
+    <div className="container max-w-3xl mx-auto px-4 py-5 sm:py-10">
       <AdminPageHeader
         title="Impostazioni"
         description="Dati globali del sito (contatti, social) usati nelle pagine pubbliche."
         actions={
-          <Button onClick={save} disabled={saving || loading}>
+          <Button onClick={save} disabled={saving || loading} className="w-full sm:w-auto">
             <Save className="h-4 w-4 mr-2" />
             {saving ? "Salvo…" : "Salva"}
           </Button>
@@ -73,7 +73,7 @@ const AdminImpostazioni = () => {
       />
 
       <Card>
-        <CardContent className="py-6 space-y-5">
+        <CardContent className="space-y-5 p-4 sm:py-6">
           {loading ? (
             <p className="text-center text-muted-foreground py-6">Caricamento…</p>
           ) : (

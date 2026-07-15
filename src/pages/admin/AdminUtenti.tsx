@@ -13,7 +13,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Download, MoreVertical } from "lucide-react";
+import { Download, Mail, MapPin, MoreVertical, User } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { Role, useAdminUsers } from "@/hooks/useAdminUsers";
 
@@ -100,7 +100,67 @@ const AdminUtenti = () => {
         </Card>
       )}
 
-      <Card>
+      <div className="space-y-3 md:hidden">
+        {loading ? (
+          <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Caricamento...</CardContent></Card>
+        ) : rows.length === 0 ? (
+          <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Nessun utente con questi filtri.</CardContent></Card>
+        ) : rows.map((u) => (
+          <Card key={u.id}>
+            <CardContent className="space-y-4 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                    <User className="h-4 w-4 shrink-0 text-[#F97316]" />
+                    <span className="truncate">{u.full_name ?? "Senza nome"}</span>
+                  </div>
+                  <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Mail className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{u.email ?? "Email non disponibile"}</span>
+                  </div>
+                  {u.city && (
+                    <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <MapPin className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{u.city}</span>
+                    </div>
+                  )}
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon" className="shrink-0"><MoreVertical className="h-4 w-4" /></Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {ALL_ROLES.map((r) => (
+                      u.roles.includes(r)
+                        ? <DropdownMenuItem key={r} onClick={() => revokeRole(u.id, r)}>Revoca {r}</DropdownMenuItem>
+                        : <DropdownMenuItem key={r} onClick={() => grantRole(u.id, r)}>Promuovi a {r}</DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              <div className="flex flex-wrap gap-1">
+                {u.roles.length === 0 ? <Badge variant="outline">Nessun ruolo</Badge>
+                  : u.roles.map((r) => <Badge key={r} variant={r === "admin" ? "default" : "secondary"}>{r}</Badge>)}
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 rounded-md border border-white/10 bg-white/[0.03] p-3 text-center">
+                <div><div className="text-lg font-bold text-white">{u.bookingsCount}</div><div className="text-[11px] text-muted-foreground">Pren.</div></div>
+                <div><div className="text-lg font-bold text-white">{u.checkinsCount}</div><div className="text-[11px] text-muted-foreground">Check-in</div></div>
+                <div><div className={u.noShowCount > 0 ? "text-lg font-bold text-destructive" : "text-lg font-bold text-white"}>{u.noShowCount}</div><div className="text-[11px] text-muted-foreground">No-show</div></div>
+              </div>
+
+              {u.categoryNames.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {u.categoryNames.map((n) => <Badge key={n} variant="outline" className="text-xs">{n}</Badge>)}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="hidden md:block">
         <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader>

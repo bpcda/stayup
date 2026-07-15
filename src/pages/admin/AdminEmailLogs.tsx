@@ -26,8 +26,8 @@ const statusVariant = (s: string): "default" | "secondary" | "destructive" | "ou
 
 const Stat = ({ label, value }: { label: string; value: number }) => (
   <Card>
-    <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">{label}</CardTitle></CardHeader>
-    <CardContent className="text-2xl font-bold">{value}</CardContent>
+    <CardHeader className="px-3 pb-1 pt-3 sm:pb-2"><CardTitle className="text-xs text-muted-foreground sm:text-sm">{label}</CardTitle></CardHeader>
+    <CardContent className="px-3 pb-3 text-xl font-bold sm:text-2xl">{value}</CardContent>
   </Card>
 );
 
@@ -35,24 +35,24 @@ const AdminEmailLogs = () => {
   const { rows, templates, range, setRange, template, setTemplate, status, setStatus, loading, error, stats } = useAdminEmailLogs();
 
   return (
-    <div className="container max-w-7xl mx-auto px-4 py-8 space-y-6">
+    <div className="container max-w-7xl mx-auto px-4 py-5 sm:py-8 space-y-4 sm:space-y-6">
       <AdminPageHeader title="Email logs" description="Storico invii email transazionali Resend." />
 
-      <div className="flex flex-wrap gap-2">
+      <div className="grid gap-2 sm:flex sm:flex-wrap">
         {RANGES.map((r) => (
           <Button key={r.v} size="sm" variant={range === r.v ? "default" : "outline"} onClick={() => setRange(r.v)}>
             {r.l}
           </Button>
         ))}
         <Select value={template ?? "all"} onValueChange={(v) => setTemplate(v === "all" ? null : v)}>
-          <SelectTrigger className="w-[220px]"><SelectValue placeholder="Template" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-[220px]"><SelectValue placeholder="Template" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tutti i template</SelectItem>
             {templates.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={status ?? "all"} onValueChange={(v) => setStatus(v === "all" ? null : v)}>
-          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tutti gli stati</SelectItem>
             {STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -60,7 +60,7 @@ const AdminEmailLogs = () => {
         </Select>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
         <Stat label="Totale" value={stats.total} />
         <Stat label="Sent" value={stats.sent} />
         <Stat label="Failed" value={stats.failed} />
@@ -69,7 +69,36 @@ const AdminEmailLogs = () => {
 
       {error && <Card className="border-destructive/40"><CardContent className="py-3 text-sm text-destructive">{error}</CardContent></Card>}
 
-      <Card>
+      <div className="space-y-3 md:hidden">
+        {loading ? (
+          <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Caricamento...</CardContent></Card>
+        ) : rows.length === 0 ? (
+          <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Nessuna email nel range selezionato.</CardContent></Card>
+        ) : rows.map((r) => (
+          <Card key={r.id}>
+            <CardContent className="space-y-3 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-semibold text-white">{r.subject || "Senza oggetto"}</div>
+                  <div className="mt-1 truncate text-xs text-muted-foreground">{r.to_email}</div>
+                </div>
+                <Badge variant={statusVariant(r.status)} className="shrink-0">{r.status}</Badge>
+              </div>
+              <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                <span className="truncate font-mono">{r.template ?? "—"}</span>
+                <span className="shrink-0">{new Date(r.created_at).toLocaleString("it-IT")}</span>
+              </div>
+              {r.error_message && (
+                <div className="rounded-md border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
+                  {r.error_message}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="hidden md:block">
         <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader>

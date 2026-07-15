@@ -225,14 +225,14 @@ const AdminShuttle = () => {
 
 
   return (
-    <div className="min-h-screen px-4 py-8">
-      <div className="max-w-6xl mx-auto space-y-8">
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen px-4 py-5 sm:py-8">
+      <div className="max-w-6xl mx-auto space-y-5 sm:space-y-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <Link to="/"><img src={stayupLogo} alt="StayUp" className="w-16 h-auto" /></Link>
-            <h1 className="text-2xl font-bold font-heading">Dashboard Admin</h1>
+            <h1 className="text-xl font-bold font-heading sm:text-2xl">Dashboard Admin</h1>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:flex-wrap">
             <Button variant={testMode ? "default" : "outline"} size="sm" onClick={() => setTestMode((v) => !v)} className={testMode ? "bg-yellow-500 hover:bg-yellow-600 text-black" : ""}>
               {testMode ? "🧪 TEST ON" : "🧪 TEST OFF"}
             </Button>
@@ -282,9 +282,9 @@ const AdminShuttle = () => {
 
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="text-lg">Gestione Navette Andata</CardTitle>
-              <Button size="sm" onClick={() => openAddSlot("andata")}>+ Aggiungi Slot</Button>
+              <Button size="sm" className="w-full sm:w-auto" onClick={() => openAddSlot("andata")}>+ Aggiungi Slot</Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -300,9 +300,9 @@ const AdminShuttle = () => {
 
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="text-lg">Gestione Navette Ritorno</CardTitle>
-              <Button size="sm" onClick={() => openAddSlot("ritorno")}>+ Aggiungi Slot</Button>
+              <Button size="sm" className="w-full sm:w-auto" onClick={() => openAddSlot("ritorno")}>+ Aggiungi Slot</Button>
             </div>
           </CardHeader>
           <CardContent>

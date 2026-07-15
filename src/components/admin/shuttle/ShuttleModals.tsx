@@ -49,7 +49,7 @@ export const ShuttleModals = (props: ShuttleModalsProps) => {
   return (
     <>
       <Dialog open={props.moveDialogOpen} onOpenChange={props.setMoveDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[92dvh] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] overflow-y-auto sm:max-w-lg">
           <DialogHeader><DialogTitle>Sposta {props.selectedBooking?.nome}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
             {(props.selectedBooking?.tipo_viaggio === "andata" || props.selectedBooking?.tipo_viaggio === "andata_ritorno") && (
@@ -103,14 +103,14 @@ export const ShuttleModals = (props: ShuttleModalsProps) => {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => props.setMoveDialogOpen(false)}>Annulla</Button>
-            <Button onClick={props.handleMove}>Conferma spostamento</Button>
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => props.setMoveDialogOpen(false)}>Annulla</Button>
+            <Button className="w-full sm:w-auto" onClick={props.handleMove}>Conferma spostamento</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={props.editSlotDialog} onOpenChange={props.setEditSlotDialog}>
-        <DialogContent>
+        <DialogContent className="max-h-[92dvh] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] overflow-y-auto sm:max-w-lg">
           <DialogHeader><DialogTitle>Modifica Slot {props.editSlotType === "andata" ? "Andata" : "Ritorno"}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -153,14 +153,14 @@ export const ShuttleModals = (props: ShuttleModalsProps) => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => props.setEditSlotDialog(false)}>Annulla</Button>
-            <Button onClick={props.saveEditSlot}>Salva</Button>
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => props.setEditSlotDialog(false)}>Annulla</Button>
+            <Button className="w-full sm:w-auto" onClick={props.saveEditSlot}>Salva</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={props.addSlotDialog} onOpenChange={props.setAddSlotDialog}>
-        <DialogContent>
+        <DialogContent className="max-h-[92dvh] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] overflow-y-auto sm:max-w-lg">
           <DialogHeader><DialogTitle>Nuovo Slot {props.addSlotType === "andata" ? "Andata" : "Ritorno"}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -187,14 +187,14 @@ export const ShuttleModals = (props: ShuttleModalsProps) => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => props.setAddSlotDialog(false)}>Annulla</Button>
-            <Button onClick={props.saveAddSlot}>Aggiungi</Button>
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => props.setAddSlotDialog(false)}>Annulla</Button>
+            <Button className="w-full sm:w-auto" onClick={props.saveAddSlot}>Aggiungi</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={props.deleteDialogOpen} onOpenChange={props.setDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[92dvh] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Eliminare {props.bookingToDelete?.nome}?</DialogTitle>
           </DialogHeader>
@@ -212,8 +212,8 @@ export const ShuttleModals = (props: ShuttleModalsProps) => {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => props.setDeleteDialogOpen(false)}>Annulla</Button>
-            <Button variant="destructive" onClick={props.confirmDeleteBooking}>Elimina</Button>
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => props.setDeleteDialogOpen(false)}>Annulla</Button>
+            <Button variant="destructive" className="w-full sm:w-auto" onClick={props.confirmDeleteBooking}>Elimina</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

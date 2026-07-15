@@ -224,7 +224,7 @@ const AdminEventoIscritti = () => {
   };
 
   return (
-    <div className="container max-w-6xl mx-auto px-4 py-10">
+    <div className="container max-w-6xl mx-auto px-4 py-5 sm:py-10">
       <AdminPageHeader
         title={event ? `Iscritti — ${event.title}` : "Iscritti"}
         description={
@@ -233,17 +233,17 @@ const AdminEventoIscritti = () => {
             : "Elenco partecipanti"
         }
         actions={
-          <Button onClick={exportCsv} disabled={participants.length === 0}>
+          <Button onClick={exportCsv} disabled={participants.length === 0} className="w-full sm:w-auto">
             <Download className="h-4 w-4 mr-2" />
             Esporta CSV
           </Button>
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-3 mb-6">
-        <Card><CardContent className="py-4"><div className="text-sm text-muted-foreground">Totale iscritti</div><div className="text-2xl font-bold">{stats.totale}</div></CardContent></Card>
-        <Card><CardContent className="py-4"><div className="text-sm text-muted-foreground">Presenti</div><div className="text-2xl font-bold">{stats.presenti}</div></CardContent></Card>
-        <Card><CardContent className="py-4"><div className="text-sm text-muted-foreground">Tasso presenza</div><div className="text-2xl font-bold">{stats.totale ? Math.round((stats.presenti / stats.totale) * 100) : 0}%</div></CardContent></Card>
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4 sm:mb-6">
+        <Card><CardContent className="px-3 py-3"><div className="text-xs text-muted-foreground sm:text-sm">Iscritti</div><div className="text-xl font-bold sm:text-2xl">{stats.totale}</div></CardContent></Card>
+        <Card><CardContent className="px-3 py-3"><div className="text-xs text-muted-foreground sm:text-sm">Presenti</div><div className="text-xl font-bold sm:text-2xl">{stats.presenti}</div></CardContent></Card>
+        <Card><CardContent className="px-3 py-3"><div className="text-xs text-muted-foreground sm:text-sm">Presenza</div><div className="text-xl font-bold sm:text-2xl">{stats.totale ? Math.round((stats.presenti / stats.totale) * 100) : 0}%</div></CardContent></Card>
       </div>
 
       <div className="mb-4 relative max-w-sm">
@@ -257,12 +257,48 @@ const AdminEventoIscritti = () => {
       </div>
 
       <Tabs defaultValue="prenotati">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-2 sm:w-auto">
           <TabsTrigger value="prenotati">Prenotati</TabsTrigger>
           <TabsTrigger value="waitlist">Lista d'attesa</TabsTrigger>
         </TabsList>
         <TabsContent value="prenotati" className="mt-4">
-          <Card>
+          <div className="space-y-3 md:hidden">
+            {loading ? (
+              <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Caricamento...</CardContent></Card>
+            ) : filtered.length === 0 ? (
+              <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">{participants.length === 0 ? "Nessun iscritto." : "Nessun risultato per la ricerca."}</CardContent></Card>
+            ) : filtered.map((p) => {
+              const present = p.checkin_id !== null;
+              return (
+                <Card key={p.id} className={present ? "border-primary/40 bg-primary/5" : ""}>
+                  <CardContent className="space-y-3 p-4">
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        checked={present}
+                        onCheckedChange={(v) => toggleAttended(p, !!v)}
+                        aria-label="Segna come presente"
+                        className="mt-1 h-5 w-5"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-semibold text-white">{displayName(p)}</div>
+                        <div className="mt-1 truncate text-xs text-muted-foreground">{p.profiles?.email ?? "Email non disponibile"}</div>
+                        {p.profiles?.phone && <div className="truncate text-xs text-muted-foreground">{p.profiles.phone}</div>}
+                      </div>
+                      <Button size="icon" variant="ghost" className="shrink-0" onClick={() => removeParticipant(p.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 rounded-md border border-white/10 bg-white/[0.03] p-3 text-xs text-muted-foreground">
+                      <span className="font-mono">{p.reference_code ?? "—"}</span>
+                      <span>{new Date(p.created_at).toLocaleDateString("it-IT")}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          <Card className="hidden md:block">
             <CardContent className="p-0 overflow-x-auto">
               {loading ? (
                 <p className="text-center text-muted-foreground py-12">Caricamento...</p>

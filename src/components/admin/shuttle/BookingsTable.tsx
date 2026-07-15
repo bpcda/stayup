@@ -25,7 +25,44 @@ export const BookingsTable = ({
 
   return (
     <>
-      <div className="overflow-x-auto">
+      <div className="space-y-3 md:hidden">
+        {bookings.map((b) => (
+          <div key={b.id} className="rounded-lg border border-border bg-card p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold text-white">{b.nome}</div>
+                <div className="mt-1 truncate text-xs text-muted-foreground">{b.email}</div>
+                <div className="truncate text-xs text-muted-foreground">{b.telefono}</div>
+              </div>
+              <span className={`shrink-0 rounded-full px-2 py-1 text-xs font-medium ${
+                b.pagato ? "bg-green-900/30 text-green-400" : "bg-red-900/30 text-red-400"
+              }`}>
+                {b.pagato ? "Pagato" : "Non pagato"}
+              </span>
+            </div>
+
+            <div className="mt-3 grid grid-cols-2 gap-2 rounded-md border border-white/10 bg-white/[0.03] p-3 text-xs">
+              <div><span className="text-muted-foreground">Tipo</span><div className="capitalize">{b.tipo_viaggio?.replace("_", " + ") || "—"}</div></div>
+              <div><span className="text-muted-foreground">Giorno</span><div>{b.giorno || "/"}</div></div>
+              <div><span className="text-muted-foreground">Fermata</span><div className="truncate">{b.fermata || "/"}</div></div>
+              <div><span className="text-muted-foreground">Orari</span><div>{b.orario || "/"} · {b.orario_ritorno || "/"}</div></div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <Button size="sm" variant="outline" onClick={() => togglePagato(b)}>
+                {b.pagato ? "Annulla pagamento" : "Segna pagato"}
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => openMoveDialog(b)}>Sposta</Button>
+              <Button size="sm" variant="outline" onClick={() => sendConfirmEmail(b)}>
+                {b.pagato ? "Riepilogo" : "Pagamento"}
+              </Button>
+              <Button size="sm" variant="destructive" onClick={() => askDeleteBooking(b)}>Elimina</Button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="hidden overflow-x-auto md:block">
         <Table>
           <TableHeader>
             <TableRow>

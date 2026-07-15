@@ -55,19 +55,19 @@ export const EventModals = (props: EventModalsProps) => {
   return (
     <>
       <Dialog open={props.editOpen} onOpenChange={props.setEditOpen}>
-        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[92dvh] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] overflow-y-auto p-4 sm:max-w-3xl sm:p-6">
           <DialogHeader>
             <DialogTitle>{e?.id ? "Modifica evento" : "Nuovo evento"}</DialogTitle>
             <DialogDescription>Compila i dettagli dell'evento.</DialogDescription>
           </DialogHeader>
 
           <Tabs defaultValue="info" className="mt-2">
-            <TabsList className="grid grid-cols-5 w-full">
-              <TabsTrigger value="info">Informazioni</TabsTrigger>
-              <TabsTrigger value="media">Media</TabsTrigger>
-              <TabsTrigger value="sponsor">Sponsor</TabsTrigger>
-              <TabsTrigger value="seo">SEO</TabsTrigger>
-              <TabsTrigger value="opzioni">Opzioni</TabsTrigger>
+            <TabsList className="flex h-auto w-full justify-start overflow-x-auto sm:grid sm:grid-cols-5">
+              <TabsTrigger value="info" className="min-w-max px-3 text-xs sm:min-w-0 sm:text-sm">Info</TabsTrigger>
+              <TabsTrigger value="media" className="min-w-max px-3 text-xs sm:min-w-0 sm:text-sm">Media</TabsTrigger>
+              <TabsTrigger value="sponsor" className="min-w-max px-3 text-xs sm:min-w-0 sm:text-sm">Sponsor</TabsTrigger>
+              <TabsTrigger value="seo" className="min-w-max px-3 text-xs sm:min-w-0 sm:text-sm">SEO</TabsTrigger>
+              <TabsTrigger value="opzioni" className="min-w-max px-3 text-xs sm:min-w-0 sm:text-sm">Opzioni</TabsTrigger>
             </TabsList>
 
             {/* INFO */}
@@ -192,7 +192,7 @@ export const EventModals = (props: EventModalsProps) => {
             <TabsContent value="media" className="space-y-6 pt-4">
               <div className="space-y-2">
                 <Label htmlFor="cover_image_file">Banner / Copertina</Label>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                   <Input
                     id="cover_image_file"
                     type="file"
@@ -205,7 +205,7 @@ export const EventModals = (props: EventModalsProps) => {
                     }}
                   />
                   {e?.cover_image_url && (
-                    <Button type="button" variant="outline" size="sm" onClick={props.removeCoverImage}>
+                    <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto" onClick={props.removeCoverImage}>
                       Rimuovi
                     </Button>
                   )}
@@ -359,10 +359,10 @@ export const EventModals = (props: EventModalsProps) => {
 
             {/* OPZIONI */}
             <TabsContent value="opzioni" className="space-y-3 pt-4">
-              <div className="flex items-center justify-between rounded-md border p-3">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between gap-3 rounded-md border p-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <Bus className="h-4 w-4 text-primary" />
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-medium text-sm">Servizio Navetta</p>
                     <p className="text-xs text-muted-foreground">Abilita la prenotazione delle navette.</p>
                   </div>
@@ -371,7 +371,7 @@ export const EventModals = (props: EventModalsProps) => {
               </div>
 
               {e?.has_shuttle && (
-                <div className="grid grid-cols-2 gap-3 p-3 rounded-md border bg-muted/30">
+                <div className="grid grid-cols-1 gap-3 rounded-md border bg-muted/30 p-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label htmlFor="price_one_way" className="text-xs">Prezzo Sola Andata (€)</Label>
                     <Input id="price_one_way" type="number" step="0.5" value={e?.price_one_way ?? 0} onChange={(ev) => set({ price_one_way: Number(ev.target.value) })} />
@@ -383,33 +383,33 @@ export const EventModals = (props: EventModalsProps) => {
                 </div>
               )}
 
-              <div className="flex items-center justify-between rounded-md border p-3">
-                <div><p className="font-medium text-sm">Attivo (legacy)</p><p className="text-xs text-muted-foreground">Se disattivato non è visibile lato sito.</p></div>
+              <div className="flex items-center justify-between gap-3 rounded-md border p-3">
+                <div className="min-w-0"><p className="font-medium text-sm">Attivo (legacy)</p><p className="text-xs text-muted-foreground">Se disattivato non è visibile lato sito.</p></div>
                 <Switch checked={!!e?.is_active} onCheckedChange={(v) => set({ is_active: v })} />
               </div>
-              <div className="flex items-center justify-between rounded-md border p-3">
-                <div><p className="font-medium text-sm">Pubblico</p><p className="text-xs text-muted-foreground">Visibile a tutti, anche non iscritti.</p></div>
+              <div className="flex items-center justify-between gap-3 rounded-md border p-3">
+                <div className="min-w-0"><p className="font-medium text-sm">Pubblico</p><p className="text-xs text-muted-foreground">Visibile a tutti, anche non iscritti.</p></div>
                 <Switch checked={!!e?.is_public} onCheckedChange={(v) => set({ is_public: v })} />
               </div>
             </TabsContent>
           </Tabs>
 
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => props.setEditOpen(false)}>Annulla</Button>
-            <Button onClick={props.saveEvent}>Salva</Button>
+          <DialogFooter className="sticky bottom-0 -mx-4 mt-4 border-t bg-background/95 px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => props.setEditOpen(false)}>Annulla</Button>
+            <Button className="w-full sm:w-auto" onClick={props.saveEvent}>Salva</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <AlertDialog open={!!props.deleteId} onOpenChange={(o) => !o && props.setDeleteId(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[calc(100vw-1rem)] max-w-lg">
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminare l'evento?</AlertDialogTitle>
             <AlertDialogDescription>L'azione è irreversibile. Verranno rimosse anche tutte le iscrizioni collegate.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annulla</AlertDialogCancel>
-            <AlertDialogAction onClick={props.removeEvent} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogCancel className="w-full sm:w-auto">Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={props.removeEvent} className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90 sm:w-auto">
               <Trash2 className="h-4 w-4 mr-2" />Elimina
             </AlertDialogAction>
           </AlertDialogFooter>

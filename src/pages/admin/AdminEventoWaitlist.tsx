@@ -87,21 +87,21 @@ export const WaitlistPanel = ({ eventId, showCapacity = true }: { eventId: strin
   return (
     <div className="space-y-4">
       {showCapacity && (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
           <Card>
-            <CardContent className="p-4 flex items-center gap-3">
+            <CardContent className="p-3 sm:p-4 flex items-center gap-3">
               <Hourglass className="h-5 w-5 text-primary" />
               <div>
-                <div className="text-2xl font-bold">{active.length}</div>
+                <div className="text-xl font-bold sm:text-2xl">{active.length}</div>
                 <div className="text-xs text-muted-foreground">In attesa di un posto</div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4 flex items-center gap-3">
+            <CardContent className="p-3 sm:p-4 flex items-center gap-3">
               <Mail className="h-5 w-5 text-amber-500" />
               <div>
-                <div className="text-2xl font-bold">{offered}</div>
+                <div className="text-xl font-bold sm:text-2xl">{offered}</div>
                 <div className="text-xs text-muted-foreground">Offerte in corso</div>
               </div>
             </CardContent>
@@ -122,7 +122,7 @@ export const WaitlistPanel = ({ eventId, showCapacity = true }: { eventId: strin
                 const badge = STATUS_BADGE[r.status];
                 const cancellable = r.status === "waiting" || r.status === "offered";
                 return (
-                  <li key={r.id} className="px-4 py-3 flex items-center gap-3">
+                  <li key={r.id} className="px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center">
                     <span className="text-sm font-mono w-8 text-muted-foreground">#{r.position}</span>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">
@@ -135,16 +135,18 @@ export const WaitlistPanel = ({ eventId, showCapacity = true }: { eventId: strin
                         )}
                       </p>
                     </div>
-                    <Badge variant={badge.variant}>
-                      {r.status === "accepted" ? <CheckCircle2 className="h-3 w-3 mr-1" /> :
-                       r.status === "expired"  ? <XCircle className="h-3 w-3 mr-1" /> : null}
-                      {badge.label}
-                    </Badge>
-                    {cancellable && (
-                      <Button size="sm" variant="ghost" onClick={() => cancelEntry(r.id)} title="Annulla waitlist">
-                        <Ban className="h-4 w-4 text-destructive" />
-                      </Button>
-                    )}
+                    <div className="flex w-full items-center gap-2 sm:w-auto">
+                      <Badge variant={badge.variant}>
+                        {r.status === "accepted" ? <CheckCircle2 className="h-3 w-3 mr-1" /> :
+                         r.status === "expired"  ? <XCircle className="h-3 w-3 mr-1" /> : null}
+                        {badge.label}
+                      </Badge>
+                      {cancellable && (
+                        <Button size="sm" variant="outline" className="ml-auto sm:ml-0" onClick={() => cancelEntry(r.id)} title="Annulla waitlist">
+                          <Ban className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
                   </li>
                 );
               })}

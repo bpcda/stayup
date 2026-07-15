@@ -33,12 +33,12 @@ const AdminSponsors = () => {
   const editing = s.editing;
 
   return (
-    <div className="container max-w-5xl mx-auto px-4 py-10">
+    <div className="container max-w-5xl mx-auto px-4 py-5 sm:py-10">
       <AdminPageHeader
         title="Sponsor"
         description="Gestisci gli sponsor e i partner mostrati nel sito e associabili agli eventi."
         actions={
-          <Button onClick={s.openCreate}>
+          <Button onClick={s.openCreate} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Nuovo sponsor
           </Button>
@@ -65,8 +65,8 @@ const AdminSponsors = () => {
         <div className="grid gap-3 sm:grid-cols-2">
           {s.sponsors.map((sp) => (
             <Card key={sp.id}>
-              <CardContent className="p-4 flex items-start gap-4">
-                <div className="h-14 w-14 shrink-0 rounded-md bg-muted flex items-center justify-center overflow-hidden">
+              <CardContent className="flex items-start gap-3 p-4 sm:gap-4">
+                <div className="h-12 w-12 shrink-0 rounded-md bg-muted flex items-center justify-center overflow-hidden sm:h-14 sm:w-14">
                   {sp.logo_url ? (
                     <img src={sp.logo_url} alt={sp.name} className="h-full w-full object-contain" />
                   ) : (
@@ -96,12 +96,12 @@ const AdminSponsors = () => {
                       <span className="text-xs text-muted-foreground">Attivo</span>
                     </div>
                     <div className="ml-auto flex gap-1">
-                      <Button size="icon" variant="ghost" onClick={() => s.openEdit(sp)}>
+                      <Button size="icon" variant="outline" onClick={() => s.openEdit(sp)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <Button
                         size="icon"
-                        variant="ghost"
+                        variant="outline"
                         onClick={() => s.setDeleteId(sp.id)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
@@ -117,7 +117,7 @@ const AdminSponsors = () => {
 
       {/* Edit/Create dialog */}
       <Dialog open={s.editOpen} onOpenChange={s.setEditOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-h-[92dvh] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{editing?.id ? "Modifica sponsor" : "Nuovo sponsor"}</DialogTitle>
             <DialogDescription>
@@ -217,8 +217,8 @@ const AdminSponsors = () => {
           )}
 
           <DialogFooter>
-            <Button variant="ghost" onClick={() => s.setEditOpen(false)}>Annulla</Button>
-            <Button onClick={s.save} disabled={s.saving}>
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => s.setEditOpen(false)}>Annulla</Button>
+            <Button className="w-full sm:w-auto" onClick={s.save} disabled={s.saving}>
               {s.saving ? "Salvo…" : "Salva"}
             </Button>
           </DialogFooter>
@@ -227,7 +227,7 @@ const AdminSponsors = () => {
 
       {/* Delete confirm */}
       <AlertDialog open={!!s.deleteId} onOpenChange={(o) => !o && s.setDeleteId(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[calc(100vw-1rem)] max-w-lg">
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminare lo sponsor?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -235,8 +235,8 @@ const AdminSponsors = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annulla</AlertDialogCancel>
-            <AlertDialogAction onClick={s.remove}>Elimina</AlertDialogAction>
+            <AlertDialogCancel className="w-full sm:w-auto">Annulla</AlertDialogCancel>
+            <AlertDialogAction className="w-full sm:w-auto" onClick={s.remove}>Elimina</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

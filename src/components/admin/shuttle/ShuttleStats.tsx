@@ -15,54 +15,54 @@ interface ShuttleStatsProps {
 
 export const ShuttleStats = ({ stats }: ShuttleStatsProps) => (
   <>
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-4">
       <Card>
-        <CardContent className="pt-6 text-center">
-          <p className="text-3xl font-bold text-primary">{stats.totale}</p>
-          <p className="text-sm text-muted-foreground">Totale iscritti</p>
+        <CardContent className="px-3 py-4 text-center sm:pt-6">
+          <p className="text-2xl font-bold text-primary sm:text-3xl">{stats.totale}</p>
+          <p className="text-xs text-muted-foreground sm:text-sm">Totale iscritti</p>
         </CardContent>
       </Card>
       <Card>
-        <CardContent className="pt-6 text-center">
-          <p className="text-3xl font-bold text-green-400">{stats.pagati}</p>
-          <p className="text-sm text-muted-foreground">Pagati</p>
+        <CardContent className="px-3 py-4 text-center sm:pt-6">
+          <p className="text-2xl font-bold text-green-400 sm:text-3xl">{stats.pagati}</p>
+          <p className="text-xs text-muted-foreground sm:text-sm">Pagati</p>
         </CardContent>
       </Card>
       <Card>
-        <CardContent className="pt-6 text-center">
-          <p className="text-3xl font-bold text-red-400">{stats.nonPagati}</p>
-          <p className="text-sm text-muted-foreground">Non pagati</p>
+        <CardContent className="px-3 py-4 text-center sm:pt-6">
+          <p className="text-2xl font-bold text-red-400 sm:text-3xl">{stats.nonPagati}</p>
+          <p className="text-xs text-muted-foreground sm:text-sm">Non pagati</p>
         </CardContent>
       </Card>
       <Card>
-        <CardContent className="pt-6 text-center">
-          <p className="text-3xl font-bold text-primary">€{stats.incasso}</p>
-          <p className="text-sm text-muted-foreground">Incasso totale</p>
+        <CardContent className="px-3 py-4 text-center sm:pt-6">
+          <p className="text-2xl font-bold text-primary sm:text-3xl">€{stats.incasso}</p>
+          <p className="text-xs text-muted-foreground sm:text-sm">Incasso totale</p>
         </CardContent>
       </Card>
     </div>
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-4">
       <Card>
-        <CardContent className="pt-6 text-center">
-          <p className="text-2xl font-bold">{stats.soloAndata}</p>
+        <CardContent className="px-3 py-4 text-center sm:pt-6">
+          <p className="text-xl font-bold sm:text-2xl">{stats.soloAndata}</p>
           <p className="text-xs text-muted-foreground">Solo Andata</p>
         </CardContent>
       </Card>
       <Card>
-        <CardContent className="pt-6 text-center">
-          <p className="text-2xl font-bold">{stats.soloRitorno}</p>
+        <CardContent className="px-3 py-4 text-center sm:pt-6">
+          <p className="text-xl font-bold sm:text-2xl">{stats.soloRitorno}</p>
           <p className="text-xs text-muted-foreground">Solo Ritorno</p>
         </CardContent>
       </Card>
       <Card>
-        <CardContent className="pt-6 text-center">
-          <p className="text-2xl font-bold">{stats.andataRitorno}</p>
+        <CardContent className="px-3 py-4 text-center sm:pt-6">
+          <p className="text-xl font-bold sm:text-2xl">{stats.andataRitorno}</p>
           <p className="text-xs text-muted-foreground">Andata + Ritorno</p>
         </CardContent>
       </Card>
       <Card>
-        <CardContent className="pt-6 text-center">
-          <p className="text-2xl font-bold">{stats.iscrittiOggi}</p>
+        <CardContent className="px-3 py-4 text-center sm:pt-6">
+          <p className="text-xl font-bold sm:text-2xl">{stats.iscrittiOggi}</p>
           <p className="text-xs text-muted-foreground">Iscritti oggi</p>
         </CardContent>
       </Card>
