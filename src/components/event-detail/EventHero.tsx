@@ -1,6 +1,8 @@
 import { ArrowLeft, Phone, Share2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { EventRow } from "@/interfaces/events";
+import { useTranslation } from "react-i18next";
+import { pickLocalized } from "@/lib/localized";
 
 interface EventHeroProps {
   event: EventRow;
@@ -10,6 +12,8 @@ interface EventHeroProps {
 
 export const EventHero = ({ event, contactPhone, share }: EventHeroProps) => {
   const navigate = useNavigate();
+  const { i18n, t } = useTranslation();
+  const title = pickLocalized(event, "title", i18n.language) ?? event.title;
 
   return (
     <section className="relative">
@@ -18,7 +22,7 @@ export const EventHero = ({ event, contactPhone, share }: EventHeroProps) => {
         {event.cover_image_url ? (
           <img
             src={event.cover_image_url}
-            alt={event.title}
+            alt={title}
             className="absolute inset-0 w-full h-full object-cover"
           />
         ) : (
@@ -42,7 +46,7 @@ export const EventHero = ({ event, contactPhone, share }: EventHeroProps) => {
       >
         <button
           onClick={() => navigate(-1)}
-          aria-label="Torna indietro"
+          aria-label={t("common.back")}
           className="h-11 w-11 rounded-full flex items-center justify-center transition-colors"
           style={{
             backgroundColor: "rgba(0,0,0,0.65)",
@@ -58,7 +62,7 @@ export const EventHero = ({ event, contactPhone, share }: EventHeroProps) => {
           {contactPhone && (
             <a
               href={`tel:${contactPhone}`}
-              aria-label="Chiama"
+              aria-label={t("eventDetail.call")}
               className="h-11 w-11 rounded-full flex items-center justify-center transition-colors"
               style={{
                 backgroundColor: "rgba(0,0,0,0.65)",
@@ -70,7 +74,7 @@ export const EventHero = ({ event, contactPhone, share }: EventHeroProps) => {
           )}
           <button
             onClick={share}
-            aria-label="Condividi"
+            aria-label={t("eventDetail.share")}
             className="h-11 w-11 rounded-full flex items-center justify-center transition-colors"
             style={{
               backgroundColor: "rgba(0,0,0,0.65)",

@@ -22,10 +22,12 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 const ResetPassword = () => {
   const navigate = useNavigate();
   const { updatePassword } = useAuth();
+  const { t } = useTranslation();
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -35,15 +37,15 @@ const ResetPassword = () => {
     e.preventDefault();
     if (password.length < 6) {
       toast({
-        title: "Password troppo corta",
-        description: "Minimo 6 caratteri.",
+        title: t("auth.passwordTooShort"),
+        description: t("auth.passwordMin", { count: 6 }),
         variant: "destructive",
       });
       return;
     }
     if (password !== confirm) {
       toast({
-        title: "Le password non coincidono",
+        title: t("reset.passwordMismatch"),
         variant: "destructive",
       });
       return;
@@ -52,12 +54,12 @@ const ResetPassword = () => {
     const { error } = await updatePassword(password);
     setSubmitting(false);
     if (error) {
-      toast({ title: "Errore", description: error, variant: "destructive" });
+      toast({ title: t("common.error"), description: error, variant: "destructive" });
       return;
     }
     toast({
-      title: "Password aggiornata",
-      description: "Ora puoi accedere con la nuova password.",
+      title: t("reset.updated"),
+      description: t("reset.updatedDescription"),
     });
     navigate("/auth", { replace: true });
   };
@@ -66,15 +68,15 @@ const ResetPassword = () => {
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
-          <CardTitle>Imposta una nuova password</CardTitle>
+          <CardTitle>{t("reset.title")}</CardTitle>
           <CardDescription>
-            Inserisci la nuova password per il tuo account.
+            {t("reset.subtitle")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password">Nuova password</Label>
+              <Label htmlFor="password">{t("reset.newPassword")}</Label>
               <Input
                 id="password"
                 type="password"
@@ -86,7 +88,7 @@ const ResetPassword = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirm">Conferma password</Label>
+              <Label htmlFor="confirm">{t("reset.confirmPassword")}</Label>
               <Input
                 id="confirm"
                 type="password"
@@ -98,11 +100,11 @@ const ResetPassword = () => {
               />
             </div>
             <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? "Aggiornamento..." : "Aggiorna password"}
+              {submitting ? t("reset.updating") : t("reset.update")}
             </Button>
             <div className="text-center pt-2">
               <Link to="/auth" className="text-sm text-primary hover:underline">
-                Torna al login
+                {t("reset.backToLogin")}
               </Link>
             </div>
           </form>

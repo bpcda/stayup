@@ -9,16 +9,18 @@ import { useEventCapacityStatus } from "@/hooks/useWaitlist";
 import { EventHero } from "@/components/event-detail/EventHero";
 import { EventContent } from "@/components/event-detail/EventContent";
 import WaitlistCTA from "@/components/event-detail/WaitlistCTA";
+import { useTranslation } from "react-i18next";
 
-const formatDateLong = (iso: string) => {
+const formatDateLong = (iso: string, language: string) => {
   const d = new Date(iso);
-  return d.toLocaleDateString("it-IT", { weekday: "short", day: "2-digit", month: "short" }).toUpperCase();
+  return d.toLocaleDateString(language, { weekday: "short", day: "2-digit", month: "short" }).toUpperCase();
 };
 
-const formatTime = (iso: string) => new Date(iso).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+const formatTime = (iso: string, language: string) => new Date(iso).toLocaleTimeString(language, { hour: "2-digit", minute: "2-digit" });
 
 const EventoDettaglio = () => {
   const { toast } = useToast();
+  const { i18n, t } = useTranslation();
   const { settings } = useSiteSettings();
   const [shuttleSubmitted, setShuttleSubmitted] = useState(false);
   const contactPhone = settings.contact_phone?.replace(/\s+/g, "") || "";
@@ -32,9 +34,9 @@ const EventoDettaglio = () => {
     }
     try {
       await navigator.clipboard.writeText(url);
-      toast({ title: "Link copiato" });
+      toast({ title: t("eventDetail.linkCopied") });
     } catch {
-      toast({ title: "Impossibile condividere", variant: "destructive" });
+      toast({ title: t("eventDetail.shareFailed"), variant: "destructive" });
     }
   };
 
@@ -55,8 +57,8 @@ const EventoDettaglio = () => {
   if (!event) {
     return (
       <div className="container mx-auto px-4 py-20 text-center">
-        <p className="text-muted-foreground mb-4">Evento non trovato.</p>
-        <Button asChild variant="outline"><Link to="/eventi">Torna agli eventi</Link></Button>
+        <p className="text-muted-foreground mb-4">{t("eventDetail.notFound")}</p>
+        <Button asChild variant="outline"><Link to="/eventi">{t("eventDetail.backToEvents")}</Link></Button>
       </div>
     );
   }
@@ -72,8 +74,8 @@ const EventoDettaglio = () => {
         event={event} 
         registered={registered} 
         isPast={isPast} 
-        formatDateLong={formatDateLong} 
-        formatTime={formatTime} 
+        formatDateLong={(iso) => formatDateLong(iso, i18n.language)} 
+        formatTime={(iso) => formatTime(iso, i18n.language)} 
         onShuttleSuccess={() => setShuttleSubmitted(true)}
         shuttleSubmitted={shuttleSubmitted}
       />
@@ -85,7 +87,7 @@ const EventoDettaglio = () => {
               <WaitlistCTA eventId={event.id} status={capacity} onJoined={reloadCapacity} />
             ) : (
               <Button onClick={registered ? unregister : register} disabled={busy} variant={registered ? "outline" : "default"} size="lg" className={`w-full h-14 text-base font-bold uppercase rounded-full ${!registered ? "bg-primary hover:bg-primary/90 text-primary-foreground" : ""}`}>
-                {busy ? "..." : registered ? "Annulla iscrizione" : "Accreditati ora"}
+                {busy ? "..." : registered ? t("eventDetail.cancelRegistration") : t("eventDetail.registerNow")}
               </Button>
             )}
           </div>

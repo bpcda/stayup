@@ -2,6 +2,8 @@ import { MapPin, ChevronDown, ChevronUp, ExternalLink, Calendar, Clock } from "l
 import ShuttleForm from "@/components/ShuttleForm";
 import { EventRow } from "@/interfaces/events";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { pickLocalized } from "@/lib/localized";
 
 interface EventContentProps {
   event: EventRow;
@@ -22,13 +24,16 @@ export const EventContent = ({
   onShuttleSuccess,
   shuttleSubmitted,
 }: EventContentProps) => {
+  const { i18n, t } = useTranslation();
   const [showMore, setShowMore] = useState(false);
-  const description = event.description ?? "";
+  const title = pickLocalized(event, "title", i18n.language) ?? event.title;
+  const description = pickLocalized(event, "description", i18n.language) ?? "";
+  const location = pickLocalized(event, "location", i18n.language);
   const isLong = description.length > 220;
   const shownDescription =
     !isLong || showMore ? description : description.slice(0, 220).trimEnd() + "…";
 
-  const mapsQuery = encodeURIComponent(event.location ?? event.title);
+  const mapsQuery = encodeURIComponent(location ?? title);
   const mapsLink  = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
   const mapsEmbed = `https://www.google.com/maps?q=${mapsQuery}&output=embed`;
 
@@ -43,14 +48,14 @@ export const EventContent = ({
 
       {/* Title */}
       <h1 className="text-3xl md:text-5xl font-bold uppercase leading-tight text-white">
-        {event.title}
+        {title}
       </h1>
 
       {/* Location */}
-      {event.location && (
+      {location && (
         <p className="mt-4 flex items-start gap-2 font-semibold uppercase text-sm text-white/80">
           <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-          <span>{event.location}</span>
+          <span>{location}</span>
         </p>
       )}
 
@@ -65,7 +70,7 @@ export const EventContent = ({
               borderColor: "rgba(74,222,128,0.25)",
             }}
           >
-            Iscritto
+            {t("eventDetail.registered")}
           </span>
         )}
         {isPast && (
@@ -77,7 +82,7 @@ export const EventContent = ({
               borderColor: "rgba(138,138,138,0.2)",
             }}
           >
-            Concluso
+            {t("events.past")}
           </span>
         )}
       </div>
@@ -89,7 +94,7 @@ export const EventContent = ({
       {description && (
         <div className="space-y-3">
           <h2 className="text-base font-semibold text-white uppercase tracking-wider">
-            Informazioni
+            {t("eventDetail.info")}
           </h2>
           <p className="text-[#D0D0D0] whitespace-pre-line leading-relaxed text-sm">
             {shownDescription}
@@ -99,7 +104,7 @@ export const EventContent = ({
               onClick={() => setShowMore((v) => !v)}
               className="inline-flex items-center gap-1.5 text-primary text-sm font-medium hover:opacity-80 transition-opacity"
             >
-              {showMore ? "Mostra meno" : "Continua a leggere"}
+              {showMore ? t("eventDetail.showLess") : t("eventDetail.readMore")}
               {showMore ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </button>
           )}
@@ -109,12 +114,12 @@ export const EventContent = ({
       {/* Orari */}
       {(event.starts_at || event.ends_at) && (
         <div className="mt-8 space-y-3">
-          <h2 className="text-base font-semibold text-white uppercase tracking-wider">Orari</h2>
+          <h2 className="text-base font-semibold text-white uppercase tracking-wider">{t("eventDetail.times")}</h2>
           <div className="space-y-2 text-sm text-[#D0D0D0]">
             {event.starts_at && (
               <p className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-primary shrink-0" />
-                Inizio:{" "}
+                {t("eventDetail.start")}:{" "}
                 <span className="text-white font-medium">
                   {formatDateLong(event.starts_at)} · {formatTime(event.starts_at)}
                 </span>
@@ -123,7 +128,7 @@ export const EventContent = ({
             {event.ends_at && (
               <p className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-primary shrink-0" />
-                Chiusura:{" "}
+                {t("eventDetail.end")}:{" "}
                 <span className="text-white font-medium">
                   {formatDateLong(event.ends_at)} · {formatTime(event.ends_at)}
                 </span>
@@ -134,7 +139,7 @@ export const EventContent = ({
       )}
 
       {/* Location map */}
-      {event.location && (
+      {location && (
         <div className="mt-8 space-y-3">
           <h2 className="text-base font-semibold text-white uppercase tracking-wider">Location</h2>
           <div
@@ -142,7 +147,7 @@ export const EventContent = ({
             style={{ borderColor: "rgba(255,255,255,0.08)" }}
           >
             <iframe
-              title={`Mappa ${event.title}`}
+              title={t("eventDetail.mapTitle", { title })}
               src={mapsEmbed}
               className="w-full h-full"
               loading="lazy"
@@ -155,7 +160,7 @@ export const EventContent = ({
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-primary text-sm font-medium hover:opacity-80 transition-opacity"
           >
-            Apri su Google Maps <ExternalLink className="h-4 w-4" />
+            {t("eventDetail.openMaps")} <ExternalLink className="h-4 w-4" />
           </a>
         </div>
       )}
@@ -170,14 +175,14 @@ export const EventContent = ({
           }}
         >
           <h2 className="text-base font-semibold text-white uppercase tracking-wider mb-6 text-center">
-            Servizio Navetta
+            {t("eventDetail.shuttle")}
           </h2>
           {shuttleSubmitted ? (
             <div className="text-center py-6 space-y-3">
               <div className="text-4xl">✅</div>
-              <h3 className="text-lg font-semibold text-white">Prenotazione Inviata</h3>
+              <h3 className="text-lg font-semibold text-white">{t("eventDetail.shuttleSent")}</h3>
               <p className="text-[#8A8A8A] text-sm">
-                Controlla la tua email per i dettagli del pagamento.
+                {t("eventDetail.shuttleSentBody")}
               </p>
             </div>
           ) : (

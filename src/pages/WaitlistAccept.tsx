@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { acceptWaitlistOffer } from "@/services/supabase/functions.service";
+import { useTranslation } from "react-i18next";
 
 /**
  * /waitlist/accept?token=<uuid>
@@ -16,6 +17,7 @@ const WaitlistAccept = () => {
   const [params] = useSearchParams();
   const token = params.get("token") ?? "";
   const { user, loading: authLoading } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [state, setState] = useState<
@@ -27,7 +29,7 @@ const WaitlistAccept = () => {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!token) { setState({ kind: "err", code: "no_token", message: "Link non valido." }); return; }
+    if (!token) { setState({ kind: "err", code: "no_token", message: t("waitlistAccept.invalidLink") }); return; }
     if (!user) {
       navigate(`/auth?next=${encodeURIComponent(`/waitlist/accept?token=${token}`)}`, { replace: true });
       return;
@@ -39,7 +41,7 @@ const WaitlistAccept = () => {
       if (error) {
         const ctx = (error as { context?: Response }).context;
         let code = "rpc_failed";
-        let message = error.message ?? "Errore";
+        let message = error.message ?? t("common.error");
         if (ctx && typeof ctx.json === "function") {
           try {
             const j = await ctx.clone().json();
@@ -52,7 +54,7 @@ const WaitlistAccept = () => {
       }
       setState({ kind: "ok", eventSlug: (data as { event_slug: string }).event_slug });
     })();
-  }, [authLoading, user, token, navigate, state.kind]);
+  }, [authLoading, user, token, navigate, state.kind, t]);
 
   return (
     <div className="container max-w-md mx-auto px-4 py-16">
@@ -61,26 +63,26 @@ const WaitlistAccept = () => {
           {state.kind === "loading" || state.kind === "idle" ? (
             <>
               <Loader2 className="h-12 w-12 mx-auto animate-spin text-muted-foreground" />
-              <p className="text-muted-foreground">Verifica offerta in corso…</p>
+              <p className="text-muted-foreground">{t("waitlistAccept.checking")}</p>
             </>
           ) : state.kind === "ok" ? (
             <>
               <CheckCircle2 className="h-16 w-16 mx-auto text-emerald-500" />
-              <h1 className="text-2xl font-bold">Posto confermato!</h1>
+              <h1 className="text-2xl font-bold">{t("waitlistAccept.confirmed")}</h1>
               <p className="text-muted-foreground">
-                Ti abbiamo inviato l'email con la conferma e il QR code.
+                {t("waitlistAccept.confirmedDescription")}
               </p>
               <Button asChild className="w-full mt-4">
-                <Link to={`/eventi/${state.eventSlug}`}>Vai all'evento</Link>
+                <Link to={`/eventi/${state.eventSlug}`}>{t("waitlistAccept.goToEvent")}</Link>
               </Button>
             </>
           ) : (
             <>
               <XCircle className="h-16 w-16 mx-auto text-destructive" />
-              <h1 className="text-2xl font-bold">Offerta non valida</h1>
+              <h1 className="text-2xl font-bold">{t("waitlistAccept.invalidOffer")}</h1>
               <p className="text-muted-foreground">{state.message}</p>
               <Button asChild variant="outline" className="w-full mt-4">
-                <Link to="/eventi">Vedi gli eventi</Link>
+                <Link to="/eventi">{t("waitlistAccept.viewEvents")}</Link>
               </Button>
             </>
           )}

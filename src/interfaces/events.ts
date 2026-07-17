@@ -9,9 +9,13 @@ export interface EventRow {
   id: string;
   slug?: string | null;
   title: string;
+  title_en?: string | null;
   short_description?: string | null;
+  short_description_en?: string | null;
   description: string | null;
+  description_en?: string | null;
   location: string | null;
+  location_en?: string | null;
   venue?: string | null;
   category_id?: string | null;
   capacity?: number | null;
@@ -31,7 +35,9 @@ export interface EventRow {
   published_at?: string | null;
   // SEO
   seo_title?: string | null;
+  seo_title_en?: string | null;
   seo_description?: string | null;
+  seo_description_en?: string | null;
   og_image_url?: string | null;
   // UI-only: contatore iscritti confermati (non in DB)
   _booked_count?: number;
@@ -49,6 +55,7 @@ export interface EventCategoryRow {
   id: string;
   slug: string;
   name: string;
+  name_en?: string | null;
 }
 
 export interface SponsorRow {

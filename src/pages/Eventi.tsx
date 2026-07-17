@@ -4,16 +4,21 @@ import { MapPin, Search, AlertCircle, RefreshCw } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { pickLocalized } from "@/lib/localized";
+import { useTranslation } from "react-i18next";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-type EventCategoryRef = { slug: string; name: string } | null;
+type EventCategoryRef = { slug: string; name: string; name_en?: string | null } | null;
 
 type EventRow = {
   id: string;
   slug: string;
   title: string;
+  title_en?: string | null;
   description: string | null;
+  description_en?: string | null;
   location: string | null;
+  location_en?: string | null;
   starts_at: string;
   ends_at: string | null;
   cover_image_url: string | null;
@@ -25,12 +30,13 @@ type CategoryRow = {
   id: string;
   slug: string;
   name: string;
+  name_en?: string | null;
 };
 
-const periodFilters: { key: "upcoming" | "past" | "all"; label: string }[] = [
-  { key: "upcoming", label: "Prossimi" },
-  { key: "past",     label: "Passati"  },
-  { key: "all",      label: "Tutti"    },
+const periodFilters: { key: "upcoming" | "past" | "all"; labelKey: string }[] = [
+  { key: "upcoming", labelKey: "events.filters.upcoming" },
+  { key: "past",     labelKey: "events.filters.past"  },
+  { key: "all",      labelKey: "events.filters.all"    },
 ];
 
 // ── FilterPill ────────────────────────────────────────────────────────────────
@@ -58,15 +64,19 @@ const FilterPill = ({
 
 // ── EventCard ─────────────────────────────────────────────────────────────────
 const EventCard = ({ e }: { e: EventRow }) => {
+  const { i18n, t } = useTranslation();
   const start = new Date(e.starts_at);
   const isPast = start.getTime() < Date.now();
+  const title = pickLocalized(e, "title", i18n.language) ?? e.title;
+  const location = pickLocalized(e, "location", i18n.language);
+  const category = pickLocalized(e.event_categories, "name", i18n.language);
 
-  const dateStr = start.toLocaleDateString("it-IT", {
+  const dateStr = start.toLocaleDateString(i18n.language, {
     weekday: "short",
     day: "2-digit",
     month: "short",
   });
-  const timeStr = start.toLocaleTimeString("it-IT", {
+  const timeStr = start.toLocaleTimeString(i18n.language, {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -85,7 +95,7 @@ const EventCard = ({ e }: { e: EventRow }) => {
         {e.cover_image_url ? (
           <img
             src={e.cover_image_url}
-            alt={e.title}
+            alt={title}
             loading="lazy"
             className="event-card-img absolute inset-0 w-full h-full object-cover"
           />
@@ -97,7 +107,7 @@ const EventCard = ({ e }: { e: EventRow }) => {
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
         {/* Category badge */}
-        {e.event_categories && (
+        {category && (
           <div className="absolute top-3 left-3">
             <span
               className="text-[10px] font-semibold uppercase tracking-widest px-2.5 py-1 rounded-full border"
@@ -107,7 +117,7 @@ const EventCard = ({ e }: { e: EventRow }) => {
                 color: "#D0D0D0",
               }}
             >
-              {e.event_categories.name}
+              {category}
             </span>
           </div>
         )}
@@ -123,7 +133,7 @@ const EventCard = ({ e }: { e: EventRow }) => {
                 color: "#8A8A8A",
               }}
             >
-              Concluso
+              {t("events.past")}
             </span>
           </div>
         )}
@@ -134,12 +144,12 @@ const EventCard = ({ e }: { e: EventRow }) => {
             {dateStr} · {timeStr}
           </p>
           <h3 className="font-bold text-xl leading-tight text-white uppercase line-clamp-2">
-            {e.title}
+            {title}
           </h3>
-          {e.location && (
+          {location && (
             <div className="flex items-center gap-1.5 text-[#D0D0D0] text-xs">
               <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
-              <span className="line-clamp-1">{e.location}</span>
+              <span className="line-clamp-1">{location}</span>
             </div>
           )}
         </div>
@@ -150,6 +160,7 @@ const EventCard = ({ e }: { e: EventRow }) => {
 
 // ── Events Page ───────────────────────────────────────────────────────────────
 const Eventi = () => {
+  const { i18n, t } = useTranslation();
   const [period, setPeriod]           = useState<"upcoming" | "past" | "all">("upcoming");
   const [categorySlug, setCategorySlug] = useState<string>("all");
   const [q, setQ]                     = useState("");
@@ -175,7 +186,7 @@ const Eventi = () => {
         supabase
           .from("events")
           .select(
-            "id, slug, title, description, location, starts_at, ends_at, cover_image_url, category_id, event_categories ( slug, name )",
+            "*, event_categories ( * )",
           )
           .eq("status", "published")
           .order("starts_at", { ascending: true }),
@@ -218,26 +229,26 @@ const Eventi = () => {
       }
       if (needle) {
         const haystack = [
-          e.title,
-          e.description ?? "",
-          e.location ?? "",
-          e.event_categories?.name ?? "",
+          pickLocalized(e, "title", i18n.language) ?? "",
+          pickLocalized(e, "description", i18n.language) ?? "",
+          pickLocalized(e, "location", i18n.language) ?? "",
+          pickLocalized(e.event_categories, "name", i18n.language) ?? "",
         ].join(" ").toLowerCase();
         if (!haystack.includes(needle)) return false;
       }
       return true;
     });
-  }, [events, period, categorySlug, q]);
+  }, [events, period, categorySlug, q, i18n.language]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10 md:py-16">
       {/* Page header */}
       <header className="mb-10 text-center space-y-3">
         <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
-          Eventi
+          {t("events.title")}
         </h1>
         <p className="text-[#8A8A8A] text-base">
-          Scopri gli eventi e iscriviti.
+          {t("events.subtitle")}
         </p>
       </header>
 
@@ -246,7 +257,7 @@ const Eventi = () => {
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8A8A8A]" />
           <input
-            placeholder="Cerca evento..."
+            placeholder={t("events.searchPlaceholder")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             className="w-full h-10 pl-10 pr-4 rounded-xl text-sm text-white placeholder-[#8A8A8A] border outline-none focus:border-white/20 transition-colors"
@@ -263,7 +274,7 @@ const Eventi = () => {
               active={period === f.key}
               onClick={() => setPeriod(f.key)}
             >
-              {f.label}
+              {t(f.labelKey)}
             </FilterPill>
           ))}
         </div>
@@ -273,7 +284,7 @@ const Eventi = () => {
       {categories.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-8">
           <FilterPill active={categorySlug === "all"} onClick={() => setCategorySlug("all")}>
-            Tutte
+            {t("events.filters.allCategories")}
           </FilterPill>
           {categories.map((c) => (
             <FilterPill
@@ -281,7 +292,7 @@ const Eventi = () => {
               active={categorySlug === c.slug}
               onClick={() => setCategorySlug(c.slug)}
             >
-              {c.name}
+              {pickLocalized(c, "name", i18n.language) ?? c.name}
             </FilterPill>
           ))}
         </div>
@@ -309,7 +320,7 @@ const Eventi = () => {
         <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
           <AlertCircle className="h-8 w-8 text-red-400" />
           <p className="text-[#8A8A8A]">
-            Impossibile caricare gli eventi.
+            {t("events.loadError")}
             <br />
             <span className="text-xs">{error}</span>
           </p>
@@ -318,11 +329,11 @@ const Eventi = () => {
             className="flex items-center gap-2 px-4 py-2 rounded-xl border text-sm text-[#D0D0D0] hover:text-white transition-colors"
             style={{ borderColor: "rgba(255,255,255,0.1)" }}
           >
-            <RefreshCw className="h-4 w-4" /> Riprova
+            <RefreshCw className="h-4 w-4" /> {t("common.retry")}
           </button>
         </div>
       ) : list.length === 0 ? (
-        <p className="text-center text-[#8A8A8A] py-16">Nessun evento trovato.</p>
+        <p className="text-center text-[#8A8A8A] py-16">{t("events.empty")}</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {list.map((e) => (

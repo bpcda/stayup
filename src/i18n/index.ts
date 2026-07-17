@@ -22,4 +22,10 @@ i18n
     },
   });
 
+i18n.on("languageChanged", (language) => {
+  if (typeof document !== "undefined") {
+    document.documentElement.lang = language.slice(0, 2);
+  }
+});
+
 export default i18n;

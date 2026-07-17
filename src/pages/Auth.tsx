@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { PRIVACY_POLICY_VERSION } from "@/lib/consent";
 import stayupLogo from "@/assets/stayup-logo.png";
+import { useTranslation } from "react-i18next";
 
 const GoogleIcon = () => (
   <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
@@ -21,6 +22,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
+  const { t } = useTranslation();
   const { signIn, signUp, signInWithGoogle, session, loading } = useAuth();
 
   // Rotta di provenienza (impostata da UserGuard/AdminGuard) o ?next=...
@@ -53,9 +55,9 @@ const Auth = () => {
   useEffect(() => {
     const err = searchParams.get("error");
     if (err) {
-      toast({ title: "Accesso non riuscito", description: err, variant: "destructive" });
+      toast({ title: t("auth.oauthFailed"), description: err, variant: "destructive" });
     }
-  }, [searchParams]);
+  }, [searchParams, t]);
 
   useEffect(() => {
     if (!loading && session) {
@@ -70,24 +72,24 @@ const Auth = () => {
     setSubmitting(false);
     if (error) {
       const msg = error.toLowerCase().includes("email not confirmed")
-        ? "Devi confermare l'email prima di accedere. Controlla la tua casella."
+        ? t("auth.errors.notConfirmed")
         : error.toLowerCase().includes("invalid")
-          ? "Email o password non valide."
+          ? t("auth.errors.invalid")
           : error;
-      toast({ title: "Errore di accesso", description: msg, variant: "destructive" });
+      toast({ title: t("auth.errors.title"), description: msg, variant: "destructive" });
       return;
     }
-    toast({ title: "Accesso effettuato", description: "Benvenuto." });
+    toast({ title: t("auth.success.title"), description: t("auth.success.message") });
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (sPassword.length < 6) {
-      toast({ title: "Password troppo corta", description: "Minimo 6 caratteri.", variant: "destructive" });
+      toast({ title: t("auth.passwordTooShort"), description: t("auth.passwordMin", { count: 6 }), variant: "destructive" });
       return;
     }
     if (!sPrivacy) {
-      toast({ title: "Privacy obbligatoria", description: "Accetta la Privacy Policy per registrarti.", variant: "destructive" });
+      toast({ title: t("auth.privacyRequired"), description: t("auth.privacyRequiredDescription"), variant: "destructive" });
       return;
     }
     setSubmitting(true);
@@ -103,14 +105,14 @@ const Auth = () => {
     setSubmitting(false);
     if (error) {
       const msg = error.toLowerCase().includes("registered")
-        ? "Questa email è già registrata. Accedi invece."
+        ? t("auth.alreadyRegistered")
         : error;
-      toast({ title: "Errore di registrazione", description: msg, variant: "destructive" });
+      toast({ title: t("auth.signupError"), description: msg, variant: "destructive" });
       return;
     }
     toast({
-      title: "Registrazione completata",
-      description: "Controlla la tua email per confermare l'account.",
+      title: t("auth.signupSuccess"),
+      description: t("auth.signupSuccessDescription"),
     });
   };
 
@@ -122,7 +124,7 @@ const Auth = () => {
     );
     if (error) {
       setSubmitting(false);
-      toast({ title: "Errore Google", description: error, variant: "destructive" });
+      toast({ title: t("auth.googleError"), description: error, variant: "destructive" });
     }
     // Se non c'è errore il browser viene reindirizzato a Google; lasciamo
     // submitting=true per disabilitare il bottone durante il redirect.
@@ -133,8 +135,8 @@ const Auth = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-3">
           <img src={stayupLogo} alt="StayUp" width={89} height={56} className="mx-auto h-14 w-auto" />
-          <CardTitle>Benvenuto in StayUp</CardTitle>
-          <CardDescription>Accedi o crea un account per iscriverti agli eventi</CardDescription>
+          <CardTitle>{t("auth.welcome")}</CardTitle>
+          <CardDescription>{t("auth.subtitle")}</CardDescription>
         </CardHeader>
         <CardContent>
           <Button
@@ -145,7 +147,7 @@ const Auth = () => {
             disabled={submitting}
           >
             <GoogleIcon />
-            Continua con Google
+            {t("auth.continueGoogle")}
           </Button>
 
           <div className="relative my-4">
@@ -153,20 +155,20 @@ const Auth = () => {
               <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">oppure</span>
+              <span className="bg-card px-2 text-muted-foreground">{t("auth.or")}</span>
             </div>
           </div>
 
           <Tabs value={tab} onValueChange={(v) => setTab(v as "login" | "signup")}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Accedi</TabsTrigger>
-              <TabsTrigger value="signup">Registrati</TabsTrigger>
+              <TabsTrigger value="login">{t("auth.signIn")}</TabsTrigger>
+              <TabsTrigger value="signup">{t("auth.signUp")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4 pt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t("auth.email")}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -177,7 +179,7 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">{t("auth.password")}</Label>
                   <Input
                     id="password"
                     type="password"
@@ -188,7 +190,7 @@ const Auth = () => {
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={submitting}>
-                  {submitting ? "Accesso in corso..." : "Accedi"}
+                  {submitting ? t("auth.signingIn") : t("auth.signIn")}
                 </Button>
               </form>
             </TabsContent>
@@ -197,7 +199,7 @@ const Auth = () => {
               <form onSubmit={handleSignUp} className="space-y-3 pt-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label htmlFor="sFirstName">Nome</Label>
+                    <Label htmlFor="sFirstName">{t("auth.firstName")}</Label>
                     <Input
                       id="sFirstName"
                       value={sFirstName}
@@ -207,7 +209,7 @@ const Auth = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="sLastName">Cognome</Label>
+                    <Label htmlFor="sLastName">{t("auth.lastName")}</Label>
                     <Input
                       id="sLastName"
                       value={sLastName}
@@ -218,7 +220,7 @@ const Auth = () => {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sEmail">Email</Label>
+                  <Label htmlFor="sEmail">{t("auth.email")}</Label>
                   <Input
                     id="sEmail"
                     type="email"
@@ -229,7 +231,7 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sPassword">Password</Label>
+                  <Label htmlFor="sPassword">{t("auth.password")}</Label>
                   <Input
                     id="sPassword"
                     type="password"
@@ -242,7 +244,7 @@ const Auth = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label htmlFor="sPhone">Telefono</Label>
+                  <Label htmlFor="sPhone">{t("auth.phone")}</Label>
                     <Input
                       id="sPhone"
                       type="tel"
@@ -252,7 +254,7 @@ const Auth = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="sCity">Città</Label>
+                  <Label htmlFor="sCity">{t("auth.city")}</Label>
                     <Input
                       id="sCity"
                       value={sCity}
@@ -271,10 +273,10 @@ const Auth = () => {
                     />
                     <span className="leading-snug">
                       <span className="text-destructive mr-0.5">*</span>
-                      Ho letto e accetto la{" "}
-                      <Link to="/privacy" className="underline" target="_blank">Privacy Policy</Link>
-                      {" "}e i{" "}
-                      <Link to="/termini" className="underline" target="_blank">Termini di servizio</Link>.
+                      {t("auth.acceptPrefix")}{" "}
+                      <Link to="/privacy" className="underline" target="_blank">{t("privacy.title")}</Link>
+                      {" "}{t("auth.acceptAnd")}{" "}
+                      <Link to="/termini" className="underline" target="_blank">{t("terms.title")}</Link>.
                     </span>
                   </label>
                   <label className="flex items-start gap-3 text-sm cursor-pointer">
@@ -283,17 +285,16 @@ const Auth = () => {
                       onCheckedChange={(v) => setSMarketing(v === true)}
                     />
                     <span className="leading-snug text-muted-foreground">
-                      Acconsento a ricevere comunicazioni di marketing e aggiornamenti sugli eventi.
-                      Potrai revocare il consenso in qualsiasi momento dal tuo profilo.
+                      {t("auth.marketingConsent")}
                     </span>
                   </label>
                 </div>
 
                 <Button type="submit" className="w-full" disabled={submitting || !sPrivacy}>
-                  {submitting ? "Registrazione..." : "Crea account"}
+                  {submitting ? t("auth.signingUp") : t("auth.createAccount")}
                 </Button>
                 <p className="text-[10px] text-muted-foreground text-center">
-                  Versione Privacy Policy: {PRIVACY_POLICY_VERSION}
+                  {t("auth.privacyVersion")}: {PRIVACY_POLICY_VERSION}
                 </p>
               </form>
             </TabsContent>
@@ -301,7 +302,7 @@ const Auth = () => {
 
           <div className="text-center pt-4">
             <Link to="/" className="text-sm text-primary hover:underline">
-              Torna alla Home
+              {t("auth.backHome")}
             </Link>
           </div>
         </CardContent>
