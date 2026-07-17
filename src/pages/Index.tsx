@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowRight } from "lucide-react";
 
 const Index = () => {
   const { t } = useTranslation();
@@ -27,12 +26,12 @@ const Index = () => {
           className="text-xs md:text-sm font-semibold tracking-[0.3em] uppercase"
           style={{ color: "#FF9F00" }}
         >
-          STAY UP.
+          {t("index.eyebrow")}
         </p>
 
         {/* Main Title */}
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.1]">
-          VIVI LA NOTTE.<br />SCOPRI L'EVENTO.
+          {t("index.titleLine1")}<br />{t("index.titleLine2")}
         </h1>
 
         {/* Primary CTA */}
@@ -47,7 +46,7 @@ const Index = () => {
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#FFB733")}
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#FF9F00")}
           >
-            SCOPRI GLI EVENTI
+            {t("index.eventsCta")}
           </Link>
         </div>
       </div>

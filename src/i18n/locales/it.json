@@ -8,6 +8,15 @@
     "confirm": "Conferma",
     "language": "Lingua"
   },
+  "nav": {
+    "events": "Eventi",
+    "about": "Chi siamo",
+    "contact": "Contatti",
+    "profile": "Profilo",
+    "profileMenu": "Menu profilo",
+    "dashboard": "Dashboard",
+    "searchEvents": "Cerca eventi"
+  },
   "auth": {
     "title": "Accesso Admin",
     "email": "Email",
@@ -31,6 +40,10 @@
     }
   },
   "index": {
+    "eyebrow": "STAY UP.",
+    "titleLine1": "VIVI LA NOTTE.",
+    "titleLine2": "SCOPRI L'EVENTO.",
+    "eventsCta": "SCOPRI GLI EVENTI",
     "wip": "Work in Progress",
     "cta": "Grill Contest Rivergaro 2026"
   },

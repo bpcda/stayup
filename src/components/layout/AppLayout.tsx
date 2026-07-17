@@ -3,28 +3,30 @@ import { NavLink, Link, useLocation } from "react-router-dom";
 import { Home, Calendar, User, LogIn, LogOut, Shield, Info, Mail, ChevronDown, Search, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import Footer from "@/components/Footer";
 import stayupLogo from "@/assets/stayup-logo.png";
 
 // ── Desktop nav items (public) ──────────────────────────────────────────────
 const desktopNavItems = [
-  { to: "/", label: "Home", end: true },
-  { to: "/eventi", label: "Eventi", end: false },
-  { to: "/chi-siamo", label: "Chi siamo", end: false },
-  { to: "/contatti", label: "Contatti", end: false },
+  { to: "/", labelKey: "common.home", end: true },
+  { to: "/eventi", labelKey: "nav.events", end: false },
+  { to: "/chi-siamo", labelKey: "nav.about", end: false },
+  { to: "/contatti", labelKey: "nav.contact", end: false },
 ];
 
 // ── Mobile bottom nav (max 4 real routes) ───────────────────────────────────
 const mobileNavItems = [
-  { to: "/", label: "Home", icon: Home, end: true },
-  { to: "/eventi", label: "Eventi", icon: Calendar, end: false },
-  { to: "/chi-siamo", label: "Chi siamo", icon: Info, end: false },
+  { to: "/", labelKey: "common.home", icon: Home, end: true },
+  { to: "/eventi", labelKey: "nav.events", icon: Calendar, end: false },
+  { to: "/chi-siamo", labelKey: "nav.about", icon: Info, end: false },
 ];
 
 // ── Profile dropdown ─────────────────────────────────────────────────────────
 const ProfileDropdown = () => {
   const { user, signOut, isAdmin, isOrganizer } = useAuth();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -45,7 +47,7 @@ const ProfileDropdown = () => {
         className="flex items-center gap-1.5 text-sm font-medium text-[#8A8A8A] hover:text-white transition-colors"
       >
         <LogIn className="h-4 w-4" />
-        <span>Accedi</span>
+        <span>{t("auth.signIn")}</span>
       </Link>
     );
   }
@@ -57,7 +59,7 @@ const ProfileDropdown = () => {
       <button
         onClick={() => setOpen((v) => !v)}
         className="flex items-center justify-center h-9 w-9 rounded-full bg-[#1A1A1A] hover:bg-[#2A2A2A] transition-colors border border-white/10"
-        aria-label="Menu profilo"
+        aria-label={t("nav.profileMenu")}
       >
         <User className="h-4 w-4 text-[#D0D0D0]" />
       </button>
@@ -74,7 +76,7 @@ const ProfileDropdown = () => {
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[#D0D0D0] hover:bg-white/5 hover:text-white transition-colors"
             >
               <User className="h-4 w-4" />
-              Profilo
+              {t("nav.profile")}
             </Link>
             {(isAdmin || isOrganizer) && (
               <Link
@@ -83,7 +85,7 @@ const ProfileDropdown = () => {
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[#D0D0D0] hover:bg-white/5 hover:text-white transition-colors"
               >
                 <Shield className="h-4 w-4 text-primary" />
-                Dashboard
+                {t("nav.dashboard")}
               </Link>
             )}
             <button
@@ -91,7 +93,7 @@ const ProfileDropdown = () => {
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[#8A8A8A] hover:bg-white/5 hover:text-white transition-colors"
             >
               <LogOut className="h-4 w-4" />
-              Esci
+              {t("auth.signOut")}
             </button>
           </div>
         </div>
@@ -103,6 +105,7 @@ const ProfileDropdown = () => {
 // ── Desktop Topbar ────────────────────────────────────────────────────────────
 const Topbar = () => {
   const { user, isAdmin, isOrganizer } = useAuth();
+  const { t } = useTranslation();
 
   return (
     <header
@@ -135,14 +138,14 @@ const Topbar = () => {
               )
             }
           >
-            {item.label}
+            {t(item.labelKey)}
           </NavLink>
         ))}
       </nav>
 
       {/* Right side */}
       <div className="flex items-center gap-5">
-        <Link to="/eventi" className="text-[#8A8A8A] hover:text-white transition-colors" aria-label="Cerca eventi">
+        <Link to="/eventi" className="text-[#8A8A8A] hover:text-white transition-colors" aria-label={t("nav.searchEvents")}>
           <Search className="h-4 w-4" />
         </Link>
         <LanguageSwitcher />
@@ -158,7 +161,7 @@ const Topbar = () => {
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
           >
             <Crown className="h-3.5 w-3.5" />
-            <span className="text-xs font-semibold tracking-wider uppercase">Dashboard</span>
+            <span className="text-xs font-semibold tracking-wider uppercase">{t("nav.dashboard")}</span>
           </Link>
         )}
         <ProfileDropdown />
@@ -170,12 +173,13 @@ const Topbar = () => {
 // ── Mobile bottom nav ─────────────────────────────────────────────────────────
 const BottomNav = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const items = [
     ...mobileNavItems,
     {
       to: user ? "/profilo" : "/auth",
-      label: user ? "Profilo" : "Accedi",
+      labelKey: user ? "nav.profile" : "auth.signIn",
       icon: user ? User : LogIn,
       end: false,
     },
@@ -208,7 +212,7 @@ const BottomNav = () => {
                 }
               >
                 <Icon className="h-5 w-5" />
-                <span>{it.label}</span>
+                <span>{t(it.labelKey)}</span>
               </NavLink>
             </li>
           );
