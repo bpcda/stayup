@@ -116,7 +116,7 @@ const Topbar = () => {
     >
       {/* Logo */}
       <Link to="/" className="flex items-center shrink-0">
-        <img src={stayupLogo} alt="StayUp" className="h-8 w-auto" />
+        <img src={stayupLogo} alt="StayUp" width={51} height={32} fetchPriority="high" className="h-8 w-auto" />
       </Link>
 
       {/* Nav links */}
@@ -231,7 +231,7 @@ const MobileTopbar = () => {
       }}
     >
       <Link to="/">
-        <img src={stayupLogo} alt="StayUp" className="h-7 w-auto" />
+        <img src={stayupLogo} alt="StayUp" width={45} height={28} fetchPriority="high" className="h-7 w-auto" />
       </Link>
       <div className="flex items-center gap-3">
         <LanguageSwitcher />

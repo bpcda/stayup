@@ -40,7 +40,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           {/* Mobile: hamburger + logo */}
           <AdminMobileNav />
           <Link to="/admin" className="md:hidden flex items-center">
-            <img src={stayupLogo} alt="StayUp" className="h-7 w-auto" />
+            <img src={stayupLogo} alt="StayUp" width={45} height={28} className="h-7 w-auto" />
           </Link>
 
           {/* Spacer pushes actions right */}

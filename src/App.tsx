@@ -8,25 +8,24 @@ import { AuthProvider } from "@/hooks/useAuth";
 import AdminGuard from "@/components/AdminGuard";
 import AppLayout from "@/components/layout/AppLayout";
 import Index from "./pages/Index";
-import GrillContest from "./pages/GrillContest";
 import AdminLayout from "@/components/admin/AdminLayout";
-import Auth from "./pages/Auth";
-import AuthCallback from "./pages/AuthCallback";
-import WaitlistAccept from "./pages/WaitlistAccept";
-import ResetPassword from "./pages/ResetPassword";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsConditions from "./pages/TermsConditions";
-import ChiSiamo from "./pages/ChiSiamo";
-import Contatti from "./pages/Contatti";
-import Eventi from "./pages/Eventi";
-import EventoDettaglio from "./pages/EventoDettaglio";
-import Profilo from "./pages/Profilo";
-import NotFound from "./pages/NotFound";
 import UserGuard from "@/components/UserGuard";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
+const Auth = lazy(() => import("./pages/Auth"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const WaitlistAccept = lazy(() => import("./pages/WaitlistAccept"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsConditions = lazy(() => import("./pages/TermsConditions"));
+const ChiSiamo = lazy(() => import("./pages/ChiSiamo"));
+const Contatti = lazy(() => import("./pages/Contatti"));
+const Eventi = lazy(() => import("./pages/Eventi"));
+const EventoDettaglio = lazy(() => import("./pages/EventoDettaglio"));
+const Profilo = lazy(() => import("./pages/Profilo"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 const AdminOverview = lazy(() => import("./pages/admin/AdminOverview"));
 const AdminShuttle = lazy(() => import("./pages/admin/AdminShuttle"));
 const AdminEventi = lazy(() => import("./pages/admin/AdminEventi"));
@@ -57,7 +56,6 @@ const AppRoutes = () => (
         <Route path="/eventi" element={<Eventi />} />
         <Route path="/eventi/:slug" element={<EventoDettaglio />} />
         <Route path="/profilo" element={<UserGuard><Profilo /></UserGuard>} />
-        <Route path="/grill-contest" element={<GrillContest />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/reset-password" element={<ResetPassword />} />

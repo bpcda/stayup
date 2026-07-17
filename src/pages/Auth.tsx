@@ -132,7 +132,7 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-3">
-          <img src={stayupLogo} alt="StayUp" className="mx-auto h-14 w-auto" />
+          <img src={stayupLogo} alt="StayUp" width={89} height={56} className="mx-auto h-14 w-auto" />
           <CardTitle>Benvenuto in StayUp</CardTitle>
           <CardDescription>Accedi o crea un account per iscriverti agli eventi</CardDescription>
         </CardHeader>

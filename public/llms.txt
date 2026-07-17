@@ -1,0 +1,21 @@
+# StayUp All Night
+
+StayUp All Night è il sito pubblico della community StayUp per scoprire eventi, prenotare la partecipazione e accedere alle informazioni principali.
+
+## Pagine principali
+
+- [Home](https://stayupallnight.it/)
+- [Eventi](https://stayupallnight.it/eventi)
+- [Chi siamo](https://stayupallnight.it/chi-siamo)
+- [Contatti](https://stayupallnight.it/contatti)
+- [Accedi](https://stayupallnight.it/auth)
+
+## Funzionalità pubbliche
+
+- Consultazione degli eventi disponibili.
+- Dettaglio evento con informazioni, disponibilità e prenotazione quando attiva.
+- Accesso o registrazione dell'utente.
+
+## Accesso
+
+Le aree profilo e amministrazione richiedono autenticazione. Le pagine `/admin/*` sono riservate agli utenti autorizzati.

@@ -58,7 +58,7 @@ const AdminSidebar = () => {
         style={{ borderColor: "rgba(255,255,255,0.08)" }}
       >
         <Link to="/admin">
-          <img src={stayupLogo} alt="StayUp" className="h-7 w-auto" />
+          <img src={stayupLogo} alt="StayUp" width={45} height={28} className="h-7 w-auto" />
         </Link>
       </div>
 

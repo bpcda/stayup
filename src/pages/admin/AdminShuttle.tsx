@@ -230,7 +230,7 @@ const AdminShuttle = () => {
       <div className="max-w-6xl mx-auto space-y-5 sm:space-y-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/"><img src={stayupLogo} alt="StayUp" className="w-16 h-auto" /></Link>
+            <Link to="/"><img src={stayupLogo} alt="StayUp" width={64} height={40} className="w-16 h-auto" /></Link>
             <h1 className="text-xl font-bold font-heading sm:text-2xl">Dashboard Admin</h1>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:flex-wrap">

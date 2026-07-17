@@ -10,7 +10,7 @@
  *   2. poi facciamo `getSession()` per ripristinare lo stato iniziale
  *   3. il ruolo admin viene risolto in modo asincrono via `has_role` RPC
  */
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 import { getSiteUrl } from "@/lib/siteUrl";
@@ -42,30 +42,66 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+type RoleState = {
+  isAdmin: boolean;
+  isOrganizer: boolean;
+};
+
+const emptyRoles: RoleState = { isAdmin: false, isOrganizer: false };
+const roleCache = new Map<string, RoleState>();
+const roleRequests = new Map<string, Promise<RoleState>>();
+
+const loadRoles = (uid: string): Promise<RoleState> => {
+  const cached = roleCache.get(uid);
+  if (cached) return Promise.resolve(cached);
+
+  const inFlight = roleRequests.get(uid);
+  if (inFlight) return inFlight;
+
+  const request = Promise.all([
+    supabase.rpc("has_role", { _user_id: uid, _role: "admin" }),
+    supabase.rpc("has_role", { _user_id: uid, _role: "organizer" }),
+  ])
+    .then(([adminRes, orgRes]) => {
+      const roles = {
+        isAdmin: Boolean(adminRes.data),
+        isOrganizer: Boolean(orgRes.data),
+      };
+      roleCache.set(uid, roles);
+      return roles;
+    })
+    .catch(() => emptyRoles)
+    .finally(() => {
+      roleRequests.delete(uid);
+    });
+
+  roleRequests.set(uid, request);
+  return request;
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isOrganizer, setIsOrganizer] = useState(false);
   const [loading, setLoading] = useState(true);
+  const roleCheckId = useRef(0);
 
   const checkRoles = async (uid: string | null) => {
+    const checkId = ++roleCheckId.current;
+
     if (!uid || !isSupabaseConfigured) {
       setIsAdmin(false);
       setIsOrganizer(false);
-      return;
+      return emptyRoles;
     }
-    try {
-      const [adminRes, orgRes] = await Promise.all([
-        supabase.rpc("has_role", { _user_id: uid, _role: "admin" }),
-        supabase.rpc("has_role", { _user_id: uid, _role: "organizer" }),
-      ]);
-      setIsAdmin(Boolean(adminRes.data));
-      setIsOrganizer(Boolean(orgRes.data));
-    } catch {
-      setIsAdmin(false);
-      setIsOrganizer(false);
+
+    const roles = await loadRoles(uid);
+    if (checkId === roleCheckId.current) {
+      setIsAdmin(roles.isAdmin);
+      setIsOrganizer(roles.isOrganizer);
     }
+    return roles;
   };
 
   useEffect(() => {
@@ -80,15 +116,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(newSession?.user ?? null);
       // Deferred per non bloccare il callback.
       setTimeout(() => {
-        checkRoles(newSession?.user?.id ?? null);
+        checkRoles(newSession?.user?.id ?? null).finally(() => setLoading(false));
       }, 0);
     });
 
     // 2) Bootstrap della sessione persistita.
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       setSession(data.session);
       setUser(data.session?.user ?? null);
-      checkRoles(data.session?.user?.id ?? null);
+      await checkRoles(data.session?.user?.id ?? null);
       setLoading(false);
     });
 
@@ -194,6 +230,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     setIsAdmin(false);
     setIsOrganizer(false);
+    roleCache.clear();
+    roleRequests.clear();
   };
 
   const requestPasswordReset = async (email: string) => {
