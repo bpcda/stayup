@@ -38,3 +38,17 @@ export interface ReturnSlot {
   price_override?: number;
   nascosto?: boolean;
 }
+
+export interface ShuttleSlotStats extends ShuttleSlot {
+  prenotati: number;
+  occupati: number;
+  rimanenti: number;
+}
+
+export interface ReturnSlotStats extends ReturnSlot {
+  prenotati: number;
+  occupati: number;
+  rimanenti: number;
+}
+
+export type SlotGroupMembers = Record<string, { fermata: string; orario: string }[]>;

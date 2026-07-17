@@ -177,8 +177,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!data?.url) return { error: "Nessun URL restituito" };
       window.location.href = data.url;
       return { error: null };
-    } catch (e: any) {
-      return { error: e?.message ?? "Errore sconosciuto" };
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : "Errore sconosciuto" };
     }
   };
 

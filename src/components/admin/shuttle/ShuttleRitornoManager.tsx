@@ -4,16 +4,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { GIORNI } from "@/lib/shuttleHelpers";
 import { downloadReturnPassengerList } from "@/lib/shuttleHelpers";
+import type { Booking, ReturnSlotStats } from "@/interfaces/shuttle";
 
 interface ShuttleRitornoManagerProps {
   returnFilterGiorno: string;
   setReturnFilterGiorno: (v: string) => void;
   returnFilterRiempimento: string;
   setReturnFilterRiempimento: (v: string) => void;
-  filteredReturnSlotStats: any[];
-  openEditSlot: (type: "ritorno", s: any) => void;
+  filteredReturnSlotStats: ReturnSlotStats[];
+  openEditSlot: (type: "ritorno", s: ReturnSlotStats) => void;
   deleteSlot: (type: "ritorno", id: string) => void;
-  bookings: any[];
+  bookings: Booking[];
 }
 
 export const ShuttleRitornoManager = ({
@@ -81,7 +82,7 @@ export const ShuttleRitornoManager = ({
                 </TableCell>
                 <TableCell className="text-center">
                   <div className="flex gap-1 justify-center">
-                    <Button size="sm" variant="outline" onClick={() => downloadReturnPassengerList(s, bookings)} disabled={s.occupati === 0}>⬇ Excel</Button>
+                    <Button size="sm" variant="outline" onClick={() => downloadReturnPassengerList(s, bookings)} disabled={s.occupati === 0}>⬇ CSV</Button>
                     <Button size="sm" variant="outline" onClick={() => openEditSlot("ritorno", s)}>✏️</Button>
                     <Button size="sm" variant="destructive" onClick={() => deleteSlot("ritorno", s.id)}>🗑</Button>
                   </div>

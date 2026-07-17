@@ -1,4 +1,4 @@
-import { Booking, ShuttleSlot, ReturnSlot } from "@/interfaces/shuttle";
+import { Booking, ShuttleSlot, ReturnSlot, ReturnSlotStats, ShuttleSlotStats, SlotGroupMembers } from "@/interfaces/shuttle";
 
 export const computeStats = (bookings: Booking[]) => {
   const totale = bookings.length;
@@ -14,8 +14,8 @@ export const computeStats = (bookings: Booking[]) => {
   return { totale, pagati, nonPagati, incasso, soloAndata, soloRitorno, andataRitorno, iscrittiOggi };
 };
 
-export const computeSlotGroupMembers = (slots: ShuttleSlot[]) => {
-  const map: Record<string, { fermata: string; orario: string }[]> = {};
+export const computeSlotGroupMembers = (slots: ShuttleSlot[]): SlotGroupMembers => {
+  const map: SlotGroupMembers = {};
   slots.forEach((s) => {
     if (!s.trip_group_id) return;
     if (!map[s.trip_group_id]) map[s.trip_group_id] = [];
@@ -27,8 +27,8 @@ export const computeSlotGroupMembers = (slots: ShuttleSlot[]) => {
 export const computeSlotStats = (
   slots: ShuttleSlot[],
   bookings: Booking[],
-  slotGroupMembers: Record<string, { fermata: string; orario: string }[]>
-) => {
+  slotGroupMembers: SlotGroupMembers
+): ShuttleSlotStats[] => {
   return slots.map((slot) => {
     const members = slot.trip_group_id
       ? slotGroupMembers[slot.trip_group_id] || [{ fermata: slot.fermata, orario: slot.orario }]
@@ -42,7 +42,7 @@ export const computeSlotStats = (
   });
 };
 
-export const computeReturnSlotStats = (returnSlots: ReturnSlot[], bookings: Booking[]) => {
+export const computeReturnSlotStats = (returnSlots: ReturnSlot[], bookings: Booking[]): ReturnSlotStats[] => {
   return returnSlots.map((slot) => {
     const matches = (b: Booking) =>
       b.giorno === slot.giorno &&

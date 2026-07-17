@@ -4,8 +4,25 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Booking } from "@/interfaces/shuttle";
+import type { Dispatch, SetStateAction } from "react";
+import { Booking, ReturnSlotStats, ShuttleSlotStats } from "@/interfaces/shuttle";
 import { STOPS, GIORNI } from "@/lib/shuttleHelpers";
+
+export type EditableSlotData = {
+  id: string;
+  giorno: string;
+  fermata?: string;
+  orario: string;
+  capienza: number;
+  nascosto: boolean;
+};
+
+export type NewSlotData = {
+  giorno: string;
+  fermata: string;
+  orario: string;
+  capienza: number;
+};
 
 interface ShuttleModalsProps {
   // Move Dialog
@@ -18,24 +35,24 @@ interface ShuttleModalsProps {
   setNewOrario: (v: string) => void;
   newOrarioRitorno: string;
   setNewOrarioRitorno: (v: string) => void;
-  slotStats: any[];
-  returnSlotStats: any[];
+  slotStats: ShuttleSlotStats[];
+  returnSlotStats: ReturnSlotStats[];
   handleMove: () => void;
 
   // Edit Slot
   editSlotDialog: boolean;
   setEditSlotDialog: (v: boolean) => void;
   editSlotType: "andata" | "ritorno";
-  editSlotData: any;
-  setEditSlotData: React.Dispatch<React.SetStateAction<any>>;
+  editSlotData: EditableSlotData;
+  setEditSlotData: Dispatch<SetStateAction<EditableSlotData>>;
   saveEditSlot: () => void;
 
   // Add Slot
   addSlotDialog: boolean;
   setAddSlotDialog: (v: boolean) => void;
   addSlotType: "andata" | "ritorno";
-  newSlotData: any;
-  setNewSlotData: React.Dispatch<React.SetStateAction<any>>;
+  newSlotData: NewSlotData;
+  setNewSlotData: Dispatch<SetStateAction<NewSlotData>>;
   saveAddSlot: () => void;
 
   // Delete Booking
@@ -115,7 +132,7 @@ export const ShuttleModals = (props: ShuttleModalsProps) => {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Giorno</Label>
-              <Select value={props.editSlotData.giorno} onValueChange={(v) => props.setEditSlotData((p: any) => ({ ...p, giorno: v }))}>
+              <Select value={props.editSlotData.giorno} onValueChange={(v) => props.setEditSlotData((p) => ({ ...p, giorno: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {GIORNI.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
@@ -125,7 +142,7 @@ export const ShuttleModals = (props: ShuttleModalsProps) => {
             {props.editSlotType === "andata" && (
               <div className="space-y-2">
                 <Label>Fermata</Label>
-                <Select value={props.editSlotData.fermata} onValueChange={(v) => props.setEditSlotData((p: any) => ({ ...p, fermata: v }))}>
+                <Select value={props.editSlotData.fermata} onValueChange={(v) => props.setEditSlotData((p) => ({ ...p, fermata: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {STOPS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -135,17 +152,17 @@ export const ShuttleModals = (props: ShuttleModalsProps) => {
             )}
             <div className="space-y-2">
               <Label>Orario (HH:MM)</Label>
-              <Input value={props.editSlotData.orario} onChange={(e) => props.setEditSlotData((p: any) => ({ ...p, orario: e.target.value }))} placeholder="14:00" />
+              <Input value={props.editSlotData.orario} onChange={(e) => props.setEditSlotData((p) => ({ ...p, orario: e.target.value }))} placeholder="14:00" />
             </div>
             <div className="space-y-2">
               <Label>Capienza</Label>
-              <Input type="number" value={props.editSlotData.capienza} onChange={(e) => props.setEditSlotData((p: any) => ({ ...p, capienza: parseInt(e.target.value) || 0 }))} />
+              <Input type="number" value={props.editSlotData.capienza} onChange={(e) => props.setEditSlotData((p) => ({ ...p, capienza: parseInt(e.target.value) || 0 }))} />
             </div>
             <div className="flex items-center space-x-2 pt-2">
               <Checkbox
                 id="nascosto-slot"
                 checked={props.editSlotData.nascosto}
-                onCheckedChange={(v) => props.setEditSlotData((p: any) => ({ ...p, nascosto: v === true }))}
+                onCheckedChange={(v) => props.setEditSlotData((p) => ({ ...p, nascosto: v === true }))}
               />
               <Label htmlFor="nascosto-slot" className="cursor-pointer">
                 Nascondi questo slot dal form pubblico
@@ -165,7 +182,7 @@ export const ShuttleModals = (props: ShuttleModalsProps) => {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Giorno</Label>
-              <Select value={props.newSlotData.giorno} onValueChange={(v) => props.setNewSlotData((p: any) => ({ ...p, giorno: v }))}>
+              <Select value={props.newSlotData.giorno} onValueChange={(v) => props.setNewSlotData((p) => ({ ...p, giorno: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {GIORNI.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
@@ -179,11 +196,11 @@ export const ShuttleModals = (props: ShuttleModalsProps) => {
             )}
             <div className="space-y-2">
               <Label>{props.addSlotType === "andata" ? "Orario partenza Università (HH:MM)" : "Orario (HH:MM)"}</Label>
-              <Input value={props.newSlotData.orario} onChange={(e) => props.setNewSlotData((p: any) => ({ ...p, orario: e.target.value }))} placeholder="14:00" />
+              <Input value={props.newSlotData.orario} onChange={(e) => props.setNewSlotData((p) => ({ ...p, orario: e.target.value }))} placeholder="14:00" />
             </div>
             <div className="space-y-2">
               <Label>Capienza</Label>
-              <Input type="number" value={props.newSlotData.capienza} onChange={(e) => props.setNewSlotData((p: any) => ({ ...p, capienza: parseInt(e.target.value) || 0 }))} />
+              <Input type="number" value={props.newSlotData.capienza} onChange={(e) => props.setNewSlotData((p) => ({ ...p, capienza: parseInt(e.target.value) || 0 }))} />
             </div>
           </div>
           <DialogFooter>

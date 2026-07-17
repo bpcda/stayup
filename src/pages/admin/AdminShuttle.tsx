@@ -11,7 +11,8 @@ import { BookingsTable } from "@/components/admin/shuttle/BookingsTable";
 import { ShuttleAndataManager } from "@/components/admin/shuttle/ShuttleAndataManager";
 import { ShuttleRitornoManager } from "@/components/admin/shuttle/ShuttleRitornoManager";
 import { ShuttleModals } from "@/components/admin/shuttle/ShuttleModals";
-import { Booking } from "@/interfaces/shuttle";
+import { Booking, ReturnSlotStats, ShuttleSlotStats } from "@/interfaces/shuttle";
+import type { EditableSlotData, NewSlotData } from "@/components/admin/shuttle/ShuttleModals";
 import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -103,11 +104,11 @@ const AdminShuttle = () => {
 
   const [editSlotDialog, setEditSlotDialog] = useState(false);
   const [editSlotType, setEditSlotType] = useState<"andata" | "ritorno">("andata");
-  const [editSlotData, setEditSlotData] = useState<any>({ id: "", giorno: "", fermata: "", orario: "", capienza: 50, nascosto: false });
+  const [editSlotData, setEditSlotData] = useState<EditableSlotData>({ id: "", giorno: "", fermata: "", orario: "", capienza: 50, nascosto: false });
 
   const [addSlotDialog, setAddSlotDialog] = useState(false);
   const [addSlotType, setAddSlotType] = useState<"andata" | "ritorno">("andata");
-  const [newSlotData, setNewSlotData] = useState<any>({ giorno: "25 Aprile", fermata: "Università Cattolica", orario: "", capienza: 50 });
+  const [newSlotData, setNewSlotData] = useState<NewSlotData>({ giorno: "25 Aprile", fermata: "Università Cattolica", orario: "", capienza: 50 });
 
   // Handlers
   const askDeleteBooking = (b: Booking) => { setBookingToDelete(b); setDeleteDialogOpen(true); };
@@ -128,8 +129,8 @@ const AdminShuttle = () => {
     }
   };
 
-  const openEditSlot = (type: "andata" | "ritorno", slot: any) => {
-    setEditSlotType(type); setEditSlotData({ ...slot }); setEditSlotDialog(true);
+  const openEditSlot = (type: "andata" | "ritorno", slot: ShuttleSlotStats | ReturnSlotStats) => {
+    setEditSlotType(type); setEditSlotData({ ...slot, nascosto: slot.nascosto === true }); setEditSlotDialog(true);
   };
   const saveEditSlot = async () => {
     const table = editSlotType === "andata" ? SLOTS_TABLE : RETURN_SLOTS_TABLE;

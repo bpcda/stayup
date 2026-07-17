@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { GIORNI, STOPS } from "@/lib/shuttleHelpers";
 import { downloadPassengerList } from "@/lib/shuttleHelpers";
+import type { Booking, ShuttleSlotStats, SlotGroupMembers } from "@/interfaces/shuttle";
 
 interface ShuttleAndataManagerProps {
   slotFilterGiorno: string;
@@ -12,11 +13,11 @@ interface ShuttleAndataManagerProps {
   setSlotFilterFermata: (v: string) => void;
   slotFilterRiempimento: string;
   setSlotFilterRiempimento: (v: string) => void;
-  filteredSlotStats: any[];
-  openEditSlot: (type: "andata", s: any) => void;
+  filteredSlotStats: ShuttleSlotStats[];
+  openEditSlot: (type: "andata", s: ShuttleSlotStats) => void;
   deleteSlot: (type: "andata", id: string) => void;
-  bookings: any[];
-  slotGroupMembers: any;
+  bookings: Booking[];
+  slotGroupMembers: SlotGroupMembers;
 }
 
 export const ShuttleAndataManager = ({
@@ -98,7 +99,7 @@ export const ShuttleAndataManager = ({
                 </TableCell>
                 <TableCell className="text-center">
                   <div className="flex gap-1 justify-center">
-                    <Button size="sm" variant="outline" onClick={() => downloadPassengerList(s, bookings, slotGroupMembers)} disabled={s.occupati === 0}>⬇ Excel</Button>
+                    <Button size="sm" variant="outline" onClick={() => downloadPassengerList(s, bookings, slotGroupMembers)} disabled={s.occupati === 0}>⬇ CSV</Button>
                     <Button size="sm" variant="outline" onClick={() => openEditSlot("andata", s)}>✏️</Button>
                     <Button size="sm" variant="destructive" onClick={() => deleteSlot("andata", s.id)}>🗑</Button>
                   </div>
